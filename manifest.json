@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dreadwake \u2014 The Hollow Pilgrimage",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A dark fantasy RPG in your side panel. Earn coins through browsing, forge gear, master forbidden arts, and face the Hollow.",
   "permissions": [
     "storage",

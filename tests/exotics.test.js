@@ -9,10 +9,10 @@ const fight=s=>{s=reduce(s,{type:'BEGIN'});s.battle.hp=s.battle.maxHp=10000;s.ba
 const turn=(s,move='attack')=>reduce(s,{type:'TURN',move});
 const procs=s=>s.combatFx.exotics||[];
 
-test('35 unique relics include 15 new gear pieces and 7 Testaments with valid art and three real slots',()=>{
+test('35 unique relics include 15 new gear pieces and 7 exotic Testaments with valid art and seven real slots',()=>{
  assert.equal(EXOTICS.length,35);assert.equal(NEW_EXOTICS.length,15);assert.equal(TESTAMENTS.length,7);assert.equal(new Set(EXOTICS.map(e=>e.id)).size,35);assert.equal(new Set(EXOTICS.map(e=>e.perk)).size,35);
- for(const e of EXOTICS){assert.ok(['weapon','armor','testament'].includes(e.slot));assert.ok(existsSync(new URL(`../assets/renders/gear-${e.id}.png`,import.meta.url)));assert.equal(e.rarity,e.slot==='testament'?'Testament':'Exotic');}
- const all=relics(EXOTICS.map(e=>e.id)),clean=migrate(all);assert.equal(clean.equippedExotics.length,3);assert.equal(clean.ownedExotics.length,35);
+ for(const e of EXOTICS){assert.ok(['weapon','helmet','chest','arms','legs','accessory','testament'].includes(e.slot));assert.ok(existsSync(new URL(`../assets/renders/gear-${e.id}.png`,import.meta.url)));assert.equal(e.rarity,'Exotic');}
+ const all=relics(EXOTICS.map(e=>e.id)),clean=migrate(all);assert.equal(clean.equippedExotics.length,7);assert.equal(clean.ownedExotics.length,35);
  const totals=exoticBonuses(clean),base=stats(fresh()),full=stats(clean);for(const key of Object.keys(totals))assert.equal(full[key],base[key]+totals[key]);
 });
 test('one hourly offer persists across reloads and uses randomized eligible pools',()=>{
@@ -82,7 +82,7 @@ test('pallbearer begins with a barrier and retaliates exactly when incoming dama
  let s=fight(relics(['pallbearer']));assert.equal(s.battle.barrier,15);s.battle.barrier=1;s=turn(s);assert.ok(procs(s).includes('pallbearer'));assert.equal(s.battle.barrier,0);
 });
 test('sun crown modifies cursed damaging spells and heals from damage actually dealt',()=>{
- let s=fight(relics(['sun']));s.hp=20;s.battle.effects.curse={power:1,amp:.2,turns:3};const buffed=turn(s,'spell'),plain=turn({...s,armor:'rags'},'spell');assert.ok(buffed.battle.hp<plain.battle.hp);assert.ok(buffed.hp>plain.hp);assert.ok(procs(buffed).includes('sun'));
+ let s=fight(relics(['sun']));s.hp=20;s.battle.effects.curse={power:1,amp:.2,turns:3};const buffed=turn(s,'spell'),plain=turn({...s,helmet:'ashhood'},'spell');assert.ok(buffed.battle.hp<plain.battle.hp);assert.ok(buffed.hp>plain.hp);assert.ok(procs(buffed).includes('sun'));
 });
 test('cash ring rescues once after Last Rites, requires sufficient coins, and cannot run twice',()=>{
  let s=fight(relics(['miser'],{coins:100,skills:{revenant:1}}));s.hp=1;s=turn(s);assert.equal(s.hp,15);assert.equal(s.coins,100);s.hp=1;s=turn(s);assert.equal(s.hp,25);assert.equal(s.coins,80);assert.equal(s.battle.exotic.bribed,true);s.hp=1;s=turn(s);assert.equal(s.battle,null);
@@ -112,12 +112,12 @@ test('old saves acquire stable shop metadata and no surprise purchases during mi
  const s=migrate(old);assert.equal(s.version,VERSION);assert.equal(s.coins,93);assert.equal(s.stage,9);assert.deepEqual(s.equippedExotics,[]);assert.deepEqual(shopStock(migrate(s)).map(e=>e.id),shopStock(s).map(e=>e.id));
 });
 
-test('the real hourly purchase path can stockpile all 35 relics while swapping three slots without replacing old possessions',()=>{
+test('the real hourly purchase path can stockpile all 35 relics while swapping seven slots without replacing old possessions',()=>{
  let now=Date.UTC(2026,9,12,13,30),s={...fresh(now),stage:7,coins:100000};
  for(let i=0;i<35;i++){
   now+=HOUR_MS;s=migrate(s,now);const e=shopStock(s)[0];assert.ok(e);s=reduce(s,{type:'BUY_EXOTIC',id:e.id},now);s=reduce(s,{type:'TOGGLE_EXOTIC',id:e.id},now);
  }
- assert.equal(s.ownedExotics.length,35);assert.equal(s.equippedExotics.length,3);
+ assert.equal(s.ownedExotics.length,35);assert.equal(s.equippedExotics.length,7);
 });
 test('rotation happens at xx:00 exactly, catches up missed hours, and leaves combat untouched',()=>{
  const before=Date.UTC(2026,9,12,13,59,59,999),s=fresh(before),old=shopStock(s)[0].id;

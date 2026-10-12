@@ -18,7 +18,7 @@ function spike(g,m,x,y,z,length=.45,tilt=0){return mesh(g,new T.ConeGeometry(.1,
 function slab(g,points,depth,mat,x=0,y=0,z=0){const shape=new T.Shape();points.forEach(([a,b],i)=>i?shape.lineTo(a,b):shape.moveTo(a,b));shape.closePath();return mesh(g,new T.ExtrudeGeometry(shape,{depth,bevelEnabled:false}),mat,x,y,z-depth/2);}
 function bone(g,a,b,r=.065){const d=new T.Vector3(...b).sub(new T.Vector3(...a));const m=mesh(g,new T.CylinderGeometry(r*.8,r,d.length(),5),mats.bone,...a);m.position.addScaledVector(d,.5);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return m;}
 function skull(g,x,y,z,scale=1){const h=new T.Group();h.position.set(x,y,z);h.scale.setScalar(scale);g.add(h);orb(h,mats.bone,0,0,0,.23,1,1.22,.85);box(h,mats.dark,-.08,.025,.17,.095,.072,.025);box(h,mats.dark,.08,.025,.17,.095,.072,.025);spike(h,mats.dark,0,-.055,.18,.07,Math.PI);box(h,mats.bone,0,-.17,.035,.25,.105,.19);for(let i=-2;i<=2;i++)box(h,mats.dark,i*.041,-.15,.14,.016,.035,.02);return h;}
-function cape(g,color=mats.blood,wide=.75){return slab(g,[[-wide,0],[-wide*1.25,-1.3],[-.6,-1.25],[-.35,-1.5],[0,-1.3],[.35,-1.5],[.65,-1.2],[wide*1.25,-1.35],[wide,0]],.045,color,0,2.2,-.27);}
+function cape(g,color=mats.blood,wide=.75){const cloth=slab(g,[[-wide,0],[-wide*1.25,-1.3],[-.6,-1.25],[-.35,-1.5],[0,-1.3],[.35,-1.5],[.65,-1.2],[wide*1.25,-1.35],[wide,0]],.045,color,0,2.2,-.27);cloth.name='cape';return cloth;}
 export function weapon(id='rust'){
  const g=new T.Group(),epic=['thorn','god'].includes(id),steel=id==='rust'?mats.rust:mats.edge;
  if(id==='reaper'){
@@ -36,6 +36,7 @@ export function weapon(id='rust'){
 }
 export function armor(id='iron'){
  const g=new T.Group(),tier={rags:0,iron:1,mantle:2,cathedral:3,night:4}[id]||1;
+ g.userData.bodyArmor=true;
  const main=tier===2?mats.cloth:tier===4?mats.dark:mats.iron;
  mesh(g,new T.CylinderGeometry(.4,.3,.82,6),main,0,.1,0);orb(g,main,0,.28,.12,.43,1,.7,.75);
  for(const side of [-1,1]){

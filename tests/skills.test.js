@@ -86,7 +86,7 @@ test('starter builds never overspend and can be replaced with another build with
 });
 test('old saves retain progression and existing capstones are equipped during migration',()=>{
  const s={...fresh(),version:1,coins:88,stage:8,skills:{edge:3,rage:1,eclipse:1}};delete s.loadout;delete s.runes;
- const next=migrate(s);assert.deepEqual(next.loadout,['rage','eclipse']);assert.equal(next.coins,88);assert.equal(next.stage,8);assert.equal(next.skills.edge,3);assert.equal(next.version,5);
+ const next=migrate(s);assert.deepEqual(next.loadout,['rage','eclipse']);assert.equal(next.coins,88);assert.equal(next.stage,8);assert.equal(next.skills.edge,3);assert.equal(next.version,6);
 });
 test('every active skill and both of its rune variants can execute without negative resources',()=>{
  let master={...fresh(),points:500};for(const k of SKILLS)for(let i=0;i<k.max;i++)master=reduce(master,{type:'LEARN',id:k.id});

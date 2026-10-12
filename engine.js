@@ -1,20 +1,10 @@
+import {GEAR,EQUIPMENT_SLOTS,DEFAULT_LOADOUT,gearBonuses,defenseReduction} from './equipment.js';
+export {GEAR,EQUIPMENT_SLOTS,DEFAULT_LOADOUT,defenseReduction} from './equipment.js';
 import {beforeRelicStrike,afterRelicStrike,relicDodge,afterRelicRetaliation} from './relic-perks.js';
 import {EXOTICS,hasExotic,exoticBonuses,shopStock,refreshHourlyShop,mergeEffect,activeRelics,relicFor} from './exotics.js';
 import {SKILLS,RUNES,rank,requirements,runeUnlocked,focusCost,moveSkill,moveReady,treePoints,PRESETS} from './skills.js';
 export {SKILLS} from './skills.js';
-export const VERSION = 5;
-export const GEAR = [
- {id:'rust',name:'Graveborn Blade',slot:'weapon',tier:1,cost:0,power:0,icon:'sword',rarity:'Worn',desc:'Even rust remembers the taste of blood.'},
- {id:'rags',name:'Pilgrim’s Shroud',slot:'armor',tier:1,cost:0,power:0,icon:'armor',rarity:'Worn',desc:'A burial cloth. Not yet your own.'},
- {id:'fang',name:'Widow’s Fang',slot:'weapon',tier:1,cost:35,power:5,icon:'sword',rarity:'Uncommon',desc:'A serrated edge, hungry for the living.'},
- {id:'iron',name:'Blackiron Cuirass',slot:'armor',tier:1,cost:30,power:3,icon:'armor',rarity:'Uncommon',desc:'Forged beneath a sun that never rose.'},
- {id:'reaper',name:'Ashen Reaper',slot:'weapon',tier:2,cost:90,power:12,icon:'scythe',rarity:'Rare',desc:'The harvest is always late in the Hollow.'},
- {id:'mantle',name:'Wraithskin Mantle',slot:'armor',tier:2,cost:80,power:7,icon:'armor',rarity:'Rare',desc:'The dead whisper between its stitches.'},
- {id:'thorn',name:'Thorn of the Eclipse',slot:'weapon',tier:3,cost:180,power:22,icon:'sword',rarity:'Epic',desc:'A splinter from the crown of a fallen god.'},
- {id:'cathedral',name:'Cathedral Plate',slot:'armor',tier:3,cost:165,power:12,icon:'armor',rarity:'Epic',desc:'Wear the last walls of a ruined sanctuary.'},
- {id:'god',name:'Godsunder',slot:'weapon',tier:4,cost:340,power:34,icon:'sword',rarity:'Legendary',desc:'No prayer can turn aside this blade.'},
- {id:'night',name:'Sovereign of Night',slot:'armor',tier:4,cost:310,power:18,icon:'armor',rarity:'Legendary',desc:'The darkness kneels to its rightful heir.'}
-];
+export const VERSION = 6;
 export const MONSTERS = [
  {name:'The Hollow Knight',kind:'knight',tag:'An oath left to rot',hp:48,attack:9,xp:30,coins:14},
  {name:'Catacomb Wretch',kind:'wretch',tag:'Hunger without a body',hp:62,attack:11,xp:38,coins:18},
@@ -23,11 +13,11 @@ export const MONSTERS = [
  {name:'Vesper, the Uncrowned',kind:'king',tag:'The throne demands a sacrifice',hp:130,attack:19,xp:85,coins:42}
 ];
 export function fresh(now=Date.now()) {
- const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,hour:null,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:['rust','rags'],weapon:'rust',armor:'rags',testament:null,standardLoadout:{weapon:'rust',armor:'rags'},battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};refreshHourlyShop(save,now);return save;
+ const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,hour:null,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:Object.values(DEFAULT_LOADOUT).filter(Boolean),...DEFAULT_LOADOUT,standardLoadout:{...DEFAULT_LOADOUT},battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};refreshHourlyShop(save,now);return save;
 }
 export function stats(s) {
- const r=id=>s.skills[id]||0,ex=exoticBonuses(s);
- return {hp:100+(s.level-1)*10+r('ward')*8+ex.hp,focus:30+r('spark')*5+ex.focus,attack:12+(s.level-1)*2+(GEAR.find(g=>g.id===s.weapon)?.power||0)+r('edge')*3+ex.attack,defense:2+(GEAR.find(g=>g.id===s.armor)?.power||0)+r('ward')*2+ex.defense};
+ const r=id=>s.skills?.[id]||0,ex=exoticBonuses(s),gear=gearBonuses(s);
+ return {hp:100+(s.level-1)*10+r('ward')*8+ex.hp+gear.hp,focus:30+r('spark')*5+ex.focus+gear.focus,attack:12+(s.level-1)*2+r('edge')*3+ex.attack+gear.attack,defense:2+r('ward')*2+ex.defense+gear.defense};
 }
 export const xpNeeded=s=>50+(s.level-1)*30;
 export const shopTier=s=>Math.min(4,1+Math.floor((s.stage-1)/3));
@@ -41,14 +31,22 @@ export function migrate(state,now=Date.now()){
  const s=structuredClone(state);
  s.ownedExotics=[...new Set(s.ownedExotics||[])].filter(id=>EXOTICS.some(e=>e.id===id));
  const legacy=[...new Set(s.equippedExotics||[])].filter(id=>s.ownedExotics.includes(id));
- s.owned=[...new Set([...(s.owned||[]),'rust','rags'])].filter(id=>GEAR.some(g=>g.id===id));
- s.standardLoadout??={weapon:GEAR.some(g=>g.id===s.weapon&&g.slot==='weapon')?s.weapon:'rust',armor:GEAR.some(g=>g.id===s.armor&&g.slot==='armor')?s.armor:'rags'};
- if((s.version||0)<5){for(const slot of ['weapon','armor','testament']){const id=legacy.find(id=>relicFor(id)?.slot===slot);if(id)s[slot]=id;}s.testament??=null;}
- for(const slot of ['weapon','armor']){
-  if(!GEAR.some(g=>g.id===s.standardLoadout[slot]&&g.slot===slot&&s.owned.includes(g.id)))s.standardLoadout[slot]=slot==='weapon'?'rust':'rags';
+ const oldVersion=s.version||0,oldArmor=s.armor,oldWeapon=s.weapon;
+ s.owned=[...new Set([...(s.owned||[]),...Object.values(DEFAULT_LOADOUT).filter(Boolean)])].filter(id=>GEAR.some(g=>g.id===id));
+ s.standardLoadout??={};
+ if(oldVersion<6){
+  const previous=[...(oldVersion<5?legacy:[]),s.weapon,oldArmor,s.testament].filter(Boolean);
+  for(const slot of EQUIPMENT_SLOTS)s[slot]=DEFAULT_LOADOUT[slot];
+  for(const id of previous){const item=GEAR.find(g=>g.id===id)||relicFor(id);if(item&&(s.owned.includes(id)||s.ownedExotics.includes(id))&&(s[item.slot]===DEFAULT_LOADOUT[item.slot]))s[item.slot]=id;}
+  const standard=[oldWeapon,oldArmor,s.standardLoadout.weapon,s.standardLoadout.armor,...Object.values(s.standardLoadout)].filter(Boolean);
+  s.standardLoadout={...DEFAULT_LOADOUT};for(const id of standard){const g=GEAR.find(g=>g.id===id);if(g&&s.owned.includes(id))s.standardLoadout[g.slot]=id;}
+ }
+ for(const slot of EQUIPMENT_SLOTS){
+  const fallback=DEFAULT_LOADOUT[slot];
+  if(!GEAR.some(g=>g.id===s.standardLoadout[slot]&&g.slot===slot&&s.owned.includes(g.id)))s.standardLoadout[slot]=fallback;
   const valid=GEAR.some(g=>g.id===s[slot]&&g.slot===slot&&s.owned.includes(g.id))||relicFor(s[slot])?.slot===slot&&s.ownedExotics.includes(s[slot]);if(!valid)s[slot]=s.standardLoadout[slot];
  }
- if(relicFor(s.testament)?.slot!=='testament'||!s.ownedExotics.includes(s.testament))s.testament=null;
+ delete s.armor;delete s.standardLoadout.armor;
  s.equippedExotics=activeRelics(s);
  s.skills??={};
  const caps=stats(s);s.hp=Math.max(0,Math.min(caps.hp,s.hp??caps.hp));s.focus=Math.max(0,Math.min(caps.focus,s.focus??caps.focus));
@@ -86,7 +84,7 @@ export function reduce(state, action, now=Date.now()) {
  }
  case 'TOGGLE_EXOTIC': {
   const e=relicFor(action.id);if(s.battle||!e||!s.ownedExotics.includes(e.id))break;
-  const remove=s[e.slot]===e.id;equipItem(s,e.slot,remove?(e.slot==='testament'?null:s.standardLoadout[e.slot]):e.id);
+  const remove=s[e.slot]===e.id;equipItem(s,e.slot,remove?(s.standardLoadout[e.slot]||null):e.id);
   log(s,`${e.name} ${remove?'returned to inventory':'equipped in your '+e.slot+' slot'}.`);break;
  }
  case 'LEARN': {
@@ -198,7 +196,7 @@ export function reduce(state, action, now=Date.now()) {
   const cursed=b.effects.curse,heavy=b.turn%3===0&&!cursed?.silence;fx.enemyAttack=heavy?'heavy':'normal';
   const lowHealth=s.hp<st.hp*.35?1-r('unyielding')*.15:1;
   marks.strikes=(marks.strikes||0)+1;const dodged=ex('boots')&&marks.strikes%4===0||relicDodge({marks,ex,proc});
-  let incoming=Math.max(1,Math.round((b.attack*(heavy?1.8:1)-st.defense-weak-(cursed?.power||0)-(b.effects.bleed?r('hemorrhage'):0))*guard*lowHealth));
+  let incoming=Math.max(1,Math.round((b.attack*(heavy?1.8:1)*(1-defenseReduction(st.defense))-weak-(cursed?.power||0)-(b.effects.bleed?r('hemorrhage'):0))*guard*lowHealth));
   if(dodged){incoming=0;if(ex('boots'))proc('boots','The enemy swings at the wrong address.');event('dodge');}
   const protectedByBarrier=b.barrier>0,absorbed=Math.min(incoming,b.barrier);b.barrier-=absorbed;
   const shattered=protectedByBarrier&&b.barrier===0&&absorbed>0;

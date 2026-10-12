@@ -1,3 +1,5 @@
+import {slotModel} from './slot-models.js';
+import {GEAR} from '../equipment.js';
 import {HeroLoadout} from './loadout-models.js';
 import {RatSwarm,ratModel} from './rat-swarm.js';
 import {hero} from './hero.js';
@@ -73,8 +75,8 @@ export function assetRender(kind,id,width=384,height=256){
  const key=new T.DirectionalLight(0xffdab0,3.4);key.position.set(-3,5,4);s.add(key);const rim=new T.DirectionalLight(0x956bff,3);rim.position.set(3,2,-2);s.add(rim);
  let model,c;
  if(kind!=='monster'){
-  model=kind==='companion'?ratModel():kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
-  const isWeapon=kind==='gear'&&(['rust','fang','reaper','thorn','god'].includes(id)||EXOTICS.find(e=>e.id===id)?.slot==='weapon');c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);if(kind==='companion'){model.rotation.set(0,-.6,0);c.position.set(1,.65,1.5);c.lookAt(0,.18,0);}
+  model=kind==='companion'?ratModel():kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):slotModel(id);model.rotation.set(.12,-.52,-.15);s.add(model);
+  const isWeapon=kind==='gear'&&(['rust','fang','reaper','thorn','god'].includes(id)||EXOTICS.find(e=>e.id===id)?.slot==='weapon');c=new T.PerspectiveCamera(33,width/height,.1,30);const slot=GEAR.find(g=>g.id===id)?.slot||EXOTICS.find(e=>e.id===id)?.slot;c.position.set(0,.05,kind==='skill'?4:isWeapon?5:({helmet:2.8,arms:3,legs:3,accessory:4,testament:3.6,chest:4}[slot]||4.3));c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);if(kind==='companion'){model.rotation.set(0,-.6,0);c.position.set(1,.65,1.5);c.lookAt(0,.18,0);}
  }else{
   s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.scale.multiplyScalar(.78);model.position.copy(ENEMY_POS);model.rotation.y=Math.atan2(HERO_POS.x-ENEMY_POS.x,HERO_POS.z-ENEMY_POS.z);s.add(model);const h=hero();h.scale.setScalar(.82);h.position.copy(HERO_POS);h.rotation.y=Math.atan2(ENEMY_POS.x-HERO_POS.x,ENEMY_POS.z-HERO_POS.z);s.add(h);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition.map(v=>v*1.2));c.lookAt(0,1.25,0);
  }

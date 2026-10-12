@@ -5,6 +5,7 @@ const fs=require('node:fs');const path=require('node:path');
  const browser=await chromium.launch({executablePath:process.env.DREADWAKE_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const page=await browser.newPage();await page.goto(process.env.DREADWAKE_ASSET_ORIGIN||'http://127.0.0.1:4173/README.md');
  const groups={companion:['rat'],monster:['knight','wretch','keeper','wing','king'],gear:['rust','rags','fang','iron','reaper','mantle','thorn','cathedral','god','night'],skill:['edge','leech','execute','rage','ward','shelter','resolve','revenant','spark','echo','omen','eclipse']};
+ const {GEAR}=await import(require('node:url').pathToFileURL(path.resolve(__dirname,'../equipment.js')));groups.gear=GEAR.map(g=>g.id);
  const {EXOTICS}=await import(require('node:url').pathToFileURL(path.resolve(__dirname,'../exotics.js')));
  if(process.argv.includes('--companions')){delete groups.monster;delete groups.gear;delete groups.skill;groups.companion=['rat'];}else if(process.argv.includes('--monsters')){delete groups.companion;delete groups.gear;delete groups.skill;}else if(process.argv.includes('--exotics')){delete groups.companion;delete groups.monster;delete groups.skill;groups.gear=EXOTICS.map(e=>e.id);}else groups.gear.push(...EXOTICS.map(e=>e.id));
  const out=path.resolve(__dirname,'../assets/renders');fs.mkdirSync(out,{recursive:true});
