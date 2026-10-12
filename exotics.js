@@ -1,4 +1,4 @@
-// Every relic has one explicit, bounded trigger. They coexist; there is no exotic-slot limit.
+// Slotted relics. Perks resolve once per accepted trigger and cannot recursively take turns.
 export const EXOTICS=[
  {id:'mouth',name:'The Cathedral Has Teeth',kind:'Living greatsword',cost:240,tier:1,attack:4,perk:'Sermon of Hunger',desc:'A cathedral compressed into a blade. The stained glass is enamel.',effect:'Every third Strike bites for 60% attack and applies 6 bleed damage for 3 turns.',color:'#e97488'},
  {id:'probate',name:'Widow’s Probate',kind:'Funeral scythe',cost:280,tier:1,attack:3,perk:'The Dead Owe Interest',desc:'Your inheritance is everyone else’s problem.',effect:'Victory grants 35% extra coins. Direct attacks deal 20% more damage below 30% enemy health.',color:'#d2b16e'},
@@ -20,9 +20,34 @@ export const EXOTICS=[
  {id:'understudy',name:'Understudy of the End',kind:'Theatre shroud',cost:430,tier:3,defense:2,perk:'One More Performance',desc:'The apocalypse has been delayed. Its replacement is eager.',effect:'Every third Guard replays 50% of your last damaging spell, without spending focus. Replays cannot charge other damage triggers.',color:'#ba9acb'},
  {id:'typewriter',name:'The Damned Typewriter',kind:'Occult writing machine',cost:250,tier:1,focus:5,perk:'Final Draft',desc:'The ribbon is an artery. The return key is a tombstone.',effect:'Hellscript eruptions store 1 ink (up to 5). Each damaging spell spends 1 ink for +12 damage and +3 burn damage.',color:'#c4a0ea'},
  {id:'receipts',name:'Hands of Infinite Receipts',kind:'Merchant’s gloves',cost:200,tier:1,perk:'Thank You for Your Damnation',desc:'Your soul is nonrefundable. Would you like a bag?',effect:'Every 25 webpage clicks while equipped grants 12 bonus coins. The counter pauses when unequipped.',color:'#d8be79'}
-].map(e=>({...e,rarity:'Exotic'}));
-export const hasExotic=(s,id)=>s.equippedExotics?.includes(id)||false;
-export function exoticBonuses(s){const total={attack:0,defense:0,hp:0,focus:0};for(const id of new Set(s.equippedExotics||[])){const e=EXOTICS.find(x=>x.id===id);if(e)for(const stat of Object.keys(total))total[stat]+=e[stat]||0;}return total;}
+,
+ {id:'cinder',slot:'weapon',name:'Cinder Verdict',kind:'Executioner greatsword',cost:420,tier:2,attack:15,perk:'Guilty of Burning',desc:'The verdict is written in the ashes of the accused.',effect:'Every second Strike erupts for 18 damage and applies 5 burn for 2 turns.',color:'#ff8050'},
+ {id:'marionette',slot:'weapon',name:'The Widow’s Last Dance',kind:'Hooked rapier',cost:390,tier:2,attack:12,perk:'Pull the Red String',desc:'A dance partner who never learned to stop bleeding.',effect:'Guard readies a red string. Your next Strike deals 70% more primary damage, then consumes it.',color:'#f583b7'},
+ {id:'maw',slot:'weapon',name:'Gravetide',kind:'Ossuary axe',cost:620,tier:3,attack:24,perk:'The Grave Has Jaws',desc:'Something enormous learned to swim beneath the cemetery.',effect:'Every third Strike summons a bone maw for 40 + your level damage.',color:'#ddd3a8'},
+ {id:'needle',slot:'weapon',name:'Saint of a Thousand Cuts',kind:'Barbed needleblade',cost:300,tier:1,attack:10,perk:'A Small Cruelty',desc:'The saint was patient. The wounds were not.',effect:'Each Strike applies 3 + your level bleed for 2 turns. Every third Strike bursts an existing bleed for 20 extra damage.',color:'#ff647d'},
+ {id:'storm',slot:'weapon',name:'Nail of the Black Storm',kind:'Thunder spear',cost:610,tier:3,attack:22,perk:'Lightning Remembers',desc:'A nail driven through the heart of a storm.',effect:'Damaging spells store 1 storm charge, up to 3. Your next Strike consumes all charges for 12 damage each.',color:'#82dfff'},
+ {id:'mirror',slot:'weapon',name:'Mercy’s Other Face',kind:'Mirror cleaver',cost:510,tier:2,attack:18,perk:'The Reflection Refuses',desc:'The reflection raises its blade a heartbeat after you.',effect:'Your first Strike each battle delivers a second cut for 50% of its actual primary damage. The reflection cannot copy itself.',color:'#c1aaff'},
+ {id:'clockwork',slot:'weapon',name:'Seven Minutes to Midnight',kind:'Chained sawblade',cost:690,tier:3,attack:26,perk:'The Last Tooth',desc:'The clock has teeth. It is running out of patience.',effect:'Every fourth damaging action tears for 32 extra damage and restores 6 focus. Guard does not advance the saw.',color:'#e8b36d'},
+ {id:'lantern',slot:'weapon',name:'The Lantern That Hunts',kind:'Soul-lantern staff',cost:480,tier:2,attack:14,focus:8,perk:'Five Hungry Lights',desc:'The souls inside mistake every heartbeat for a doorway.',effect:'Each damaging spell releases five hunting lights for 10 + your level extra damage and applies 4 burn for 2 turns.',color:'#9cffc7'},
+ {id:'carrion',slot:'armor',name:'The Carrion Regent',kind:'Raven crown',cost:410,tier:2,defense:6,hp:12,perk:'A Murder in Session',desc:'Its subjects arrive before the body is cold.',effect:'Guard releases a raven volley for 14 damage and applies a 2-turn curse: −2 enemy damage and +10% damage taken.',color:'#b898e5'},
+ {id:'furnace',slot:'armor',name:'Furnace of the Unburied',kind:'Infernal breastplate',cost:590,tier:3,defense:9,hp:18,perk:'No Rest for the Furnace',desc:'There is a door in your chest. Hell has the key.',effect:'Surviving a heavy enemy attack erupts for 20 + defense damage and applies 6 burn for 2 turns.',color:'#ffa55d'},
+ {id:'glass',slot:'armor',name:'Thousand-Pain Saint',kind:'Shattered glass plate',cost:430,tier:2,defense:5,focus:8,perk:'Every Shard a Prayer',desc:'A thousand stained-glass saints, all facing inward.',effect:'Guard grants a 16-point barrier. When an incoming attack breaks your barrier, launch 28 damage of glass shards.',color:'#9ce6ef'},
+ {id:'eclipseMail',slot:'armor',name:'A Night Without Witness',kind:'Shadow plate',cost:560,tier:3,defense:8,focus:6,perk:'You Saw Nothing',desc:'The darkness has agreed to an alibi.',effect:'Dodge every third enemy strike completely. That dodge readies 12 bonus damage for your next Strike.',color:'#ba9dff'},
+ {id:'rosary',slot:'armor',name:'The Kneeling Engine',kind:'Rosary gauntlets',cost:320,tier:1,defense:4,perk:'Prayer Is a Machine',desc:'Every forbidden word turns another tooth in the mechanism.',effect:'Each damaging spell grants an 8-point barrier before the enemy retaliates.',color:'#ead7a0'},
+ {id:'thornsuit',slot:'armor',name:'Garden of the Last Martyr',kind:'Briar mantle',cost:470,tier:2,defense:7,hp:10,perk:'Suffering Takes Root',desc:'They buried the martyr. The garden disagreed.',effect:'Actual incoming health damage stores 1 thorn, up to 3. Guard consumes all thorns for 9 damage and 3 healing each.',color:'#abda84'},
+ {id:'orbit',slot:'armor',name:'Funeral for a Falling Star',kind:'Comet pauldrons',cost:660,tier:3,defense:10,focus:10,perk:'The Sky Attends',desc:'Even a dying star can bring flowers to its own funeral.',effect:'Every third damaging spell calls a comet for 24 + 2 per level damage and grants a 20-point barrier.',color:'#a9cbff'}
+].map(e=>{
+ const weapons=['mouth','probate','echoBlade','meteor'];
+ const armor=['sutures','moth','halo','rats','boots','pallbearer','sun','understudy','receipts'];
+ const slot=e.slot||(weapons.includes(e.id)?'weapon':armor.includes(e.id)?'armor':'testament');
+ return {...e,slot,rarity:slot==='testament'?'Testament':'Exotic'};
+});
+export const NEW_EXOTICS=EXOTICS.slice(20);
+export const TESTAMENTS=EXOTICS.filter(e=>e.slot==='testament');
+export const relicFor=id=>EXOTICS.find(e=>e.id===id);
+export const activeRelics=s=>[s.weapon,s.armor,s.testament].filter(id=>relicFor(id));
+export const hasExotic=(s,id)=>activeRelics(s).includes(id);
+export function exoticBonuses(s){const total={attack:0,defense:0,hp:0,focus:0};for(const id of activeRelics(s)){const e=relicFor(id);if(e)for(const stat of Object.keys(total))total[stat]+=e[stat]||0;}return total;}
 function random(seed){let x=seed>>>0;return()=>{x=(x+0x6D2B79F5)>>>0;let t=x;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export const exoticTier=s=>Math.min(4,1+Math.floor((s.stage-1)/3));
 export const HOUR_MS=60*60*1000;

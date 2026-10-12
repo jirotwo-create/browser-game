@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import {fresh,reduce,stats,migrate,VERSION} from '../engine.js';
 import {moveReady} from '../skills.js';
 import {existsSync} from 'node:fs';
-import {EXOTICS,shopStock,exoticOffers,exoticBonuses,mergeEffect,HOUR_MS,hourSlot,nextShopRotation} from '../exotics.js';
-const relics=(ids,extra={})=>({...fresh(),ownedExotics:[...ids],equippedExotics:[...ids],...extra});
+import {EXOTICS,shopStock,exoticOffers,exoticBonuses,mergeEffect,HOUR_MS,hourSlot,nextShopRotation,activeRelics,relicFor,TESTAMENTS,NEW_EXOTICS} from '../exotics.js';
+const relics=(ids,extra={})=>{const s={...fresh(),ownedExotics:[...ids]};for(const id of ids)s[relicFor(id).slot]=id;s.equippedExotics=activeRelics(s);return {...s,...extra};};
 const fight=s=>{s=reduce(s,{type:'BEGIN'});s.battle.hp=s.battle.maxHp=10000;s.battle.attack=10;return s;};
 const turn=(s,move='attack')=>reduce(s,{type:'TURN',move});
 const procs=s=>s.combatFx.exotics||[];
 
-test('20 unique exotics have distinct perks, valid models, additive stats, and no equip cap',()=>{
- assert.equal(EXOTICS.length,20);assert.equal(new Set(EXOTICS.map(e=>e.id)).size,20);assert.equal(new Set(EXOTICS.map(e=>e.perk)).size,20);
- for(const e of EXOTICS)assert.ok(existsSync(new URL(`../assets/renders/gear-${e.id}.png`,import.meta.url)));
- const all=relics(EXOTICS.map(e=>e.id)),clean=migrate(all);assert.equal(clean.equippedExotics.length,20);
+test('35 unique relics include 15 new gear pieces and 7 Testaments with valid art and three real slots',()=>{
+ assert.equal(EXOTICS.length,35);assert.equal(NEW_EXOTICS.length,15);assert.equal(TESTAMENTS.length,7);assert.equal(new Set(EXOTICS.map(e=>e.id)).size,35);assert.equal(new Set(EXOTICS.map(e=>e.perk)).size,35);
+ for(const e of EXOTICS){assert.ok(['weapon','armor','testament'].includes(e.slot));assert.ok(existsSync(new URL(`../assets/renders/gear-${e.id}.png`,import.meta.url)));assert.equal(e.rarity,e.slot==='testament'?'Testament':'Exotic');}
+ const all=relics(EXOTICS.map(e=>e.id)),clean=migrate(all);assert.equal(clean.equippedExotics.length,3);assert.equal(clean.ownedExotics.length,35);
  const totals=exoticBonuses(clean),base=stats(fresh()),full=stats(clean);for(const key of Object.keys(totals))assert.equal(full[key],base[key]+totals[key]);
 });
 test('one hourly offer persists across reloads and uses randomized eligible pools',()=>{
@@ -30,9 +30,10 @@ test('purchase stores exactly one exotic, does not equip it, and leaves the clai
 test('manual rerolls are removed and cannot alter stock or spend coins',()=>{
  const s={...fresh(),coins:100};const next=reduce(s,{type:'REROLL_EXOTICS'});assert.equal(next.coins,100);assert.deepEqual(next.exoticShop,s.exoticShop);
 });
-test('equip toggles pause perks, reject unowned IDs, freeze in combat, and cannot generate health or focus',()=>{
- let s=relics(['miser','typewriter'],{hp:40,focus:8});s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,30);s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,40);
- s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});assert.equal(s.focus,3);s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});assert.equal(s.focus,8);
+test('slot swaps pause perks, reject unowned IDs, freeze in combat, and cannot generate health or focus',()=>{
+ let s=relics(['miser'],{hp:40,focus:8});s.ownedExotics.push('typewriter');s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,40);s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,40);
+ s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});assert.equal(s.hp,40);assert.equal(s.focus,8);assert.equal(s.testament,'typewriter');assert.ok(!s.equippedExotics.includes('miser'));
+ s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});assert.equal(s.focus,8);s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});assert.equal(s.focus,8);
  s=reduce(s,{type:'TOGGLE_EXOTIC',id:'bell'});assert.equal(s.equippedExotics.includes('bell'),false);s=fight(s);assert.deepEqual(reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'}).equippedExotics,s.equippedExotics);
 });
 test('cathedral sword bites every third Strike, applies bleed, and shows its perk',()=>{
@@ -46,7 +47,7 @@ test('yesterday sword echoes only previous primary damage and never echoes a pre
  let s=fight(relics(['echoBlade']));s=turn(s);const primary=s.battle.exotic.previousDamage;s=turn(s,'guard');assert.ok(s.combatFx.events.some(e=>e.label==='You Already Bled'&&e.amount===Math.round(primary*.3)));s=turn(s,'guard');assert.equal(procs(s).includes('echoBlade'),false);
 });
 test('tea brews on Guard, buffs exactly the next damaging action, and heals',()=>{
- let s=fight(relics(['tea']));s.hp=50;s=turn(s,'guard');assert.equal(s.battle.exotic.tea,true);const brewed=turn(s),plain=turn({...s,equippedExotics:[]});assert.ok(brewed.combatFx.events.find(e=>e.type==='damage').amount>plain.combatFx.events.find(e=>e.type==='damage').amount);assert.equal(brewed.battle.exotic.tea,false);assert.ok(procs(brewed).includes('tea'));
+ let s=fight(relics(['tea']));s.hp=50;s=turn(s,'guard');assert.equal(s.battle.exotic.tea,true);const brewed=turn(s),plain=turn({...s,testament:null});assert.ok(brewed.combatFx.events.find(e=>e.type==='damage').amount>plain.combatFx.events.find(e=>e.type==='damage').amount);assert.equal(brewed.battle.exotic.tea,false);assert.ok(procs(brewed).includes('tea'));
 });
 test('meteor counts damaging actions only and applies a burn on the third',()=>{
  let s=fight(relics(['meteor']));s=turn(s);s=turn(s,'guard');s=turn(s);assert.equal(procs(s).includes('meteor'),false);s=turn(s);assert.ok(procs(s).includes('meteor'));assert.equal(s.battle.effects.burn.damage,7);
@@ -81,7 +82,7 @@ test('pallbearer begins with a barrier and retaliates exactly when incoming dama
  let s=fight(relics(['pallbearer']));assert.equal(s.battle.barrier,15);s.battle.barrier=1;s=turn(s);assert.ok(procs(s).includes('pallbearer'));assert.equal(s.battle.barrier,0);
 });
 test('sun crown modifies cursed damaging spells and heals from damage actually dealt',()=>{
- let s=fight(relics(['sun']));s.hp=20;s.battle.effects.curse={power:1,amp:.2,turns:3};const buffed=turn(s,'spell'),plain=turn({...s,equippedExotics:[]},'spell');assert.ok(buffed.battle.hp<plain.battle.hp);assert.ok(buffed.hp>plain.hp);assert.ok(procs(buffed).includes('sun'));
+ let s=fight(relics(['sun']));s.hp=20;s.battle.effects.curse={power:1,amp:.2,turns:3};const buffed=turn(s,'spell'),plain=turn({...s,armor:'rags'},'spell');assert.ok(buffed.battle.hp<plain.battle.hp);assert.ok(buffed.hp>plain.hp);assert.ok(procs(buffed).includes('sun'));
 });
 test('cash ring rescues once after Last Rites, requires sufficient coins, and cannot run twice',()=>{
  let s=fight(relics(['miser'],{coins:100,skills:{revenant:1}}));s.hp=1;s=turn(s);assert.equal(s.hp,15);assert.equal(s.coins,100);s.hp=1;s=turn(s);assert.equal(s.hp,25);assert.equal(s.coins,80);assert.equal(s.battle.exotic.bribed,true);s.hp=1;s=turn(s);assert.equal(s.battle,null);
@@ -101,22 +102,22 @@ test('receipt gloves grant exactly twelve bonus coins per twenty-five equipped c
  let s=relics(['receipts']);const initial=s.coins;for(let i=0;i<25;i++)s=reduce(s,{type:'BROWSE',kind:'click'});assert.equal(s.coins,initial+25+12);assert.equal(s.exoticResources.receipts,0);
  s=reduce(s,{type:'TOGGLE_EXOTIC',id:'receipts'});for(let i=0;i<20;i++)s=reduce(s,{type:'BROWSE',kind:'click'});assert.equal(s.exoticResources.receipts,0);
 });
-test('all twenty exotics coexist with talents and runes; proc chains terminate and resources remain bounded',()=>{
- let s=fight(relics(EXOTICS.map(e=>e.id),{coins:1000,skills:{ward:3,spark:3,kindle:3,leech:3,thorns:3,fortress:2,echo:3,rend:3,bastion:3,hex:3},runes:{rend:'deep',bastion:'aegis',hex:'frailty'},loadout:['rend','bastion','hex'],focus:60}));s.exoticResources.ink=5;
- for(let i=0;i<40&&s.battle;i++){const planned=['hex','rend','bastion','spell','guard','attack'][i%6];s=turn(s,moveReady(s,planned)?'guard':planned);assert.ok(s.hp>0&&s.hp<=stats(s).hp);assert.ok(s.focus>=0&&s.focus<=stats(s).focus);assert.ok(s.combatFx.events.length<70);}
- assert.equal(s.battle,null);assert.equal(s.kills,1);assert.equal(s.equippedExotics.length,20);
+test('three slotted relics coexist with talents and runes; proc chains terminate and resources remain bounded',()=>{
+ let s=fight(relics(['meteor','understudy','typewriter'],{coins:1000,skills:{ward:3,spark:3,kindle:3,leech:3,thorns:3,fortress:2,echo:3,rend:3,bastion:3,hex:3},runes:{rend:'deep',bastion:'aegis',hex:'frailty'},loadout:['rend','bastion','hex'],focus:60}));s.exoticResources.ink=5;
+ for(let i=0;i<400&&s.battle;i++){const planned=['hex','rend','bastion','spell','guard','attack'][i%6];s=turn(s,moveReady(s,planned)?'guard':planned);assert.ok(s.hp>0&&s.hp<=stats(s).hp);assert.ok(s.focus>=0&&s.focus<=stats(s).focus);assert.ok(s.combatFx.events.length<70);}
+ assert.equal(s.battle,null);assert.equal(s.kills,1);assert.equal(s.equippedExotics.length,3);
 });
 test('old saves acquire stable shop metadata and no surprise purchases during migration',()=>{
  const old={...fresh(),version:2,coins:93,stage:9};delete old.ownedExotics;delete old.equippedExotics;delete old.exoticResources;delete old.exoticShop;
  const s=migrate(old);assert.equal(s.version,VERSION);assert.equal(s.coins,93);assert.equal(s.stage,9);assert.deepEqual(s.equippedExotics,[]);assert.deepEqual(shopStock(migrate(s)).map(e=>e.id),shopStock(s).map(e=>e.id));
 });
 
-test('the real hourly purchase path can stockpile and equip all twenty without replacing old possessions',()=>{
+test('the real hourly purchase path can stockpile all 35 relics while swapping three slots without replacing old possessions',()=>{
  let now=Date.UTC(2026,9,12,13,30),s={...fresh(now),stage:7,coins:100000};
- for(let i=0;i<20;i++){
+ for(let i=0;i<35;i++){
   now+=HOUR_MS;s=migrate(s,now);const e=shopStock(s)[0];assert.ok(e);s=reduce(s,{type:'BUY_EXOTIC',id:e.id},now);s=reduce(s,{type:'TOGGLE_EXOTIC',id:e.id},now);
  }
- assert.equal(s.ownedExotics.length,20);assert.equal(s.equippedExotics.length,20);
+ assert.equal(s.ownedExotics.length,35);assert.equal(s.equippedExotics.length,3);
 });
 test('rotation happens at xx:00 exactly, catches up missed hours, and leaves combat untouched',()=>{
  const before=Date.UTC(2026,9,12,13,59,59,999),s=fresh(before),old=shopStock(s)[0].id;

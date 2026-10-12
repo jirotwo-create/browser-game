@@ -1,11 +1,11 @@
 {
   "name": "dreadwake",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check background.js && node --check content.js && node --check panel.js && node --check engine.js && node --check effects.js && node --check assets/models.js && node --check assets/renderer.js && node --check skills.js && node --check combat-effects.js && node --check exotics.js && node --check assets/exotic-models.js && node --check hellscript-art.js && node --check assets/hero.js && node --check assets/battle-animation.js && node --check assets/rat-swarm.js",
+    "check": "node --check background.js && node --check content.js && node --check panel.js && node --check engine.js && node --check effects.js && node --check assets/models.js && node --check assets/renderer.js && node --check skills.js && node --check combat-effects.js && node --check exotics.js && node --check relic-perks.js && node --check assets/exotic-models.js && node --check hellscript-art.js && node --check assets/hero.js && node --check assets/battle-animation.js && node --check assets/rat-swarm.js && node --check assets/new-relic-models.js && node --check assets/relic-animations.js && node --check assets/loadout-models.js",
     "start": "python3 -m http.server 4173 --bind 0.0.0.0"
   }
 }

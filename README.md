@@ -18,9 +18,9 @@ Requires Chromium's Side Panel API (Chrome 114+; use a current version of your c
 - **Hellscript:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 100 eligible keys grants 35 coins and 8 focus (more with Hellscript Covenant). A live gauge appears on the webpage. Igniting Hellscript breaks a horned infernal seal: scarlet and gold rings erupt, flames and embers rise, coins scatter, and a demonic reward banner shows the actual spoils. Both the panel and webpage gauge have ember-lit segmented progress and a demonic seal. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
 - **The Hunt:** fight one turn at a time. Strike recovers focus; Guard heals, restores focus, and reduces incoming damage. Soulfire spends focus. Every third enemy turn is a telegraphed heavy attack.
 - **Black Forge:** buy standard weapons and armor into your inventory. Forge tiers unlock at stages 4, 7, and 10. Purchases do not replace equipped gear.
-- **Hourly exotic offering:** exactly one exotic is on offer at a time. It changes at the top of each clock hour, with a visible countdown. Victories, purchases, browsing, and forge-tier unlocks do not reset the timer or replace the current offer. Bought offers stay claimed until the next hour. Manual rerolls have been removed.
-- **Inventory / The Reliquary:** all owned standard gear and exotics live in a dedicated tab. Search by item name or perk, filter weapons/armor/exotics/equipped items, and sort by rarity, name, or equipped status. Compare standard item stats before equipping. Equip, swap, or unequip exotics outside battle; your other possessions remain stored. Purchases are stored first and must be equipped from the inventory.
-- **Exotic collection:** twenty original one-of-a-kind weapons, armor pieces, and oddities. Equip any number at once, including multiple weapons, crowns, and accessories; every stat bonus and perk stacks. Exotic items supplement your standard weapon/armor and never consume skill slots. Unequip and re-equip freely outside combat. Nothing expires or disappears from your collection.
+- **Hourly exotic offering:** exactly one exotic or Testament is on offer at a time. It changes at the top of each clock hour, with a visible countdown. Victories, purchases, browsing, and forge-tier unlocks do not reset the timer or replace the current offer. Bought offers stay claimed until the next hour. Manual rerolls have been removed.
+- **Inventory / The Reliquary:** all owned standard gear and exotics live in a dedicated tab. Search by item name or perk, filter weapons/armor/exotics/Testaments/equipped items, and sort by rarity, name, or equipped status. Compare standard item stats before equipping. Equip, swap, or unequip exotics outside battle; your other possessions remain stored. Purchases are stored first and must be equipped from the inventory.
+- **Exotics and Testaments:** 28 exotic weapons/armor pieces and seven Testaments. Use one weapon, one armor piece and one Testament. Exotic gear replaces standard gear in the matching slot; you can wear an exotic weapon and exotic armor together without a separate exotic cap. Testaments have their own rarity and slot. Purchases stay stored until equipped. Swapping never deletes the previous item. Additional Testament slot unlocks are reserved for a future patch.
 - **Forbidden Arts:** 30 talents across Blood, Bone, and Void. Spend two starting points, then earn two more each level. Learning one rank of a parent unlocks its branches; capstones need eight points invested in their tree. Passives always work. Choose three learned active skills for your combat loadout; Strike, Guard, and Soulfire remain available too.
 - **Runes:** each of the eleven active skills has two alternative rune effects. Most unlock at rank 2; capstone runes need 12 invested tree points. Use one rune per ability or keep it unmodified. Switch freely outside combat.
 - **Builds:** mix talents across trees, customize slots and runes, or apply a suggested Bleed & Feed, Bone Fortress, or Hexweaver starter build. Reset talents for free outside combat to refund every spent skill point. Your level, coins, equipment, and stage remain. Builds and equipment cannot change mid-battle.
@@ -49,13 +49,17 @@ npm start
 
 Reload the extension from its management page after editing its background script or manifest; refresh test webpages after changing `content.js`. The side panel loads `panel.html`; the standalone preview loads `index.html`. Both share the same UI, engine, and assets. The extension's service worker serializes state updates to avoid lost rewards from multiple tabs.
 
-`npm test` runs 68 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
+`npm test` runs 88 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
 
 ## Project structure
 
 - `engine.js`: deterministic game rules, equipment, monsters, status resolution, save migration, and build changes.
-- `exotics.js`: the twenty-item exotic catalog, deterministic persistent hourly offerings, perk helpers, additive stats, and safe effect merging.
-- `assets/exotic-models.js`: twenty original low-poly 3D exotic models; no new external assets are required.
+- `exotics.js`: the 35-item exotic/Testament catalog, deterministic persistent hourly offerings, perk helpers, additive stats, and safe effect merging.
+- `assets/exotic-models.js`: the original twenty low-poly 3D relic models; no new external assets are required.
+- `relic-perks.js`: bounded trigger hooks for fifteen new weapon/armor perks.
+- `assets/new-relic-models.js`: fifteen distinct original low-poly item models.
+- `assets/relic-animations.js`: fifteen custom proc animations and reduced-motion poses.
+- `assets/loadout-models.js`: equipped weapon grips, worn armor and floating Testament models.
 - `skills.js`: 30 talents, 22 rune choices, starter builds, requirements, cost/readiness checks, and numerical upgrade previews.
 - `combat-effects.js`: distinct combat animations, combat feedback, and readable status badges.
 - `background.js`: persistent save and message handling.
@@ -66,7 +70,7 @@ Reload the extension from its management page after editing its background scrip
 - `assets/hero.js`: original articulated obsidian-armored hero with a crimson cape, ember visor and executioner blade.
 - `assets/battle-animation.js`: mesh poses and disposable 3D spell effects driven by accepted combat events.
 - `assets/renderer.js`: a reusable 384×256 WebGL viewport, nearest-neighbor scaling, flat-shaded lighting, drag rotation, and an asset baker. Rendering pauses when the hunt is hidden or the document is in the background.
-- `assets/renders/`: 47 bundled PNGs rendered from the original 3D meshes. Equipment uses these renders; monster renders also provide a fallback if WebGL is unavailable. Earlier model-rendered talent icons remain as development assets.
+- `assets/renders/`: 63 bundled PNGs rendered from the original 3D meshes. Equipment uses these renders; monster renders also provide a fallback if WebGL is unavailable. Earlier model-rendered talent icons remain as development assets.
 - `assets/skill-atlas.png`: 30 original painted fantasy ability icons, one per talent, used as a CSS sprite atlas. These are original generated assets, not copied game icons.
 - `assets/vendor/`: locally bundled Three.js 0.180.0 and its MIT license.
 - `assets/art.js`: interface icon helpers and markup for rendered assets.
@@ -76,7 +80,7 @@ This is an unpacked extension; it has not been submitted to browser extension st
 
 ## Optional graphics development
 
-The extension is ready to load without rebuilding. To regenerate the 47 bundled renders after changing the meshes, start the development server, install Playwright into a separate tools directory, then run:
+The extension is ready to load without rebuilding. To regenerate the 63 bundled renders after changing the meshes, start the development server, install Playwright into a separate tools directory, then run:
 
 ```sh
 npm install --prefix /tmp/dreadwake-tools --cache /tmp/dreadwake-npm-cache playwright
@@ -87,13 +91,14 @@ DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/s
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-inventory.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-combat-3d.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-rats.cjs
+DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-slotted-relics.cjs
 ```
 
 These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to another Chromium executable if needed. They require a local server on port 4173 (`npm start`). The browser smoke test covers live 3D rotation, asset loading, combat, preferences, typing rewards, confirmed webpage effects, input privacy, reduced motion, and failure handling. It uses a mock extension transport because this environment blocks unpacked extension installation.
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.2**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.7.0**.
 
 ## Build examples
 
@@ -107,34 +112,58 @@ Suggested builds spend only available points, respecting all prerequisites. They
 
 Existing saves migrate automatically. Previously learned talents and progression stay intact; existing Blood Sovereign and Total Eclipse abilities are placed in your loadout when migrating an old save. Skill choices are now reversible.
 
-## Impossible exotics
+## Exotics and Testaments
 
-All twenty items have original 3D inventory art, readable named perks, combat proc notices, and persistent ownership. There is no exotic equip limit or restriction by item kind. The first hourly offering opens immediately; more exotics enter the eligible pool at forge tiers 2 and 3. Eligibility is evaluated only when a new hourly offering is selected. The collection is currently purchased from the hourly shop rather than dropped by monsters.
+The collection contains 28 exotic weapons/armor pieces and seven Testaments, all with original 3D art and named perks. Exactly one hourly offering selects from the combined eligible pool. New forge tiers expand the pool on the next hourly rotation. Relics are bought from the shop; they currently do not drop from monsters.
 
-| Item | What makes it impossible |
-| --- | --- |
-| The Cathedral Has Teeth | Every third Strike makes the living blade bite and cause bleeding. |
-| Widow’s Probate | The dead pay 35% more coins; nearly dead enemies take more direct damage. |
-| An Argument with Yesterday | Your last turn's primary wound repeats at 30% damage. Echoes never copy echoes. |
-| A Perfectly Normal Teapot | Guard brews suspicious moon tea for your next damaging action. |
-| Small Apology to the Sky | Every third damaging action drops a meteor and starts a burn. |
-| The Saint’s Bad Stitching | Healing becomes stored surgical thread; Strike cashes it in as damage. |
-| Moth-Eaten Eternity | Moths ignite your spells and heal you when your focus runs low. |
-| The Saint Who Froze Hell | Guard curses enemies and suppresses heavy attacks without weakening stronger curses. |
-| Parliament of Rats | A growing rat legislature attacks after your actions. Guard recruits new members. |
-| God’s Unpaid Invoice | Bleed, burn, and curses become six-coin tax deductions on victory. |
-| The Ninth Toll | Every ninth accepted action deals doom equal to 30% of enemy maximum health. |
-| Yesterday’s Funeral | Your first active skill has no cooldown; Guard rewinds other cooldowns faster. |
-| Boots That Never Arrive | Every fourth enemy strike misses completely. |
-| The Laughing Pallbearer | Start shielded; a broken barrier delivers a very damaging coffin joke. |
-| The Sun’s Last Tenant | Spells feed on curses for extra damage and life-steal. |
-| Miser’s Last Breath | Bribe death once per battle for 20 coins; Last Rites gets first refusal. |
-| Choir of Loose Teeth | Every third damaging spell launches a singing volley of teeth. |
-| Understudy of the End | Every third Guard replays half of your last damaging spell for free. |
-| The Damned Typewriter | Typing bursts stock up to five ink charges; spells spend them for damage and burning. |
-| Hands of Infinite Receipts | Twenty-five equipped webpage clicks print twelve bonus coins. |
+A loadout contains one weapon, one armor piece and one Testament. Two exotic gear pieces can be equipped together. Stat bonuses and perks apply only to equipped items. Physical worn gear such as crowns, halos, gloves, boots and shields uses the armor slot. The teapot, contract, bell, hourglass, soul ring, jawbone reliquary and typewriter are now Testaments. Extra Testament slots are not implemented in this patch.
 
-Exotic procs are deliberately bounded: they never execute an additional combat turn or recursively activate damage-trigger counters. Purchased stat bonuses add together. Stronger existing wounds and curses are preserved when an exotic applies a weaker version. Every accepted combat action can activate several equipped perks, and the combat HUD names them. Counters reset each battle, except typewriter ink and receipt progress, which persist; unequipping pauses those browsing perks.
+### Fifteen new exotic weapons and armor
+
+| Item | Slot | Unique effect |
+| --- | --- | --- |
+| Cinder Verdict | Weapon | Every second Strike erupts for 18 damage and applies 5 burn for 2 turns. |
+| The Widow’s Last Dance | Weapon | Guard readies a red string. Your next Strike deals 70% more primary damage, then consumes it. |
+| Gravetide | Weapon | Every third Strike summons a bone maw for 40 + your level damage. |
+| Saint of a Thousand Cuts | Weapon | Each Strike applies 3 + your level bleed for 2 turns. Every third Strike bursts an existing bleed for 20 extra damage. |
+| Nail of the Black Storm | Weapon | Damaging spells store 1 storm charge, up to 3. Your next Strike consumes all charges for 12 damage each. |
+| Mercy’s Other Face | Weapon | Your first Strike each battle delivers a second cut for 50% of its actual primary damage. The reflection cannot copy itself. |
+| Seven Minutes to Midnight | Weapon | Every fourth damaging action tears for 32 extra damage and restores 6 focus. Guard does not advance the saw. |
+| The Lantern That Hunts | Weapon | Each damaging spell releases five hunting lights for 10 + your level extra damage and applies 4 burn for 2 turns. |
+| The Carrion Regent | Armor | Guard releases a raven volley for 14 damage and applies a 2-turn curse: −2 enemy damage and +10% damage taken. |
+| Furnace of the Unburied | Armor | Surviving a heavy enemy attack erupts for 20 + defense damage and applies 6 burn for 2 turns. |
+| Thousand-Pain Saint | Armor | Guard grants a 16-point barrier. When an incoming attack breaks your barrier, launch 28 damage of glass shards. |
+| A Night Without Witness | Armor | Dodge every third enemy strike completely. That dodge readies 12 bonus damage for your next Strike. |
+| The Kneeling Engine | Armor | Each damaging spell grants an 8-point barrier before the enemy retaliates. |
+| Garden of the Last Martyr | Armor | Actual incoming health damage stores 1 thorn, up to 3. Guard consumes all thorns for 9 damage and 3 healing each. |
+| Funeral for a Falling Star | Armor | Every third damaging spell calls a comet for 24 + 2 per level damage and grants a 20-point barrier. |
+
+### Original collection, reclassified
+
+| Item | Slot | Perk |
+| --- | --- | --- |
+| The Cathedral Has Teeth | Weapon | Sermon of Hunger |
+| Widow’s Probate | Weapon | The Dead Owe Interest |
+| An Argument with Yesterday | Weapon | You Already Bled |
+| A Perfectly Normal Teapot | Testament | Do Not Drink the Moon |
+| Small Apology to the Sky | Weapon | Extinction, Politely |
+| The Saint’s Bad Stitching | Armor | Pain Is Thread |
+| Moth-Eaten Eternity | Armor | Hungry for Lanterns |
+| The Saint Who Froze Hell | Armor | Winter Has Jurisdiction |
+| Parliament of Rats | Armor | Motion to Devour |
+| God’s Unpaid Invoice | Testament | Sin Is Deductible |
+| The Ninth Toll | Testament | The End Keeps Time |
+| Yesterday’s Funeral | Testament | Time Was a Mistake |
+| Boots That Never Arrive | Armor | Wrong Address |
+| The Laughing Pallbearer | Armor | A Cracking Good Joke |
+| The Sun’s Last Tenant | Armor | Eviction Notice |
+| Miser’s Last Breath | Testament | Death Accepts Cash |
+| Choir of Loose Teeth | Testament | A Cappella Calamity |
+| Understudy of the End | Armor | One More Performance |
+| The Damned Typewriter | Testament | Final Draft |
+| Hands of Infinite Receipts | Armor | Thank You for Your Damnation |
+
+Exotic procs are deliberately bounded: they never execute an additional combat turn or recursively activate damage-trigger counters. Equipped slot stat bonuses add together; stored items never grant stats. Stronger existing wounds and curses are preserved when an exotic applies a weaker version. Every accepted combat action can activate the perks of your three equipped relics, and the combat HUD names them. Counters reset each battle, except typewriter ink and receipt progress, which persist; unequipping pauses those browsing perks.
 
 Use `node scripts/bake-assets.cjs --exotics` (with the same optional Playwright configuration above) to regenerate only exotic renders.
 
@@ -144,7 +173,7 @@ The extension now requests Chromium's `alarms` permission to schedule the next c
 
 The hourly offering selects an eligible unowned exotic and stays fixed for that hour. With more than one eligible choice, consecutive hours do not offer the same item. A claimed item remains visible until the next hour; if all exotics are owned, the shop shows collection completion. Old four-offer saves migrate to the hourly format while preserving every owned item and current equipment.
 
-Inventory has no capacity limit. Each named item is unique; buying an already-owned item never charges you twice. The standard loadout still has one weapon and one armor piece, while all purchased exotics can be equipped at the same time. Inventory changes are locked during battle, but you can still browse your possessions.
+Inventory has no capacity limit. Each named item is unique; buying an already-owned item never charges you twice. The current loadout has one weapon, one armor piece and one Testament. Exotic gear uses the same slots as standard gear; all other possessions remain stored. Inventory changes are locked during battle, but you can still browse your possessions.
 
 ## Hellscript visual patch
 
@@ -156,7 +185,7 @@ Hellscript now requires 100 rhythmic keys per eruption and grants a fixed 35 coi
 
 ## Hero and 3D combat patch
 
-The Unburnt now stands beside every monster in the cathedral. The camera retains its original perspective, with a slightly wider view for both combatants. The hero has a fixed cosmetic design: faceted black plate, silver spikes, an ember visor, a torn crimson cape and a jagged blade. Equipment stats continue to come from your loadout.
+The Unburnt now stands beside every monster in the cathedral. The camera retains its original perspective, with a slightly wider view for both combatants. The hero’s base design has faceted black plate, silver spikes, an ember visor, a torn crimson cape and a jagged blade. Equipped weapon models, armor ornaments and the active Testament now appear on the hero. Equipment stats come from your loadout.
 
 Accepted turns animate the hero first, then the monster when the rules actually resolve a retaliation. Weapon arts lunge and slash; Soulfire travels between combatants; Feast and Drain siphon energy; Bone wards surround the hero; Mend raises healing rings; Hex surrounds the monster with a curse sigil; Nova erupts outward; Eclipse summons a dark orb. Monsters swing articulated mesh arms, recoil, dive or cast, and collapse when defeated. Damage, healing and absorption feedback follows the corresponding animation phase. Existing rune mechanics and exotic proc announcements remain active.
 
@@ -170,6 +199,14 @@ Swords attach at their handle centers to actual hand joints. The hero, knight an
 
 ## Parliament of Rats companions
 
-Equipping Parliament of Rats adds three original low-poly rat companions to the cathedral. Their tails sway while idle; triggered attacks send the rats scurrying to the monster with animated feet, a biting leap and a return to the hero. Guard recruits one visible rat, matching the combat counter up to twelve. The animation reads an explicit rat damage event, so it does not attack after a primary hit has already killed the monster. Rat damage labels appear during the bite phase. Reloading or browsing does not replay a previous swarm attack. Unequipping removes the visible swarm.
+Equipping Parliament of Rats in the armor slot adds three original low-poly rat companions to the cathedral. Their tails sway while idle; triggered attacks send the rats scurrying to the monster with animated feet, a biting leap and a return to the hero. Guard recruits one visible rat, matching the combat counter up to twelve. The animation reads an explicit rat damage event, so it does not attack after a primary hit has already killed the monster. Rat damage labels appear during the bite phase. Reloading or browsing does not replay a previous swarm attack. Unequipping removes the visible swarm.
 
 `assets/rat-swarm.js` reuses a pool of at most twelve models. Reduced motion keeps the rats still. When WebGL is unavailable, static renders of the rats appear with the correct equipped count; regenerate their original transparent asset with `node scripts/bake-assets.cjs --companions`. `scripts/smoke-rats.cjs` checks actual Guard recruitment, damage, approach/bite/return poses, capped pooling, reduced motion, duplicate-event handling, unequip and fallback asset loading. Combat balance and save format are unchanged.
+
+## Slotted relics and new animations (v1.7.0)
+
+Save schema 5 preserves every owned item, currency, talents, skills and progression. For pre-slot saves, migration selects the first previously active weapon, armor and Testament in each category, then stores the remaining relics. Your last standard weapon/armor are remembered for unequip. Active combat and counters remain saved; no extra combat turn occurs during migration. Vitality and focus are capped to the new loadout. Gear swaps change maximum stats and clamp resources to the new caps; they never refill health or focus.
+
+The fifteen new items have unique proc records and 3D effects: cinder pillars, puppet strings, bone jaws, needle volleys, forked lightning, mirror cuts, rotating saw teeth, five hunting lights, raven wings, a furnace eruption, glass shields/shrapnel, shadow silhouettes, rosary beads, briars and a falling comet with orbital wards. Reactions animate after the enemy phase. Temporary meshes are disposed when the sequence finishes or is replaced. Reduced motion keeps effects still. Equipped weapons grip the hero’s hand by their actual handle point; crowns, gloves, boots, mantles and plates attach to the corresponding body region. The active Testament floats beside the hero. Static WebGL fallback shows the representative hero and monster render; dynamic worn gear and proc meshes require WebGL.
+
+`tests/slotted-relics.test.js` covers migration, actual slot replacement, all fifteen perks, bounded counters, stored-item inactivity and lethal-hit short circuits. `scripts/smoke-slotted-relics.cjs` triggers every new perk through a real panel action, checks custom animation movement and reduced-motion stability, weapon grips, cleanup, model loading, all three slots, inventory filters and narrow layouts.

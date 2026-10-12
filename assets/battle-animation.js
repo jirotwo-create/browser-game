@@ -1,3 +1,4 @@
+import {addRelicAnimation,updateRelicNode} from './relic-animations.js';
 import * as T from './vendor/three.module.js';
 const colors={blood:0xff4260,bone:0xc9f4ac,void:0xb07bff};
 const slashMoves=['attack','rend','feast','riposte','rage'];
@@ -70,6 +71,7 @@ export class BattleAnimation{
   if(fx.events.some(e=>e.type==='absorb'))this.ring(player,colors.bone,.65,'burst',1.1);
   if(fx.events.some(e=>e.type==='dodge'))this.ring(player,0x8bceff,.75,'burst',1.1);
   if(fx.events.some(e=>e.type==='revive'))this.ring(player,0xffdc87,1,'heal',1.35);
+  for(const record of (fx.relicAnimations||[]).slice(0,8))addRelicAnimation(this,record,HERO_POS,ENEMY_POS);
  }
  update(now,hero,enemy,reduced=false){
   if(!hero||!enemy)return false;
@@ -83,7 +85,7 @@ export class BattleAnimation{
   if(t>1.9){this.clear();return false;}
   if(!reduced){
    const lunge=wave(t,.06,.8),swing=wave(t,.15,.65),retaliate=fx.enemyAttack?wave(t,.85,1.55):0;
-   if(slashMoves.includes(fx.move)){hero.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),lunge*.28);swingWeapon(rig.swordArm,t,.06,.8,fx.move==='rage');rig.body.rotation.y=-swing*.45;rig.cape.rotation.x+=lunge*.35;}
+   if(slashMoves.includes(fx.move)){hero.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),lunge*.28);swingWeapon(rig.swordArm,t,.06,.8,fx.move==='rage');if(['storm','lantern'].includes(rig.blade.userData.asset)){rig.swordArm.rotation.x=-swing*.95;rig.swordArm.userData.elbow.rotation.x=-.3+swing*.15;rig.swordArm.userData.hand.rotation.x=.7+swing*1.8;}rig.body.rotation.y=-swing*.45;rig.cape.rotation.x+=lunge*.35;}
    else{rig.castArm.rotation.x=-wave(t,.08,.85)*1.6;rig.body.rotation.x=-wave(t,.08,.85)*.07;}
    if(fx.move==='guard'||fx.move==='bastion'){const brace=wave(t,.15,1.6);rig.swordArm.rotation.x=-brace*.9;rig.swordArm.userData.elbow.rotation.x=-.3-brace*.5;rig.swordArm.userData.hand.rotation.x=.7+brace*.4;}
    const hit=wave(t,.4,.74);if(fx.events.some(e=>e.amount>0&&['damage','exoticDamage','bleed','burn'].includes(e.type))){enemy.rotation.z=-hit*.18;enemy.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),hit*.055);}
@@ -108,6 +110,7 @@ export class BattleAnimation{
     const progress=reduced?.5:Math.min(1,a/.35),from=tag==='projectile'?HERO_POS:ENEMY_POS,to=tag==='projectile'?ENEMY_POS:HERO_POS;m.position.copy(from).lerp(to,progress);m.position.y+=1.35+Math.sin(progress*Math.PI)*.25;
    }else if(tag==='impact')m.position.addScaledVector(m.userData.velocity,a);
    else if(tag==='heal'||tag==='ember')m.position.y+=a*.9;
+   updateRelicNode(m,a,reduced);
    if(!reduced){if(['ring','burst','nova','sigil'].includes(tag))m.scale.setScalar(scale*(.65+a*2.3));if(tag==='slash')m.rotation.z+=.035;if(tag==='curse')m.rotation.y+=.05;}
   }
   return true;

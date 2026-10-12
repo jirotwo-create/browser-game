@@ -1,7 +1,8 @@
-import {EXOTICS,hasExotic,exoticBonuses,shopStock,refreshHourlyShop,mergeEffect} from './exotics.js';
+import {beforeRelicStrike,afterRelicStrike,relicDodge,afterRelicRetaliation} from './relic-perks.js';
+import {EXOTICS,hasExotic,exoticBonuses,shopStock,refreshHourlyShop,mergeEffect,activeRelics,relicFor} from './exotics.js';
 import {SKILLS,RUNES,rank,requirements,runeUnlocked,focusCost,moveSkill,moveReady,treePoints,PRESETS} from './skills.js';
 export {SKILLS} from './skills.js';
-export const VERSION = 4;
+export const VERSION = 5;
 export const GEAR = [
  {id:'rust',name:'Graveborn Blade',slot:'weapon',tier:1,cost:0,power:0,icon:'sword',rarity:'Worn',desc:'Even rust remembers the taste of blood.'},
  {id:'rags',name:'Pilgrim’s Shroud',slot:'armor',tier:1,cost:0,power:0,icon:'armor',rarity:'Worn',desc:'A burial cloth. Not yet your own.'},
@@ -22,7 +23,7 @@ export const MONSTERS = [
  {name:'Vesper, the Uncrowned',kind:'king',tag:'The throne demands a sacrifice',hp:130,attack:19,xp:85,coins:42}
 ];
 export function fresh(now=Date.now()) {
- const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,hour:null,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:['rust','rags'],weapon:'rust',armor:'rags',battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};refreshHourlyShop(save,now);return save;
+ const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,hour:null,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:['rust','rags'],weapon:'rust',armor:'rags',testament:null,standardLoadout:{weapon:'rust',armor:'rags'},battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};refreshHourlyShop(save,now);return save;
 }
 export function stats(s) {
  const r=id=>s.skills[id]||0,ex=exoticBonuses(s);
@@ -39,16 +40,33 @@ function earn(s,n) {s.xp+=n;while(s.xp>=xpNeeded(s)){s.xp-=xpNeeded(s);s.level++
 export function migrate(state,now=Date.now()){
  const s=structuredClone(state);
  s.ownedExotics=[...new Set(s.ownedExotics||[])].filter(id=>EXOTICS.some(e=>e.id===id));
- s.equippedExotics=[...new Set(s.equippedExotics||[])].filter(id=>s.ownedExotics.includes(id));
+ const legacy=[...new Set(s.equippedExotics||[])].filter(id=>s.ownedExotics.includes(id));
+ s.owned=[...new Set([...(s.owned||[]),'rust','rags'])].filter(id=>GEAR.some(g=>g.id===id));
+ s.standardLoadout??={weapon:GEAR.some(g=>g.id===s.weapon&&g.slot==='weapon')?s.weapon:'rust',armor:GEAR.some(g=>g.id===s.armor&&g.slot==='armor')?s.armor:'rags'};
+ if((s.version||0)<5){for(const slot of ['weapon','armor','testament']){const id=legacy.find(id=>relicFor(id)?.slot===slot);if(id)s[slot]=id;}s.testament??=null;}
+ for(const slot of ['weapon','armor']){
+  if(!GEAR.some(g=>g.id===s.standardLoadout[slot]&&g.slot===slot&&s.owned.includes(g.id)))s.standardLoadout[slot]=slot==='weapon'?'rust':'rags';
+  const valid=GEAR.some(g=>g.id===s[slot]&&g.slot===slot&&s.owned.includes(g.id))||relicFor(s[slot])?.slot===slot&&s.ownedExotics.includes(s[slot]);if(!valid)s[slot]=s.standardLoadout[slot];
+ }
+ if(relicFor(s.testament)?.slot!=='testament'||!s.ownedExotics.includes(s.testament))s.testament=null;
+ s.equippedExotics=activeRelics(s);
+ s.skills??={};
+ const caps=stats(s);s.hp=Math.max(0,Math.min(caps.hp,s.hp??caps.hp));s.focus=Math.max(0,Math.min(caps.focus,s.focus??caps.focus));
  s.exoticResources??={ink:0,receipts:0};s.exoticResources.ink=Math.max(0,Math.min(5,s.exoticResources.ink||0));s.exoticResources.receipts=Math.max(0,Math.min(24,s.exoticResources.receipts||0));
  s.exoticShop??={seed:((s.stage||1)*2654435761^(s.clicks||0))>>>0||1,hour:null};
  refreshHourlyShop(s,now);
- s.skills??={};s.runes??={};
+ s.runes??={};
  if(!Array.isArray(s.loadout))s.loadout=['rage','eclipse'].filter(id=>rank(s,id));
  s.loadout=s.loadout.map(id=>SKILLS.some(k=>k.id===id&&k.active)&&rank(s,id)?id:null).slice(0,3);
  s.version=VERSION;
  if(s.battle){s.battle.effects??={};s.battle.cooldowns??={};s.battle.barrier??=0;s.battle.resonance??=0;s.battle.exotic??={};}
  return s;
+}
+function equipItem(s,slot,id){
+ s[slot]=id;const after=stats(s);
+ // Gear changes alter caps; they never refill health or focus.
+ s.hp=Math.max(1,Math.min(after.hp,s.hp));s.focus=Math.max(0,Math.min(after.focus,s.focus));
+ s.equippedExotics=activeRelics(s);
 }
 export function reduce(state, action, now=Date.now()) {
  const s=migrate(state,now), r=id=>rank(s,id), ex=id=>hasExotic(s,id);let st=stats(s);
@@ -61,15 +79,15 @@ export function reduce(state, action, now=Date.now()) {
    if(s.combo>=100){s.combo=0;s.bursts++;const reward=35;s.coins+=reward;s.focus=Math.min(st.focus,s.focus+8+r('echo')*2);if(ex('typewriter')){s.exoticResources.ink=Math.min(5,s.exoticResources.ink+1);log(s,`The Damned Typewriter stores ink (${s.exoticResources.ink}/5).`);}log(s,`Hellscript ignited! +${reward} coins. Your focus rekindles.`);}
   }break;
  case 'BUY': {const g=GEAR.find(x=>x.id===action.id);if(s.battle||!g||s.owned.includes(g.id)||g.tier>shopTier(s)||s.coins<g.cost)break;s.coins-=g.cost;s.owned.push(g.id);log(s,`${g.name} stored in your inventory.`);break;}
- case 'EQUIP': {const g=GEAR.find(x=>x.id===action.id);if(!s.battle&&g&&s.owned.includes(g.id)){s[g.slot]=g.id;log(s,`${g.name} equipped.`);}break;}
+ case 'EQUIP': {const g=GEAR.find(x=>x.id===action.id);if(!s.battle&&g&&s.owned.includes(g.id)){equipItem(s,g.slot,g.id);s.standardLoadout[g.slot]=g.id;log(s,`${g.name} equipped. Other gear remains stored.`);}break;}
  case 'BUY_EXOTIC': {
   const e=shopStock(s).find(e=>e.id===action.id);if(s.battle||!e||s.coins<e.cost||s.ownedExotics.includes(e.id))break;
   s.coins-=e.cost;s.ownedExotics.push(e.id);log(s,`${e.name} stored in your inventory. Equip it to activate ${e.perk}.`);break;
  }
  case 'TOGGLE_EXOTIC': {
-  if(s.battle||!s.ownedExotics.includes(action.id))break;
-  const before=stats(s);if(ex(action.id))s.equippedExotics=s.equippedExotics.filter(id=>id!==action.id);else s.equippedExotics.push(action.id);
-  const after=stats(s);s.hp=Math.max(1,Math.min(after.hp,s.hp+after.hp-before.hp));s.focus=Math.max(0,Math.min(after.focus,s.focus+after.focus-before.focus));break;
+  const e=relicFor(action.id);if(s.battle||!e||!s.ownedExotics.includes(e.id))break;
+  const remove=s[e.slot]===e.id;equipItem(s,e.slot,remove?(e.slot==='testament'?null:s.standardLoadout[e.slot]):e.id);
+  log(s,`${e.name} ${remove?'returned to inventory':'equipped in your '+e.slot+' slot'}.`);break;
  }
  case 'LEARN': {
   const k=SKILLS.find(x=>x.id===action.id);if(s.battle||!k||r(k.id)>=k.max||s.points<k.cost||requirements(s,k))break;
@@ -108,7 +126,7 @@ export function reduce(state, action, now=Date.now()) {
   const k=moveSkill(move),id=k?.id||move,rune=s.runes[id];
   const fx={id:s.rev+1,move:id,title:k?.name||{attack:'Strike',guard:'Guard',spell:'Soulfire'}[move],tree:k?.tree||(move==='spell'?'void':move==='guard'?'bone':'blood'),events:[],enemyName:b.name,enemyKind:b.kind,ratCount:ex('rats')?(b.exotic.rats||3):0};s.combatFx=fx;
   const event=(type,amount=0,label='')=>fx.events.push({type,amount,label});
-  const proc=(id,note='')=>{const e=EXOTICS.find(x=>x.id===id);event('exotic',0,e.perk);fx.exotics??=[];if(!fx.exotics.includes(id))fx.exotics.push(id);log(s,`${e.name}: ${note||e.perk}`);};
+  const proc=(id,note='',phase='cast',detail={})=>{const e=EXOTICS.find(x=>x.id===id);event('exotic',0,e.perk);fx.relicAnimations??=[];fx.relicAnimations.push({id,phase,...detail});fx.exotics??=[];if(!fx.exotics.includes(id))fx.exotics.push(id);log(s,`${e.name}: ${note||e.perk}`);};
   const marks=b.exotic;b.exotic.turns=(b.exotic.turns||0)+1;
   const taxedStatuses=new Set(Object.keys(b.effects).filter(name=>['bleed','burn','curse'].includes(name)));
   const heal=(n,label='Healing')=>{const gained=Math.min(st.hp-s.hp,Math.round(n));s.hp+=gained;if(gained&&ex('sutures'))marks.stitches=Math.min(60,(marks.stitches||0)+Math.floor(gained/2));if(gained){event('heal',gained,label);log(s,`${label} restores ${gained} health.`);}return gained;};
@@ -148,6 +166,7 @@ export function reduce(state, action, now=Date.now()) {
   if(id==='drain'){spell=true;damage=8+r('drain')*5+r('spark')*4;leech=rune==='hunger'?1:.5;gainFocus(6+r('drain')*2+(rune==='font'?6:0));event('siphon');}
   if(id==='nova'){spell=true;damage=22+r('nova')*10+r('spark')*4;if(rune==='collapse')status('curse',{power:4,amp:.2,turns:2});else{damage+=(b.effects.burn?.damage||0)*(rune==='detonate'?5:3);delete b.effects.burn;}event('nova');}
   if(id==='eclipse'){spell=true;damage=40+r('spark')*6+s.level*3;heal(rune==='dawn'?32:16,'Eclipse');weak=r('omen')*3;if(rune==='umbra')status('curse',{power:5,amp:.2,turns:3});event('eclipse');}
+  damage=beforeRelicStrike({s,b,marks,move,spell,damaging:damage>0,st,ex,proc,barrier},damage);
   if(spell&&damage){damage*=1+r('resonance')*.15*Math.min(3,b.resonance);b.resonance=Math.min(3,b.resonance+1);if(r('resonance'))event('resonance',b.resonance);}else if(!spell)b.resonance=0;
   const damaging=damage>0;
   if(damaging){
@@ -166,6 +185,8 @@ export function reduce(state, action, now=Date.now()) {
   if(b.effects.curse)damage*=1+b.effects.curse.amp;
   const dealt=hit(damage);marks.previousDamage=dealt;if(spell&&damaging)marks.lastSpell=dealt;
   if(leech)heal(dealt*leech,id==='drain'?'Soul Siphon':'Ravenous');
+  afterRelicStrike({s,b,marks,move,spell,damaging,dealt,st,ex,proc,hit,heal,barrier,gainFocus});
+  for(const name of Object.keys(b.effects))if(['bleed','burn','curse'].includes(name))taxedStatuses.add(name);
   if(b.hp<=0){victory();break;}
   if(ex('mouth')&&move==='attack'&&marks.slashes%3===0){proc('mouth','The cathedral bites.');hit(st.attack*.6,'exoticDamage','Sermon of Hunger');mergeEffect(b,'bleed',{damage:6,turns:3});taxedStatuses.add('bleed');}
   if(b.hp>0&&ex('meteor')&&damaging&&marks.damaging%3===0){proc('meteor','An apology falls from orbit.');hit(35+s.level*2,'exoticDamage','Extinction, Politely');mergeEffect(b,'burn',{damage:7,turns:2});taxedStatuses.add('burn');}
@@ -176,9 +197,9 @@ export function reduce(state, action, now=Date.now()) {
   if(b.hp<=0){victory();break;}
   const cursed=b.effects.curse,heavy=b.turn%3===0&&!cursed?.silence;fx.enemyAttack=heavy?'heavy':'normal';
   const lowHealth=s.hp<st.hp*.35?1-r('unyielding')*.15:1;
-  marks.strikes=(marks.strikes||0)+1;const dodged=ex('boots')&&marks.strikes%4===0;
+  marks.strikes=(marks.strikes||0)+1;const dodged=ex('boots')&&marks.strikes%4===0||relicDodge({marks,ex,proc});
   let incoming=Math.max(1,Math.round((b.attack*(heavy?1.8:1)-st.defense-weak-(cursed?.power||0)-(b.effects.bleed?r('hemorrhage'):0))*guard*lowHealth));
-  if(dodged){incoming=0;proc('boots','The enemy swings at the wrong address.');event('dodge');}
+  if(dodged){incoming=0;if(ex('boots'))proc('boots','The enemy swings at the wrong address.');event('dodge');}
   const protectedByBarrier=b.barrier>0,absorbed=Math.min(incoming,b.barrier);b.barrier-=absorbed;
   const shattered=protectedByBarrier&&b.barrier===0&&absorbed>0;
   if(absorbed)event('absorb',absorbed);
@@ -186,6 +207,7 @@ export function reduce(state, action, now=Date.now()) {
   if(s.hp<=0&&r('revenant')&&!b.revived){s.hp=15;b.revived=true;event('revive',15);log(s,'Last Rites denies the grave. You rise with 15 health.');}
   if(s.hp<=0&&ex('miser')&&!marks.bribed&&s.coins>=20){marks.bribed=true;s.coins-=20;s.hp=Math.min(st.hp,25);event('revive',s.hp,'Death Accepts Cash');proc('miser','Death accepts 20 coins. You rise with 25 health.');}
   if(s.hp<=0){fx.defeat=true;s.battle=null;s.coins=Math.max(0,s.coins-8);s.hp=Math.round(st.hp*.5);s.focus=Math.round(st.focus*.5);log(s,'The Hollow claims you. You awaken wounded. −8 coins.');break;}
+  afterRelicRetaliation({s,b,marks,heavy,shattered,actual,st,ex,hit,proc});
   if(shattered&&ex('pallbearer')){proc('pallbearer','The coffin cracks a joke.');hit(20+st.defense,'exoticDamage','A Cracking Good Joke');}
   const reflected=r('thorns')*2*(protectedByBarrier?2:1)+(b.spikes?8:0);
   if(reflected)hit(reflected,'reflect','Splinter Crown');if(b.spikes)b.spikes--;
@@ -197,5 +219,5 @@ export function reduce(state, action, now=Date.now()) {
  }
  default:return state;
  }
- s.rev++;return s;
+ s.equippedExotics=activeRelics(s);s.rev++;return s;
 }

@@ -12,7 +12,8 @@ export function combatEffects(fx){
  const symbol=document.createElement('div');symbol.className='ability-symbol';symbol.textContent={attack:'╱',guard:'◇',spell:'✦',rend:'╱╱╱',feast:'◈',riposte:'⚔',rage:'♛',bastion:'⬡',mend:'✚',reprisal:'◇',hex:'⛧',drain:'◎',nova:'✹',eclipse:'◐'}[fx.move]||'✦';layer.append(symbol);
  const events=fx.victory?[{type:'reward',amount:fx.coins,label:'COINS'},...fx.events.filter(e=>['heal','revive'].includes(e.type))]:fx.events.filter(e=>e.amount>0);
  for(const [i,e]of events.slice(0,7).entries()){
-  const text=document.createElement('span');text.className=`combat-number number-${e.type}`;text.style.setProperty('--delay',`${(e.label==='Parliament of Rats'?850:['hurt','absorb','revive'].includes(e.type)?1000:400)+i*40}ms`);
+  const record=fx.relicAnimations?.find(record=>EXOTICS.find(item=>item.id===record.id)?.perk===e.label);
+  const text=document.createElement('span');text.className=`combat-number number-${e.type}`;text.style.setProperty('--delay',`${(e.label==='Parliament of Rats'?850:record?.phase==='reaction'?1250:record&&EXOTICS.findIndex(item=>item.id===record.id)>=20?650:['hurt','absorb','revive'].includes(e.type)?1000:400)+i*40}ms`);
   text.textContent=['damage','bleed','burn','counter','reflect','hurt','exoticDamage'].includes(e.type)?`−${e.amount}`:`+${e.amount}`;
   const label=document.createElement('small');label.textContent=e.label||{heal:'HEAL',barrier:'BARRIER',absorb:'ABSORBED',focus:'FOCUS',hurt:'YOUR HEALTH',shatter:'SHATTER',revive:'LAST RITES',reward:'COINS'}[e.type]||e.type.toUpperCase();text.append(label);
   text.style.left=['heal','hurt','focus','barrier','absorb','revive'].includes(e.type)?`${18+i%2*6}%`:`${58+i%2*8}%`;text.style.top=`${34+(i%3)*11}%`;layer.append(text);

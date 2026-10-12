@@ -1,3 +1,4 @@
+import {NEW_RELIC_IDS,newRelicModel} from './new-relic-models.js';
 import * as T from './vendor/three.module.js';
 import {mats,mesh,weapon,armor,talent} from './models.js';
 const box=(g,m,x,y,z,w,h,d,rz=0)=>mesh(g,new T.BoxGeometry(w,h,d),m,x,y,z,0,0,rz);
@@ -11,6 +12,7 @@ function crown(g,mat=mats.gold){mesh(g,new T.CylinderGeometry(.55,.49,.19,10,tru
 function glove(g,x,mat=mats.iron){box(g,mat,x,-.08,0,.28,.45,.16);for(let i=0;i<4;i++)box(g,mat,x-.11+i*.075,.27,.02,.055,.34-(i===3?.07:0),.09);box(g,mat,x-.23,-.02,.03,.09,.28,.1,-.5);box(g,mats.gold,x,-.32,0,.34,.12,.21);}
 function parchment(g,x=0,y=0,z=0){box(g,mats.bone,x,y,z,.7,.91,.035);for(let i=0;i<5;i++)box(g,mats.blood,x-.025,y+.28-i*.12,z+.025,.47-(i%2)*.12,.024,.015);}
 export function exoticModel(id){
+ if(NEW_RELIC_IDS.includes(id))return newRelicModel(id);
  const g=new T.Group();g.userData.asset=id;
  if(id==='mouth'){
   const w=weapon('god');g.add(w);for(let side of [-1,1])for(let i=0;i<5;i++)cone(g,mats.bone,side*.35,-.1+i*.21,.035,.055,.2,side*Math.PI/2);
