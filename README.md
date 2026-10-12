@@ -1,6 +1,6 @@
 # Dreadwake — The Hollow Pilgrimage
 
-A self-contained Manifest V3 Chromium side-panel RPG. Original realtime low-polygon 3D monsters, textured 3D equipment and talent renders, a bundled jagged display font, turn-based encounters, browsing rewards, persistent equipment, and three branching skill trees with 30 talents, eleven active skills, and rune customization. No backend, API keys, build step, or package installation. Three.js 0.180.0 is bundled locally; the extension needs no CDN.
+A self-contained Manifest V3 Chromium side-panel RPG. Original realtime low-polygon 3D hero and monsters, textured 3D equipment and talent renders, a bundled jagged display font, turn-based encounters, browsing rewards, persistent equipment, and three branching skill trees with 30 talents, eleven active skills, and rune customization. No backend, API keys, build step, or package installation. Three.js 0.180.0 is bundled locally; the extension needs no CDN.
 
 ## Install in Chrome, Edge, Brave, or another Chromium browser
 
@@ -49,7 +49,7 @@ npm start
 
 Reload the extension from its management page after editing its background script or manifest; refresh test webpages after changing `content.js`. The side panel loads `panel.html`; the standalone preview loads `index.html`. Both share the same UI, engine, and assets. The extension's service worker serializes state updates to avoid lost rewards from multiple tabs.
 
-`npm test` runs 67 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
+`npm test` runs 68 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
 
 ## Project structure
 
@@ -63,6 +63,8 @@ Reload the extension from its management page after editing its background scrip
 - `effects.js`: bounded canvas particles and a Shadow DOM typing gauge. The overlay does not intercept pointer events or change page layout; coordinates are used locally and never sent to the background worker. Rewards display only after a confirmed save.
 - `panel.js`, `panel.html`, `index.html`, `style.css`: responsive game interface and browser preview.
 - `assets/models.js`: original low-poly 3D meshes for five monsters, ten equipment items, twelve talents, and a ruined cathedral; deterministic 32×32 texture generation.
+- `assets/hero.js`: original articulated obsidian-armored hero with a crimson cape, ember visor and executioner blade.
+- `assets/battle-animation.js`: mesh poses and disposable 3D spell effects driven by accepted combat events.
 - `assets/renderer.js`: a reusable 384×256 WebGL viewport, nearest-neighbor scaling, flat-shaded lighting, drag rotation, and an asset baker. Rendering pauses when the hunt is hidden or the document is in the background.
 - `assets/renders/`: 47 bundled PNGs rendered from the original 3D meshes. Equipment uses these renders; monster renders also provide a fallback if WebGL is unavailable. Earlier model-rendered talent icons remain as development assets.
 - `assets/skill-atlas.png`: 30 original painted fantasy ability icons, one per talent, used as a CSS sprite atlas. These are original generated assets, not copied game icons.
@@ -83,13 +85,14 @@ DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/s
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-skills.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-exotics.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-inventory.cjs
+DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-combat-3d.cjs
 ```
 
 These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to another Chromium executable if needed. They require a local server on port 4173 (`npm start`). The browser smoke test covers live 3D rotation, asset loading, combat, preferences, typing rewards, confirmed webpage effects, input privacy, reduced motion, and failure handling. It uses a mock extension transport because this environment blocks unpacked extension installation.
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.5.0**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.0**.
 
 ## Build examples
 
@@ -149,3 +152,13 @@ The browsing typing ritual is now **Hellscript**. Its linked talent is **Hellscr
 `hellscript-art.js` provides an original horned demonic seal shared by the panel and isolated webpage overlay. The full eruption uses a bounded particle pool with flaming embers and infernal rings. Subtle and Off settings still apply; reduced motion skips animated particles and displays a static reward notice. No remote fonts, assets, new website access, or telemetry are needed.
 
 Hellscript now requires 100 rhythmic keys per eruption and grants a fixed 35 coins. Focus rewards are unchanged.
+
+## Hero and 3D combat patch
+
+The Unburnt now stands beside every monster in the cathedral. The camera retains its original perspective, with a slightly wider view for both combatants. The hero has a fixed cosmetic design: faceted black plate, silver spikes, an ember visor, a torn crimson cape and a jagged blade. Equipment stats continue to come from your loadout.
+
+Accepted turns animate the hero first, then the monster when the rules actually resolve a retaliation. Weapon arts lunge and slash; Soulfire travels between combatants; Feast and Drain siphon energy; Bone wards surround the hero; Mend raises healing rings; Hex surrounds the monster with a curse sigil; Nova erupts outward; Eclipse summons a dark orb. Monsters swing articulated mesh arms, recoil, dive or cast, and collapse when defeated. Damage, healing and absorption feedback follows the corresponding animation phase. Existing rune mechanics and exotic proc announcements remain active.
+
+Animations are visual and never resolve extra turns or grant rewards. A newer turn replaces unfinished effects. Temporary geometry and materials are disposed after the sequence. Navigation and hidden documents pause rendering. Reduced motion keeps characters still and displays static spell indicators. All five bundled fallback images now show the hero alongside the monster; WebGL fallback remains static. Regenerate these with `node scripts/bake-assets.cjs --monsters`.
+
+`smoke-combat-3d.cjs` checks all fourteen base/active moves against five monster rigs, visible effects, attack poses, retaliation, cleanup, unchanged combat events, reduced motion and real panel turns at a narrow viewport.

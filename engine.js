@@ -106,7 +106,7 @@ export function reduce(state, action, now=Date.now()) {
  case 'TURN': {
   const b=s.battle,move=action.move;if(!b||s.hp<=0||moveReady(s,move))break;
   const k=moveSkill(move),id=k?.id||move,rune=s.runes[id];
-  const fx={id:s.rev+1,move:id,title:k?.name||{attack:'Strike',guard:'Guard',spell:'Soulfire'}[move],tree:k?.tree||(move==='spell'?'void':move==='guard'?'bone':'blood'),events:[],enemyName:b.name};s.combatFx=fx;
+  const fx={id:s.rev+1,move:id,title:k?.name||{attack:'Strike',guard:'Guard',spell:'Soulfire'}[move],tree:k?.tree||(move==='spell'?'void':move==='guard'?'bone':'blood'),events:[],enemyName:b.name,enemyKind:b.kind};s.combatFx=fx;
   const event=(type,amount=0,label='')=>fx.events.push({type,amount,label});
   const proc=(id,note='')=>{const e=EXOTICS.find(x=>x.id===id);event('exotic',0,e.perk);fx.exotics??=[];if(!fx.exotics.includes(id))fx.exotics.push(id);log(s,`${e.name}: ${note||e.perk}`);};
   const marks=b.exotic;b.exotic.turns=(b.exotic.turns||0)+1;
@@ -174,7 +174,7 @@ export function reduce(state, action, now=Date.now()) {
   if(b.hp>0&&ex('rats')){proc('rats',`${marks.rats||3} rats vote to devour.`);hit(marks.rats||3,'exoticDamage','Parliament of Rats');}
   if(b.hp>0&&ex('bell')&&marks.turns%9===0){proc('bell','The ninth toll ends the conversation.');hit(b.maxHp*.3,'exoticDamage','The Ninth Toll');}
   if(b.hp<=0){victory();break;}
-  const cursed=b.effects.curse,heavy=b.turn%3===0&&!cursed?.silence;
+  const cursed=b.effects.curse,heavy=b.turn%3===0&&!cursed?.silence;fx.enemyAttack=heavy?'heavy':'normal';
   const lowHealth=s.hp<st.hp*.35?1-r('unyielding')*.15:1;
   marks.strikes=(marks.strikes||0)+1;const dodged=ex('boots')&&marks.strikes%4===0;
   let incoming=Math.max(1,Math.round((b.attack*(heavy?1.8:1)-st.defense-weak-(cursed?.power||0)-(b.effects.bleed?r('hemorrhage'):0))*guard*lowHealth));

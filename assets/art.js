@@ -24,7 +24,7 @@ export function icon(name, cls='') {
  return `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.rune}</svg>`;
 }
 export function scene(kind='knight') {
- return `<div class="world-viewport" data-monster="${kind}"><img class="world-art baked-3d" src="assets/renders/monster-${kind}.png" alt="Low-poly 3D ${kind} rendered in a ruined gothic cathedral"><span class="viewport-label">REALTIME 3D · DRAG TO ROTATE</span></div>`;
+ return `<div class="world-viewport" data-monster="${kind}"><img class="world-art baked-3d" src="assets/renders/monster-${kind}.png" alt="Black-armored hero facing a low-poly 3D ${kind} in a ruined gothic cathedral"><span class="viewport-label">REALTIME 3D · DRAG TO ROTATE</span></div>`;
 }
 export function gearArt(id,name='Equipment') {
  return `<img class="gear-render" src="assets/renders/gear-${id}.png" alt="${name}, a textured low-poly 3D model" loading="lazy">`;
