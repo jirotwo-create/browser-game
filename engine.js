@@ -33,7 +33,7 @@ export const MONSTERS = [
  {name:'Vesper, the Uncrowned',kind:'king',tag:'The throne demands a sacrifice',hp:130,attack:19,xp:85,coins:42}
 ];
 export function fresh() {
- return {version:VERSION,coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,skills:{},owned:['rust','rags'],weapon:'rust',armor:'rags',battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};
+ return {version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,skills:{},owned:['rust','rags'],weapon:'rust',armor:'rags',battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};
 }
 export function stats(s) {
  const r=id=>s.skills[id]||0;
@@ -51,6 +51,7 @@ export function reduce(state, action, now=Date.now()) {
  const s=structuredClone(state), r=id=>s.skills[id]||0;
  let st=stats(s);
  switch(action.type) {
+ case 'SET_FX': if(['full','subtle','off'].includes(action.mode))s.fx=action.mode;break;
  case 'BROWSE':
   if(action.kind==='click'){s.coins++;s.clicks++;}
   else if(action.kind==='type'){

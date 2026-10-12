@@ -81,3 +81,10 @@ test('many battles progress across all forge tiers without negative resources',(
  }
  assert.equal(s.stage,13);assert.equal(shopTier(s),4);assert.equal(s.kills,12);assert.ok(s.level>1);assert.ok(s.xp<xpNeeded(s));
 });
+
+test('visual-effect preferences persist without changing gameplay or accepting invalid modes',()=>{
+ const initial=fresh();const muted=reduce(initial,{type:'SET_FX',mode:'off'});
+ assert.equal(muted.fx,'off');assert.equal(muted.coins,initial.coins);assert.equal(muted.hp,initial.hp);
+ assert.equal(reduce(muted,{type:'SET_FX',mode:'invalid'}).fx,'off');
+ assert.equal(reduce(muted,{type:'SET_FX',mode:'subtle'}).fx,'subtle');
+});
