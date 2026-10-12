@@ -1,0 +1,1 @@
+{"name":"dreadwake","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node --test","check":"node --check background.js && node --check content.js && node --check panel.js && node --check engine.js","start":"python3 -m http.server 4173 --bind 0.0.0.0"}}
