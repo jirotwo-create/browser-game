@@ -17,7 +17,9 @@ Requires Chromium's Side Panel API (Chrome 114+; use a current version of your c
 - **Click a webpage:** earn one coin with a spinning coin pickup, sparks, and a floating +1 at the click location. An 80 ms click debounce rejects accidental duplicate input.
 - **Keyboard Hex:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 20 eligible keys grants 5–15 coins and 8 focus (more with the Keyboard Hex talent). A live gauge appears on the webpage. Completing a hex releases an occult sigil, expanding rings, violet/gold sparks, a coin shower, and a banner showing the actual earned rewards. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
 - **The Hunt:** fight one turn at a time. Strike recovers focus; Guard heals, restores focus, and reduces incoming damage. Soulfire spends focus. Every third enemy turn is a telegraphed heavy attack.
-- **Black Forge:** buy and equip weapons and armor. Forge tiers unlock at stages 4, 7, and 10. Owned gear can be re-equipped without charge.
+- **Black Forge:** buy and equip standard weapons and armor. Forge tiers unlock at stages 4, 7, and 10. Owned gear can be re-equipped without charge.
+- **Impossible Stock:** four randomized exotic offers, saved until purchase or rotation. A victory refreshes stock for free; a manual reroll costs 25 coins and is disabled when every remaining eligible item is already shown. Purchases never reshuffle the other offers. Higher forge tiers expand the eligible pool. Every purchase is automatically equipped.
+- **Exotic collection:** twenty original one-of-a-kind weapons, armor pieces, and oddities. Equip any number at once, including multiple weapons, crowns, and accessories; every stat bonus and perk stacks. Exotic items supplement your standard weapon/armor and never consume skill slots. Unequip and re-equip freely outside combat. Nothing expires or disappears from your collection.
 - **Forbidden Arts:** 30 talents across Blood, Bone, and Void. Spend two starting points, then earn two more each level. Learning one rank of a parent unlocks its branches; capstones need eight points invested in their tree. Passives always work. Choose three learned active skills for your combat loadout; Strike, Guard, and Soulfire remain available too.
 - **Runes:** each of the eleven active skills has two alternative rune effects. Most unlock at rank 2; capstone runes need 12 invested tree points. Use one rune per ability or keep it unmodified. Switch freely outside combat.
 - **Builds:** mix talents across trees, customize slots and runes, or apply a suggested Bleed & Feed, Bone Fortress, or Hexweaver starter build. Reset talents for free outside combat to refund every spent skill point. Your level, coins, equipment, and stage remain. Builds and equipment cannot change mid-battle.
@@ -46,11 +48,13 @@ npm start
 
 Reload the extension from its management page after editing its background script or manifest; refresh test webpages after changing `content.js`. The side panel loads `panel.html`; the standalone preview loads `index.html`. Both share the same UI, engine, and assets. The extension's service worker serializes state updates to avoid lost rewards from multiple tabs.
 
-`npm test` runs 34 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
+`npm test` runs 62 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
 
 ## Project structure
 
 - `engine.js`: deterministic game rules, equipment, monsters, status resolution, save migration, and build changes.
+- `exotics.js`: the twenty-item exotic catalog, deterministic persistent shop pools, perk helpers, additive stats, and safe effect merging.
+- `assets/exotic-models.js`: twenty original low-poly 3D exotic models; no new external assets are required.
 - `skills.js`: 30 talents, 22 rune choices, starter builds, requirements, cost/readiness checks, and numerical upgrade previews.
 - `combat-effects.js`: distinct combat animations, combat feedback, and readable status badges.
 - `background.js`: persistent save and message handling.
@@ -59,7 +63,7 @@ Reload the extension from its management page after editing its background scrip
 - `panel.js`, `panel.html`, `index.html`, `style.css`: responsive game interface and browser preview.
 - `assets/models.js`: original low-poly 3D meshes for five monsters, ten equipment items, twelve talents, and a ruined cathedral; deterministic 32×32 texture generation.
 - `assets/renderer.js`: a reusable 384×256 WebGL viewport, nearest-neighbor scaling, flat-shaded lighting, drag rotation, and an asset baker. Rendering pauses when the hunt is hidden or the document is in the background.
-- `assets/renders/`: 27 bundled PNGs rendered from the original 3D meshes. Equipment uses these renders; monster renders also provide a fallback if WebGL is unavailable. Earlier model-rendered talent icons remain as development assets.
+- `assets/renders/`: 47 bundled PNGs rendered from the original 3D meshes. Equipment uses these renders; monster renders also provide a fallback if WebGL is unavailable. Earlier model-rendered talent icons remain as development assets.
 - `assets/skill-atlas.png`: 30 original painted fantasy ability icons, one per talent, used as a CSS sprite atlas. These are original generated assets, not copied game icons.
 - `assets/vendor/`: locally bundled Three.js 0.180.0 and its MIT license.
 - `assets/art.js`: interface icon helpers and markup for rendered assets.
@@ -69,20 +73,21 @@ This is an unpacked extension; it has not been submitted to browser extension st
 
 ## Optional graphics development
 
-The extension is ready to load without rebuilding. To regenerate the 27 bundled renders after changing the meshes, start the development server, install Playwright into a separate tools directory, then run:
+The extension is ready to load without rebuilding. To regenerate the 47 bundled renders after changing the meshes, start the development server, install Playwright into a separate tools directory, then run:
 
 ```sh
 npm install --prefix /tmp/dreadwake-tools --cache /tmp/dreadwake-npm-cache playwright
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/bake-assets.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-browser.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-skills.cjs
+DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-exotics.cjs
 ```
 
 These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to another Chromium executable if needed. They require a local server on port 4173 (`npm start`). The browser smoke test covers live 3D rotation, asset loading, combat, preferences, typing rewards, confirmed webpage effects, input privacy, reduced motion, and failure handling. It uses a mock extension transport because this environment blocks unpacked extension installation.
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.2.0**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.3.0**.
 
 ## Build examples
 
@@ -95,3 +100,34 @@ Download and extract the updated GitHub ZIP. Replace your old extension files wi
 Suggested builds spend only available points, respecting all prerequisites. They also refund your current build first. Select any talent to see its requirements, rank, current and next numerical effects, focus/health cost, cooldown and rune options. A mix of talents from all three trees is allowed.
 
 Existing saves migrate automatically. Previously learned talents and progression stay intact; existing Blood Sovereign and Total Eclipse abilities are placed in your loadout when migrating an old save. Skill choices are now reversible.
+
+## Impossible exotics
+
+All twenty items have original 3D inventory art, readable named perks, combat proc notices, and persistent ownership. There is no exotic equip limit or restriction by item kind. The first pool opens immediately; more enter at forge tiers 2 and 3. The collection is currently purchased from the rotating shop rather than dropped by monsters.
+
+| Item | What makes it impossible |
+| --- | --- |
+| The Cathedral Has Teeth | Every third Strike makes the living blade bite and cause bleeding. |
+| Widow’s Probate | The dead pay 35% more coins; nearly dead enemies take more direct damage. |
+| An Argument with Yesterday | Your last turn's primary wound repeats at 30% damage. Echoes never copy echoes. |
+| A Perfectly Normal Teapot | Guard brews suspicious moon tea for your next damaging action. |
+| Small Apology to the Sky | Every third damaging action drops a meteor and starts a burn. |
+| The Saint’s Bad Stitching | Healing becomes stored surgical thread; Strike cashes it in as damage. |
+| Moth-Eaten Eternity | Moths ignite your spells and heal you when your focus runs low. |
+| The Saint Who Froze Hell | Guard curses enemies and suppresses heavy attacks without weakening stronger curses. |
+| Parliament of Rats | A growing rat legislature attacks after your actions. Guard recruits new members. |
+| God’s Unpaid Invoice | Bleed, burn, and curses become six-coin tax deductions on victory. |
+| The Ninth Toll | Every ninth accepted action deals doom equal to 30% of enemy maximum health. |
+| Yesterday’s Funeral | Your first active skill has no cooldown; Guard rewinds other cooldowns faster. |
+| Boots That Never Arrive | Every fourth enemy strike misses completely. |
+| The Laughing Pallbearer | Start shielded; a broken barrier delivers a very damaging coffin joke. |
+| The Sun’s Last Tenant | Spells feed on curses for extra damage and life-steal. |
+| Miser’s Last Breath | Bribe death once per battle for 20 coins; Last Rites gets first refusal. |
+| Choir of Loose Teeth | Every third damaging spell launches a singing volley of teeth. |
+| Understudy of the End | Every third Guard replays half of your last damaging spell for free. |
+| The Damned Typewriter | Typing bursts stock up to five ink charges; spells spend them for damage and burning. |
+| Hands of Infinite Receipts | Twenty-five equipped webpage clicks print twelve bonus coins. |
+
+Exotic procs are deliberately bounded: they never execute an additional combat turn or recursively activate damage-trigger counters. Purchased stat bonuses add together. Stronger existing wounds and curses are preserved when an exotic applies a weaker version. Every accepted combat action can activate several equipped perks, and the combat HUD names them. Counters reset each battle, except typewriter ink and receipt progress, which persist; unequipping pauses those browsing perks.
+
+Use `node scripts/bake-assets.cjs --exotics` (with the same optional Playwright configuration above) to regenerate only exotic renders.

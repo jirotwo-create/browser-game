@@ -1,3 +1,5 @@
+import {EXOTICS} from './exotics.js';
+import {gearArt} from './assets/art.js';
 const colors={blood:'#e74c6d',bone:'#b9ed98',void:'#b68aff'};
 let played,first=true;
 export function combatEffects(fx){
@@ -11,11 +13,12 @@ export function combatEffects(fx){
  const events=fx.victory?[{type:'reward',amount:fx.coins,label:'COINS'},...fx.events.filter(e=>['heal','revive'].includes(e.type))]:fx.events.filter(e=>e.amount>0);
  for(const [i,e]of events.slice(0,7).entries()){
   const text=document.createElement('span');text.className=`combat-number number-${e.type}`;text.style.setProperty('--delay',`${i*90}ms`);
-  text.textContent=['damage','bleed','burn','counter','reflect','hurt'].includes(e.type)?`−${e.amount}`:`+${e.amount}`;
+  text.textContent=['damage','bleed','burn','counter','reflect','hurt','exoticDamage'].includes(e.type)?`−${e.amount}`:`+${e.amount}`;
   const label=document.createElement('small');label.textContent=e.label||{heal:'HEAL',barrier:'BARRIER',absorb:'ABSORBED',focus:'FOCUS',hurt:'YOUR HEALTH',shatter:'SHATTER',revive:'LAST RITES',reward:'COINS'}[e.type]||e.type.toUpperCase();text.append(label);
   text.style.left=['heal','hurt','focus','barrier','absorb','revive'].includes(e.type)?`${18+i%2*6}%`:`${58+i%2*8}%`;text.style.top=`${34+(i%3)*11}%`;layer.append(text);
  }
  if(fx.events.some(e=>e.type==='revive'))layer.classList.add('reviving');
+ if(fx.exotics?.length){const special=['meteor','bell','mouth','choir','pallbearer','understudy','typewriter','rats','tea','miser','sun','echoBlade'].find(id=>fx.exotics.includes(id))||fx.exotics[0];const apparition=document.createElement('img');apparition.className=`relic-apparition relic-${special}`;apparition.src=`assets/renders/gear-${special}.png`;apparition.alt='';layer.append(apparition);const procs=document.createElement('div');procs.className='exotic-procs';for(const id of fx.exotics.slice(0,6)){const e=EXOTICS.find(e=>e.id===id);const tag=document.createElement('div');tag.innerHTML=gearArt(e.id,e.name);const label=document.createElement('span');label.textContent=e.perk;tag.append(label);procs.append(tag);}if(fx.exotics.length>6){const extra=document.createElement('small');extra.textContent=`+${fx.exotics.length-6} MORE EXOTIC EFFECTS`;procs.append(extra);}layer.append(procs);}
  scene.append(layer);setTimeout(()=>layer.remove(),1900);
 }
 export function statusHTML(b,icon){

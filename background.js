@@ -4,7 +4,7 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(consol
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
  const page = sender.tab !== undefined;
  if (page && (message?.type !== 'BROWSE' || !['click', 'type'].includes(message.kind))) return;
- if (!page && !['GET','BUY','EQUIP','LEARN','REST','BEGIN','FLEE','TURN','SET_FX','SLOT','SET_RUNE','RESPEC','PRESET'].includes(message?.type)) return;
+ if (!page && !['GET','BUY','EQUIP','LEARN','REST','BEGIN','FLEE','TURN','SET_FX','SLOT','SET_RUNE','RESPEC','PRESET','BUY_EXOTIC','TOGGLE_EXOTIC','REROLL_EXOTICS'].includes(message?.type)) return;
  queue = queue.then(async () => {
   const stored = await chrome.storage.local.get('dreadwake');
   const state = stored.dreadwake ? migrate(stored.dreadwake) : fresh();

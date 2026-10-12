@@ -1,3 +1,5 @@
+import {exoticModel} from './exotic-models.js';
+import {EXOTICS} from '../exotics.js';
 import * as T from './vendor/three.module.js';
 import {monster,cathedral,weapon,armor,talent} from './models.js';
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -53,8 +55,8 @@ export function assetRender(kind,id,width=384,height=256){
  const key=new T.DirectionalLight(0xffdab0,3.4);key.position.set(-3,5,4);s.add(key);const rim=new T.DirectionalLight(0x956bff,3);rim.position.set(3,2,-2);s.add(rim);
  let model,c;
  if(kind!=='monster'){
-  model=kind==='skill'?talent(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
-  const isWeapon=kind==='gear'&&['rust','fang','reaper','thorn','god'].includes(id);c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);
+  model=kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
+  const isWeapon=kind==='gear'&&['rust','fang','reaper','thorn','god','mouth','probate','echoBlade','meteor'].includes(id);c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);
  }else{
   s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.rotation.y=-.25;s.add(model);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition);c.lookAt(0,1.45,0);
  }
