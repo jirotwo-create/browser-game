@@ -58,7 +58,7 @@ export function reduce(state, action, now=Date.now()) {
   if(action.kind==='click'){s.coins++;s.clicks++;if(ex('receipts')&&++s.exoticResources.receipts>=25){s.exoticResources.receipts=0;s.coins+=12;log(s,'Hands of Infinite Receipts: +12 bonus coins. No refunds.');}}
   else if(action.kind==='type'){
    s.keys++;s.combo=now-s.lastType<2500?s.combo+1:1;s.lastType=now;
-   if(s.combo>=20){s.combo=0;s.bursts++;const reward=5+Math.min(10,Math.floor(s.bursts/5));s.coins+=reward;s.focus=Math.min(st.focus,s.focus+8+r('echo')*2);if(ex('typewriter')){s.exoticResources.ink=Math.min(5,s.exoticResources.ink+1);log(s,`The Damned Typewriter stores ink (${s.exoticResources.ink}/5).`);}log(s,`Hex burst! +${reward} coins. Your focus rekindles.`);}
+   if(s.combo>=20){s.combo=0;s.bursts++;const reward=5+Math.min(10,Math.floor(s.bursts/5));s.coins+=reward;s.focus=Math.min(st.focus,s.focus+8+r('echo')*2);if(ex('typewriter')){s.exoticResources.ink=Math.min(5,s.exoticResources.ink+1);log(s,`The Damned Typewriter stores ink (${s.exoticResources.ink}/5).`);}log(s,`Hellscript ignited! +${reward} coins. Your focus rekindles.`);}
   }break;
  case 'BUY': {const g=GEAR.find(x=>x.id===action.id);if(s.battle||!g||s.owned.includes(g.id)||g.tier>shopTier(s)||s.coins<g.cost)break;s.coins-=g.cost;s.owned.push(g.id);log(s,`${g.name} stored in your inventory.`);break;}
  case 'EQUIP': {const g=GEAR.find(x=>x.id===action.id);if(!s.battle&&g&&s.owned.includes(g.id)){s[g.slot]=g.id;log(s,`${g.name} equipped.`);}break;}

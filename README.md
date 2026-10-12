@@ -15,7 +15,7 @@ Requires Chromium's Side Panel API (Chrome 114+; use a current version of your c
 ## Play
 
 - **Click a webpage:** earn one coin with a spinning coin pickup, sparks, and a floating +1 at the click location. An 80 ms click debounce rejects accidental duplicate input.
-- **Keyboard Hex:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 20 eligible keys grants 5–15 coins and 8 focus (more with the Keyboard Hex talent). A live gauge appears on the webpage. Completing a hex releases an occult sigil, expanding rings, violet/gold sparks, a coin shower, and a banner showing the actual earned rewards. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
+- **Hellscript:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 20 eligible keys grants 5–15 coins and 8 focus (more with Hellscript Covenant). A live gauge appears on the webpage. Igniting Hellscript breaks a horned infernal seal: scarlet and gold rings erupt, flames and embers rise, coins scatter, and a demonic reward banner shows the actual spoils. Both the panel and webpage gauge have ember-lit segmented progress and a demonic seal. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
 - **The Hunt:** fight one turn at a time. Strike recovers focus; Guard heals, restores focus, and reduces incoming damage. Soulfire spends focus. Every third enemy turn is a telegraphed heavy attack.
 - **Black Forge:** buy standard weapons and armor into your inventory. Forge tiers unlock at stages 4, 7, and 10. Purchases do not replace equipped gear.
 - **Hourly exotic offering:** exactly one exotic is on offer at a time. It changes at the top of each clock hour, with a visible countdown. Victories, purchases, browsing, and forge-tier unlocks do not reset the timer or replace the current offer. Bought offers stay claimed until the next hour. Manual rerolls have been removed.
@@ -89,7 +89,7 @@ These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to an
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.4.0**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.5.0**.
 
 ## Build examples
 
@@ -141,3 +141,9 @@ The extension now requests Chromium's `alarms` permission to schedule the next c
 The hourly offering selects an eligible unowned exotic and stays fixed for that hour. With more than one eligible choice, consecutive hours do not offer the same item. A claimed item remains visible until the next hour; if all exotics are owned, the shop shows collection completion. Old four-offer saves migrate to the hourly format while preserving every owned item and current equipment.
 
 Inventory has no capacity limit. Each named item is unique; buying an already-owned item never charges you twice. The standard loadout still has one weapon and one armor piece, while all purchased exotics can be equipped at the same time. Inventory changes are locked during battle, but you can still browse your possessions.
+
+## Hellscript visual patch
+
+The browsing typing ritual is now **Hellscript**. Its linked talent is **Hellscript Covenant**. Names, preview controls, event messages, and progress labels use the new theme. Existing saves, skill IDs, the 20-key rhythm requirement, rewards, typing privacy, and exotic ink charges are preserved.
+
+`hellscript-art.js` provides an original horned demonic seal shared by the panel and isolated webpage overlay. The full eruption uses a bounded particle pool with flaming embers and infernal rings. Subtle and Off settings still apply; reduced motion skips animated particles and displays a static reward notice. No remote fonts, assets, new website access, or telemetry are needed.

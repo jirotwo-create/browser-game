@@ -27,7 +27,7 @@ export const SKILLS=[
  skill('unyielding','bone','Unyielding',3,2,2,'resolve','Below 35% health, reduce incoming damage by 15% per rank.'),
  skill('revenant','bone','Last Rites',4,1,3,'ward','Survive one fatal blow per battle and rise with 15 health.',{gate:8,effect:'revive'}),
  skill('spark','void','Cinder Script',0,3,1,null,'Gain 5 maximum focus and 4 spell damage per rank.'),
- skill('echo','void','Keyboard Hex',1,3,1,'spark','Webpage typing bursts restore 2 additional focus per rank.'),
+ skill('echo','void','Hellscript Covenant',1,3,1,'spark','Hellscript eruptions restore 2 additional focus per rank.'),
  skill('hex','void','Withering Hex',1,3,1,'spark','Curse the enemy for 3 turns: it deals 2 + 2 per rank less damage and takes 20% more direct damage.',{active:true,focus:8,cooldown:3,effect:'curse'}),
  skill('omen','void','Dark Omen',2,2,2,'echo','Soulfire and Eclipse weaken the enemy’s next strike by 3 damage per rank.'),
  skill('drain','void','Soul Siphon',2,3,1,'echo','Deal 8 + 5 per rank + spell power. Restore 6 + 2 per rank focus and heal half the damage dealt.',{active:true,focus:4,cooldown:3,effect:'siphon'}),
@@ -89,7 +89,7 @@ export function skillPower(s,k,st,n){
   ward:`+${n*2} defense and +${n*8} maximum health`,shelter:`Guard restores ${4+n*4} health`,bastion:`${Math.round((20+n*8)*(1+rank(s,'fortress')*.2))}-point barrier`,resolve:`Heal ${n*8} when the hunt starts`,
   mend:`Heal ${16+n*8} now, then ${4+n*2} on each of the next 3 turns`,thorns:`Reflect ${n*2} damage (${n*4} if shielded)`,fortress:`Guard grants ${n*6} base barrier; +${n*20}% to all barriers`,
   reprisal:`${Math.round(attack*.7+n*6)} damage plus remaining barrier`,unyielding:`Take ${n*15}% less damage below 35% health`,revenant:'Survive one fatal blow per battle with 15 health',
-  spark:`+${n*5} maximum focus and +${n*4} spell damage`,echo:`Typing bursts restore ${8+n*2} focus`,hex:`−${2+n*2} enemy damage; +20% damage taken for 3 strikes`,omen:`Soulfire and Eclipse weaken the next strike by ${n*3} damage`,
+  spark:`+${n*5} maximum focus and +${n*4} spell damage`,echo:`Hellscript restores ${8+n*2} focus`,hex:`−${2+n*2} enemy damage; +20% damage taken for 3 strikes`,omen:`Soulfire and Eclipse weaken the next strike by ${n*3} damage`,
   drain:`${8+n*5+power} damage; restore ${6+n*2} focus; heal half of damage`,kindle:`Soulfire applies ${n*3} burn damage for 2 turns`,resonance:`+${n*15}% spell damage per chain step (up to +${n*45}%)`,
   nova:`${22+n*10+power} damage; consume burn for +3× its per-turn damage`,conduit:`Spells cost ${n} less focus; Guard grants ${6+n*2} focus`,eclipse:`${40+rank(s,'spark')*6+s.level*3} damage and 16 healing`
  };
