@@ -96,7 +96,7 @@ export class BattleAnimation{
    if(fx.events.some(e=>e.type==='counter'))swingWeapon(rig.swordArm,t,1.15,1.8);
    if(fx.events.some(e=>e.type==='hurt'))rig.body.rotation.z=wave(t,1.1,1.5)*.16;
    if(fx.events.some(e=>e.type==='dodge'))hero.position.z+=wave(t,.95,1.5)*.5;
-   if(fx.victory){const collapse=Math.max(0,Math.min(1,(t-(fx.enemyAttack?1.25:.65))/.6));enemy.rotation.z=-collapse*1.35;enemy.position.y-=collapse*.4;}
+   if(fx.victory){const collapse=Math.max(0,Math.min(1,(t-(fx.enemyAttack ? 1.25 : fx.ratAttack?.damage > 0 ? .95 : .65))/.6));enemy.rotation.z=-collapse*1.35;enemy.position.y-=collapse*.4;}
    if(fx.defeat)rig.body.rotation.z=Math.max(0,Math.min(1,(t-1.2)/.4))*.65;
   }
   for(const m of this.nodes){

@@ -63,8 +63,10 @@ test('winter halo suppresses heavy strikes without downgrading stronger curses',
  let s=fight(relics(['halo']));s.battle.turn=3;s.battle.effects.curse={power:8,amp:.35,turns:4};s=turn(s,'guard');assert.equal(s.battle.effects.curse.power,8);assert.equal(s.battle.effects.curse.amp,.35);assert.equal(s.battle.effects.curse.silence,true);assert.ok(procs(s).includes('halo'));
 });
 test('rat parliament grows on Guard, caps at twelve, and attacks on accepted actions only',()=>{
- let s=fight(relics(['rats']));assert.equal(s.battle.exotic.rats,3);s=turn(s,'guard');assert.equal(s.battle.exotic.rats,4);assert.ok(s.combatFx.events.some(e=>e.label==='Parliament of Rats'&&e.amount===4));
+ let s=fight(relics(['rats']));assert.equal(s.battle.exotic.rats,3);s=turn(s,'guard');assert.equal(s.battle.exotic.rats,4);assert.deepEqual(s.combatFx.ratAttack,{count:4,damage:4});assert.equal(s.combatFx.ratCount,4);assert.ok(s.combatFx.events.some(e=>e.label==='Parliament of Rats'&&e.amount===4));
  for(let i=0;i<15;i++)s=turn(s,'guard');assert.equal(s.battle.exotic.rats,12);const before=s.battle.hp;s=reduce(s,{type:'BROWSE',kind:'click'});assert.equal(s.battle.hp,before);
+ let dying=fight(relics(['rats']));dying.battle.hp=2;dying=turn(dying,'guard');assert.deepEqual(dying.combatFx.ratAttack,{count:4,damage:2});assert.equal(dying.combatFx.victory,true);assert.equal(dying.combatFx.enemyAttack,undefined);
+ let killed=fight(relics(['rats']));killed.battle.hp=1;killed=turn(killed);assert.equal(killed.combatFx.ratAttack,undefined);
 });
 test('the ninth toll deals maximum-health-based doom exactly every ninth accepted action',()=>{
  let s=fight(relics(['bell']));for(let i=0;i<8;i++)s=turn(s,'guard');assert.equal(procs(s).includes('bell'),false);s=turn(s,'guard');assert.ok(s.combatFx.events.some(e=>e.label==='The Ninth Toll'&&e.amount===3000));

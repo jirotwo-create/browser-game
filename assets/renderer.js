@@ -1,3 +1,4 @@
+import {RatSwarm,ratModel} from './rat-swarm.js';
 import {hero} from './hero.js';
 import {BattleAnimation,rigMonster,HERO_POS,ENEMY_POS} from './battle-animation.js';
 import {exoticModel} from './exotic-models.js';
@@ -5,13 +6,13 @@ import {EXOTICS} from '../exotics.js';
 import * as T from './vendor/three.module.js';
 import {monster,cathedral,weapon,armor,talent} from './models.js';
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-let renderer,world,camera,actor,player,arena,animation,current,requestedKind,canvas,drag=0,last=0,failed=false,frame=0,played,initialized=false;
+let renderer,world,camera,actor,player,arena,animation,swarm,current,requestedKind,canvas,drag=0,last=0,failed=false,frame=0,played,initialized=false;
 const cameraPosition=[4.3,2.7,6.5];
 function setup(){
  renderer=new T.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power',preserveDrawingBuffer:true});
  renderer.setPixelRatio(1);renderer.setSize(384,256,false);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;
  canvas=renderer.domElement;canvas.className='world-art real-3d';canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Interactive low-poly 3D monster and black-armored hero inside a ruined cathedral. Drag to rotate.');
- world=new T.Scene();world.background=new T.Color('#17121e');world.fog=new T.FogExp2('#21182b',.065);world.add(cathedral());arena=new T.Group();world.add(arena);player=hero();player.scale.setScalar(.82);arena.add(player);animation=new BattleAnimation(arena);
+ world=new T.Scene();world.background=new T.Color('#17121e');world.fog=new T.FogExp2('#21182b',.065);world.add(cathedral());arena=new T.Group();world.add(arena);player=hero();player.scale.setScalar(.82);arena.add(player);animation=new BattleAnimation(arena);swarm=new RatSwarm(arena);
  world.add(new T.HemisphereLight(0xc0c3ee,0x4a2235,2));
  const key=new T.DirectionalLight(0xffd1a4,3.4);key.position.set(-3,5,4);world.add(key);
  const rim=new T.DirectionalLight(0x9175ff,3);rim.position.set(3,2,-2);world.add(rim);
@@ -27,7 +28,7 @@ function setup(){
 function dispose(g){g?.traverse(o=>{if(o.isMesh)o.geometry.dispose();});}
 function draw(time,force=false){
  if(!canvas?.isConnected||document.hidden||failed||(!force&&time-last<33))return;last=time;
- arena.rotation.y=drag;const wasAnimating=!!animation.fx;animation.update(time,player,actor,reduced.matches);
+ arena.rotation.y=drag;const wasAnimating=!!animation.fx;animation.update(time,player,actor,reduced.matches);swarm.update(time,reduced.matches);
  if(wasAnimating&&!animation.fx&&requestedKind!==current)replaceMonster(requestedKind);
  if(aura&&!reduced.matches)for(const ring of aura.children)if(ring.userData.spin)ring.rotation.y=time*.00065;
  renderer.render(world,camera);
@@ -47,13 +48,21 @@ export function mount3D(root=document){
   host.append(canvas);draw(performance.now(),true);if(!frame)loop();
  }catch(error){failed=true;host.querySelector('.viewport-label').textContent='3D RENDER · WEBGL UNAVAILABLE';console.warn('3D viewport unavailable; displaying bundled 3D render.',error);}
 }
+export function setCompanions(state){
+ const count=state.equippedExotics?.includes('rats')?Math.max(0,Math.min(12,Math.floor(state.battle?.exotic?.rats||state.combatFx?.ratCount||3))):0;
+ const host=document.querySelector('[data-monster]');
+ if(host&&count){const fallback=document.createElement('div');fallback.className='rat-fallback';fallback.setAttribute('role','img');fallback.setAttribute('aria-label',`${count} Parliament of Rats companions`);for(let i=0;i<count;i++){const image=document.createElement('img');image.src='assets/renders/companion-rat.png';image.alt='';fallback.append(image);}host.querySelector('.rat-fallback')?.remove();host.append(fallback);}
+ else host?.querySelector('.rat-fallback')?.remove();
+ if(!swarm)return;
+ swarm.sync(count);canvas.setAttribute('aria-label',`Interactive low-poly 3D monster and black-armored hero${count?' with '+count+' rat companions':''} inside a ruined cathedral. Drag to rotate.`);draw(performance.now(),true);
+}
 export function playCombat(fx){
- if(!initialized){initialized=true;played=fx?.id;return;}
- if(!fx){played=undefined;animation?.clear();if(actor&&requestedKind!==current)replaceMonster(requestedKind);draw(performance.now(),true);return;}
+ if(!initialized){initialized=true;played=fx?.id;if(swarm)swarm.played=fx?.id;return;}
+ if(!fx){played=undefined;swarm?.play(null,performance.now());animation?.clear();if(actor&&requestedKind!==current)replaceMonster(requestedKind);draw(performance.now(),true);return;}
  if(fx.id===played)return;played=fx.id;
  if(!animation||!canvas?.isConnected||failed)return;
  if(fx.enemyKind&&fx.enemyKind!==current)replaceMonster(fx.enemyKind);
- animation.start(fx,performance.now());draw(performance.now(),true);if(!frame)loop();
+ swarm.play(fx,performance.now());animation.start(fx,performance.now());draw(performance.now(),true);if(!frame)loop();
 }
 // This renderer is also used by the asset baking script: the PNG fallback is a render of the same meshes.
 export function assetRender(kind,id,width=384,height=256){
@@ -62,8 +71,8 @@ export function assetRender(kind,id,width=384,height=256){
  const key=new T.DirectionalLight(0xffdab0,3.4);key.position.set(-3,5,4);s.add(key);const rim=new T.DirectionalLight(0x956bff,3);rim.position.set(3,2,-2);s.add(rim);
  let model,c;
  if(kind!=='monster'){
-  model=kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
-  const isWeapon=kind==='gear'&&['rust','fang','reaper','thorn','god','mouth','probate','echoBlade','meteor'].includes(id);c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);
+  model=kind==='companion'?ratModel():kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
+  const isWeapon=kind==='gear'&&['rust','fang','reaper','thorn','god','mouth','probate','echoBlade','meteor'].includes(id);c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);if(kind==='companion'){model.rotation.set(0,-.6,0);c.position.set(1,.65,1.5);c.lookAt(0,.18,0);}
  }else{
   s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.scale.multiplyScalar(.78);model.position.copy(ENEMY_POS);model.rotation.y=Math.atan2(HERO_POS.x-ENEMY_POS.x,HERO_POS.z-ENEMY_POS.z);s.add(model);const h=hero();h.scale.setScalar(.82);h.position.copy(HERO_POS);h.rotation.y=Math.atan2(ENEMY_POS.x-HERO_POS.x,ENEMY_POS.z-HERO_POS.z);s.add(h);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition.map(v=>v*1.2));c.lookAt(0,1.25,0);
  }

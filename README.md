@@ -86,13 +86,14 @@ DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/s
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-exotics.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-inventory.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-combat-3d.cjs
+DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-rats.cjs
 ```
 
 These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to another Chromium executable if needed. They require a local server on port 4173 (`npm start`). The browser smoke test covers live 3D rotation, asset loading, combat, preferences, typing rewards, confirmed webpage effects, input privacy, reduced motion, and failure handling. It uses a mock extension transport because this environment blocks unpacked extension installation.
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.1**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.2**.
 
 ## Build examples
 
@@ -166,3 +167,9 @@ Animations are visual and never resolve extra turns or grant rewards. A newer tu
 ## Weapon grip and swing correction
 
 Swords attach at their handle centers to actual hand joints. The hero, knight and king now have articulated shoulders, elbows and wrists; the king and knight carry their shields on their forearms. The revenant grips its scythe shaft, and the Bellkeeper grips a single connected staff. All combatants face one another. Weapon attacks now wind up, extend through the target and recover instead of rotating a weapon offset from the hand. Counterattacks reuse the same articulated swing. Reduced motion preserves the resting grip, and defeated monsters do not play a retaliation. Grip regression checks sample the weapon-to-hand alignment throughout the attack sequence. The five static combat renders were regenerated with corrected grips.
+
+## Parliament of Rats companions
+
+Equipping Parliament of Rats adds three original low-poly rat companions to the cathedral. Their tails sway while idle; triggered attacks send the rats scurrying to the monster with animated feet, a biting leap and a return to the hero. Guard recruits one visible rat, matching the combat counter up to twelve. The animation reads an explicit rat damage event, so it does not attack after a primary hit has already killed the monster. Rat damage labels appear during the bite phase. Reloading or browsing does not replay a previous swarm attack. Unequipping removes the visible swarm.
+
+`assets/rat-swarm.js` reuses a pool of at most twelve models. Reduced motion keeps the rats still. When WebGL is unavailable, static renders of the rats appear with the correct equipped count; regenerate their original transparent asset with `node scripts/bake-assets.cjs --companions`. `scripts/smoke-rats.cjs` checks actual Guard recruitment, damage, approach/bite/return poses, capped pooling, reduced motion, duplicate-event handling, unequip and fallback asset loading. Combat balance and save format are unchanged.

@@ -106,7 +106,7 @@ export function reduce(state, action, now=Date.now()) {
  case 'TURN': {
   const b=s.battle,move=action.move;if(!b||s.hp<=0||moveReady(s,move))break;
   const k=moveSkill(move),id=k?.id||move,rune=s.runes[id];
-  const fx={id:s.rev+1,move:id,title:k?.name||{attack:'Strike',guard:'Guard',spell:'Soulfire'}[move],tree:k?.tree||(move==='spell'?'void':move==='guard'?'bone':'blood'),events:[],enemyName:b.name,enemyKind:b.kind};s.combatFx=fx;
+  const fx={id:s.rev+1,move:id,title:k?.name||{attack:'Strike',guard:'Guard',spell:'Soulfire'}[move],tree:k?.tree||(move==='spell'?'void':move==='guard'?'bone':'blood'),events:[],enemyName:b.name,enemyKind:b.kind,ratCount:ex('rats')?(b.exotic.rats||3):0};s.combatFx=fx;
   const event=(type,amount=0,label='')=>fx.events.push({type,amount,label});
   const proc=(id,note='')=>{const e=EXOTICS.find(x=>x.id===id);event('exotic',0,e.perk);fx.exotics??=[];if(!fx.exotics.includes(id))fx.exotics.push(id);log(s,`${e.name}: ${note||e.perk}`);};
   const marks=b.exotic;b.exotic.turns=(b.exotic.turns||0)+1;
@@ -131,7 +131,7 @@ export function reduce(state, action, now=Date.now()) {
    if(ex('sutures')&&marks.stitches){damage+=marks.stitches;proc('sutures',`${marks.stitches} stitches cut loose.`);marks.stitches=0;}
    heal(r('leech')*2,'Crimson Tithe');gainFocus(3);
   }
-  if(move==='guard'){guard=.35;heal(4+r('shelter')*4,'Grave Shelter');gainFocus(6+r('conduit')*2);if(r('fortress'))barrier(r('fortress')*6,'Living Ossuary');event('guard');marks.guards=(marks.guards||0)+1;if(ex('tea')){marks.tea=true;proc('tea','The kettle is ready for your next damaging action.');}if(ex('rats'))marks.rats=Math.min(12,(marks.rats||3)+1);if(ex('halo')){mergeEffect(b,'curse',{power:3,amp:.1,turns:2,silence:true});proc('halo','A winter curse silences heavy attacks.');}if(ex('hourglass')){for(const key of Object.keys(b.cooldowns))b.cooldowns[key]=Math.max(0,b.cooldowns[key]-1);proc('hourglass','Guard winds cooldowns back one extra turn.');}}
+  if(move==='guard'){guard=.35;heal(4+r('shelter')*4,'Grave Shelter');gainFocus(6+r('conduit')*2);if(r('fortress'))barrier(r('fortress')*6,'Living Ossuary');event('guard');marks.guards=(marks.guards||0)+1;if(ex('tea')){marks.tea=true;proc('tea','The kettle is ready for your next damaging action.');}if(ex('rats')){marks.rats=Math.min(12,(marks.rats||3)+1);fx.ratCount=marks.rats;}if(ex('halo')){mergeEffect(b,'curse',{power:3,amp:.1,turns:2,silence:true});proc('halo','A winter curse silences heavy attacks.');}if(ex('hourglass')){for(const key of Object.keys(b.cooldowns))b.cooldowns[key]=Math.max(0,b.cooldowns[key]-1);proc('hourglass','Guard winds cooldowns back one extra turn.');}}
   if(move==='spell'){spell=true;s.focus-=Math.max(1,10-r('conduit'));damage=20+r('spark')*4+s.level*2;weak=r('omen')*3;if(r('kindle'))status('burn',{damage:r('kindle')*3,turns:2});}
   if(id==='rend'){
    damage=st.attack*.9+r('rend')*4;
@@ -171,7 +171,7 @@ export function reduce(state, action, now=Date.now()) {
   if(b.hp>0&&ex('meteor')&&damaging&&marks.damaging%3===0){proc('meteor','An apology falls from orbit.');hit(35+s.level*2,'exoticDamage','Extinction, Politely');mergeEffect(b,'burn',{damage:7,turns:2});taxedStatuses.add('burn');}
   if(b.hp>0&&ex('choir')&&spell&&damaging&&marks.spells%3===0){proc('choir','The choir releases a volley of teeth.');hit(18+s.level,'exoticDamage','A Cappella Calamity');}
   if(b.hp>0&&ex('understudy')&&move==='guard'&&marks.guards%3===0&&marks.lastSpell){proc('understudy','The understudy repeats your spell.');hit(marks.lastSpell*.5,'exoticDamage','One More Performance');}
-  if(b.hp>0&&ex('rats')){proc('rats',`${marks.rats||3} rats vote to devour.`);hit(marks.rats||3,'exoticDamage','Parliament of Rats');}
+  if(b.hp>0&&ex('rats')){proc('rats',`${marks.rats||3} rats vote to devour.`);const damage=hit(marks.rats||3,'exoticDamage','Parliament of Rats');fx.ratAttack={count:marks.rats||3,damage};}
   if(b.hp>0&&ex('bell')&&marks.turns%9===0){proc('bell','The ninth toll ends the conversation.');hit(b.maxHp*.3,'exoticDamage','The Ninth Toll');}
   if(b.hp<=0){victory();break;}
   const cursed=b.effects.curse,heavy=b.turn%3===0&&!cursed?.silence;fx.enemyAttack=heavy?'heavy':'normal';

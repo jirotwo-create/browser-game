@@ -6,7 +6,7 @@ const fs=require('node:fs');const path=require('node:path');
  const page=await browser.newPage();await page.goto(process.env.DREADWAKE_ASSET_ORIGIN||'http://127.0.0.1:4173/README.md');
  const groups={monster:['knight','wretch','keeper','wing','king'],gear:['rust','rags','fang','iron','reaper','mantle','thorn','cathedral','god','night'],skill:['edge','leech','execute','rage','ward','shelter','resolve','revenant','spark','echo','omen','eclipse']};
  const {EXOTICS}=await import(require('node:url').pathToFileURL(path.resolve(__dirname,'../exotics.js')));
- if(process.argv.includes('--monsters')){delete groups.gear;delete groups.skill;}else if(process.argv.includes('--exotics')){delete groups.monster;delete groups.skill;groups.gear=EXOTICS.map(e=>e.id);}else groups.gear.push(...EXOTICS.map(e=>e.id));
+ if(process.argv.includes('--companions')){delete groups.monster;delete groups.gear;delete groups.skill;groups.companion=['rat'];}else if(process.argv.includes('--monsters')){delete groups.gear;delete groups.skill;}else if(process.argv.includes('--exotics')){delete groups.monster;delete groups.skill;groups.gear=EXOTICS.map(e=>e.id);}else groups.gear.push(...EXOTICS.map(e=>e.id));
  const out=path.resolve(__dirname,'../assets/renders');fs.mkdirSync(out,{recursive:true});
  for(const [kind,ids]of Object.entries(groups))for(const id of ids){
   const data=await page.evaluate(async({kind,id})=>{const{assetRender}=await import('/assets/renderer.js');return assetRender(kind,id,kind==='monster'?576:256,kind==='monster'?384:256);},{kind,id});

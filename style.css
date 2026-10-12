@@ -22,3 +22,7 @@
 
 /* Keep real mesh choreography visible beneath readable combat feedback. */
 .combat-visual.has-3d{background:none;animation:none}.combat-visual.has-3d .ability-symbol{display:none}.combat-visual.has-3d .combat-announcement{top:12%;font-size:23px}.combat-visual.has-3d .combat-number{font-size:23px}.combat-visual.has-3d .relic-apparition{opacity:.5}
+
+.rat-fallback{position:absolute;left:20%;bottom:17%;width:140px;display:flex;flex-wrap:wrap;gap:0;pointer-events:none}.rat-fallback img{width:35px;height:35px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 3px 2px #000)}
+
+.combat-visual.has-3d .relic-rats{display:none}
