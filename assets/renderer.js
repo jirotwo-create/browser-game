@@ -24,6 +24,7 @@ function dispose(g){g?.traverse(o=>{if(o.isMesh)o.geometry.dispose();});}
 function draw(time,force=false){
  if(!canvas?.isConnected||document.hidden||failed||(!force&&time-last<33))return;last=time;
  if(actor){actor.rotation.y=drag+(reduced.matches?0:Math.sin(time*.00035)*.16);actor.position.y=reduced.matches?0:Math.sin(time*.0015)*.026;}
+ if(aura&&!reduced.matches)aura.rotation.y=time*.00065;
  renderer.render(world,camera);
 }
 function loop(time=0){frame=0;if(document.hidden||!canvas?.isConnected||failed)return;draw(time,reduced.matches);if(!reduced.matches)frame=requestAnimationFrame(loop);}
@@ -58,4 +59,22 @@ export function assetRender(kind,id,width=384,height=256){
   s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.rotation.y=-.25;s.add(model);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition);c.lookAt(0,1.45,0);
  }
  r.render(s,c);const data=r.domElement.toDataURL('image/png');dispose(model);r.dispose();r.forceContextLoss();return data;
+}
+let aura,auraKey='';
+export function setCombatAura(b){
+ if(!world)return;
+ const types=[...(Object.keys(b?.effects||{})),...(b?.barrier?['barrier']:[]),...(b?.regen?['regen']:[])];const signature=types.sort().join(',');
+ if(signature===auraKey)return;auraKey=signature;
+ if(aura){world.remove(aura);aura.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});aura=null;}
+ if(!types.length)return;aura=new T.Group();world.add(aura);
+ const material=(color,opacity=.8,wireframe=false)=>new T.MeshBasicMaterial({color,transparent:true,opacity,wireframe,depthWrite:false,blending:T.AdditiveBlending,side:T.DoubleSide});
+ for(const type of types){
+  if(type==='barrier'){const shield=new T.Mesh(new T.IcosahedronGeometry(1,1),material(0xb0e985,.2,true));shield.position.y=1.5;shield.scale.set(1.1,1.7,1.1);aura.add(shield);}
+  if(type==='curse'){const ring=new T.Mesh(new T.TorusGeometry(.75,.035,3,7),material(0xab6cff));ring.rotation.x=Math.PI/2;ring.position.y=2.7;aura.add(ring);}
+  if(type==='regen'){const ring=new T.Mesh(new T.TorusGeometry(.75,.025,3,12),material(0xb4fa8e));ring.rotation.x=Math.PI/2;ring.position.y=.1;aura.add(ring);}
+  if(type==='burn'||type==='bleed')for(let i=0;i<7;i++){
+   const p=new T.Mesh(type==='burn'?new T.ConeGeometry(.055,.24,4):new T.IcosahedronGeometry(.05,0),material(type==='burn'?0xbc72ff:0xec4167));const angle=i*Math.PI*2/7;p.position.set(Math.sin(angle)*.62,type==='burn'?.28:.6+(i%3)*.55,Math.cos(angle)*.62);aura.add(p);
+  }
+ }
+ draw(performance.now(),true);
 }

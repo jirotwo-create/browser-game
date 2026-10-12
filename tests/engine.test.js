@@ -23,7 +23,7 @@ test('equipment requires funds and progression, equips once, and cannot double c
  s=reduce(s,{type:'EQUIP',id:'rust'});assert.equal(s.weapon,'rust');
  assert.equal(shopTier({...s,stage:4}),2);assert.equal(shopTier({...s,stage:7}),3);assert.equal(shopTier({...s,stage:10}),4);
 });
-test('skill branches require a fully ranked parent and charge the correct points',()=>{
+test('skill branches require a learned parent and charge the correct points',()=>{
  let s={...fresh(),points:30};s=reduce(s,{type:'LEARN',id:'leech'});assert.equal(s.skills.leech,undefined);
  for(let i=0;i<3;i++)s=reduce(s,{type:'LEARN',id:'edge'});
  assert.equal(stats(s).attack,21);assert.equal(s.points,27);
@@ -65,11 +65,12 @@ test('typing focus and vitality never exceed their current stat caps',()=>{
  s.points=3;s=reduce(s,{type:'LEARN',id:'ward'});assert.equal(s.hp,stats(s).hp);
 });
 test('every skill tree is reachable and its capstone acts in combat',()=>{
- let s={...fresh(),points:100,coins:1000};
+ let s={...fresh(),points:200,coins:1000};
  for(const sk of SKILLS)for(let i=0;i<sk.max;i++)s=reduce(s,{type:'LEARN',id:sk.id});
  assert.equal(s.skills.eclipse,1);assert.equal(s.skills.rage,1);assert.equal(s.skills.revenant,1);
+ s=reduce(s,{type:'SLOT',slot:0,id:'eclipse'});s=reduce(s,{type:'SLOT',slot:1,id:'rage'});
  s.stage=10;s=reduce(s,{type:'BUY',id:'god'});s=reduce(s,{type:'BEGIN'});
- const hp=s.battle.hp;s=reduce(s,{type:'TURN',move:'eclipse'});assert.ok(s.battle.hp<hp);assert.equal(s.focus,25);
+ const hp=s.battle.hp;s=reduce(s,{type:'TURN',move:'eclipse'});assert.ok(s.battle.hp<hp);assert.equal(s.focus,27);
  s=reduce(s,{type:'TURN',move:'rite'});assert.ok(s.hp>0);
 });
 test('many battles progress across all forge tiers without negative resources',()=>{

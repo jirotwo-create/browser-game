@@ -29,6 +29,8 @@ export function scene(kind='knight') {
 export function gearArt(id,name='Equipment') {
  return `<img class="gear-render" src="assets/renders/gear-${id}.png" alt="${name}, a textured low-poly 3D model" loading="lazy">`;
 }
+const skillOrder=['edge','leech','rend','execute','feast','hemorrhage','frenzy','riposte','carnage','rage','ward','shelter','bastion','resolve','mend','thorns','fortress','reprisal','unyielding','revenant','spark','echo','hex','omen','drain','kindle','resonance','nova','conduit','eclipse'];
 export function skillArt(id,name='Talent') {
- return `<img class="skill-render" src="assets/renders/skill-${id}.png" alt="${name} talent icon" loading="lazy">`;
+ const i=Math.max(0,skillOrder.indexOf(id));
+ return `<span class="skill-painted" role="img" aria-label="${name} fantasy ability icon" style="--icon-x:${(i%6)*20}%;--icon-y:${Math.floor(i/6)*25}%"></span>`;
 }
