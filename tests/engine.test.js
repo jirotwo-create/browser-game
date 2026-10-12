@@ -6,14 +6,14 @@ test('page clicks grant one coin without mutating the prior save',()=>{
  const s=fresh(),next=reduce(s,{type:'BROWSE',kind:'click'});
  assert.equal(next.coins,s.coins+1);assert.equal(next.clicks,1);assert.equal(s.clicks,0);
 });
-test('20 rhythmic keys grant coins and focus, while pauses reset a chain',()=>{
+test('100 rhythmic keys grant coins and focus, while pauses reset a chain',()=>{
  let s={...fresh(),focus:0};
- for(let i=0;i<19;i++)s=reduce(s,{type:'BROWSE',kind:'type'},10000+i*100);
- assert.equal(s.coins,12);assert.equal(s.combo,19);
- s=reduce(s,{type:'BROWSE',kind:'type'},12000);
- assert.equal(s.coins,17);assert.equal(s.focus,8);assert.equal(s.combo,0);assert.equal(s.bursts,1);
- s=reduce(s,{type:'BROWSE',kind:'type'},13000);
- s=reduce(s,{type:'BROWSE',kind:'type'},16000);assert.equal(s.combo,1);
+ for(let i=0;i<99;i++)s=reduce(s,{type:'BROWSE',kind:'type'},10000+i*100);
+ assert.equal(s.coins,12);assert.equal(s.combo,99);
+ s=reduce(s,{type:'BROWSE',kind:'type'},19900);
+ assert.equal(s.coins,47);assert.equal(s.focus,8);assert.equal(s.combo,0);assert.equal(s.bursts,1);
+ s=reduce(s,{type:'BROWSE',kind:'type'},20000);
+ s=reduce(s,{type:'BROWSE',kind:'type'},23000);assert.equal(s.combo,1);
 });
 test('equipment requires funds and progression, stores gear until equipped, and cannot double charge',()=>{
  let s=fresh();s=reduce(s,{type:'BUY',id:'fang'});assert.equal(s.weapon,'rust');

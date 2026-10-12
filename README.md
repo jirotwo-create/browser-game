@@ -15,7 +15,7 @@ Requires Chromium's Side Panel API (Chrome 114+; use a current version of your c
 ## Play
 
 - **Click a webpage:** earn one coin with a spinning coin pickup, sparks, and a floating +1 at the click location. An 80 ms click debounce rejects accidental duplicate input.
-- **Hellscript:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 20 eligible keys grants 5–15 coins and 8 focus (more with Hellscript Covenant). A live gauge appears on the webpage. Igniting Hellscript breaks a horned infernal seal: scarlet and gold rings erupt, flames and embers rise, coins scatter, and a demonic reward banner shows the actual spoils. Both the panel and webpage gauge have ember-lit segmented progress and a demonic seal. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
+- **Hellscript:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 100 eligible keys grants 35 coins and 8 focus (more with Hellscript Covenant). A live gauge appears on the webpage. Igniting Hellscript breaks a horned infernal seal: scarlet and gold rings erupt, flames and embers rise, coins scatter, and a demonic reward banner shows the actual spoils. Both the panel and webpage gauge have ember-lit segmented progress and a demonic seal. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
 - **The Hunt:** fight one turn at a time. Strike recovers focus; Guard heals, restores focus, and reduces incoming damage. Soulfire spends focus. Every third enemy turn is a telegraphed heavy attack.
 - **Black Forge:** buy standard weapons and armor into your inventory. Forge tiers unlock at stages 4, 7, and 10. Purchases do not replace equipped gear.
 - **Hourly exotic offering:** exactly one exotic is on offer at a time. It changes at the top of each clock hour, with a visible countdown. Victories, purchases, browsing, and forge-tier unlocks do not reset the timer or replace the current offer. Bought offers stay claimed until the next hour. Manual rerolls have been removed.
@@ -144,6 +144,8 @@ Inventory has no capacity limit. Each named item is unique; buying an already-ow
 
 ## Hellscript visual patch
 
-The browsing typing ritual is now **Hellscript**. Its linked talent is **Hellscript Covenant**. Names, preview controls, event messages, and progress labels use the new theme. Existing saves, skill IDs, the 20-key rhythm requirement, rewards, typing privacy, and exotic ink charges are preserved.
+The browsing typing ritual is now **Hellscript**. Its linked talent is **Hellscript Covenant**. Names, preview controls, event messages, and progress labels use the new theme. Existing saves, skill IDs, typing privacy, and exotic ink charges are preserved.
 
 `hellscript-art.js` provides an original horned demonic seal shared by the panel and isolated webpage overlay. The full eruption uses a bounded particle pool with flaming embers and infernal rings. Subtle and Off settings still apply; reduced motion skips animated particles and displays a static reward notice. No remote fonts, assets, new website access, or telemetry are needed.
+
+Hellscript now requires 100 rhythmic keys per eruption and grants a fixed 35 coins. Focus rewards are unchanged.

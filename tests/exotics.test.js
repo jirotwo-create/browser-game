@@ -92,7 +92,7 @@ test('the understudy replays spells every third Guard without focus cost or dama
  let s=fight(relics(['understudy','meteor']));s=turn(s,'spell');const damage=s.battle.exotic.lastSpell;s=turn(s,'guard');s=turn(s,'guard');const damaging=s.battle.exotic.damaging;s=turn(s,'guard');assert.ok(s.combatFx.events.some(e=>e.label==='One More Performance'&&e.amount===Math.round(damage*.5)));assert.equal(s.battle.exotic.damaging,damaging);assert.equal(procs(s).includes('meteor'),false);
 });
 test('typewriter stores typing ink with a five-charge cap and consumes one per damaging spell',()=>{
- let s=relics(['typewriter']);for(let i=0;i<140;i++)s=reduce(s,{type:'BROWSE',kind:'type'},10000+i*100);assert.equal(s.exoticResources.ink,5);s=fight(s);s=turn(s,'spell');assert.equal(s.exoticResources.ink,4);assert.ok(procs(s).includes('typewriter'));assert.equal(s.battle.effects.burn.damage,3);
+ let s=relics(['typewriter']);for(let i=0;i<700;i++)s=reduce(s,{type:'BROWSE',kind:'type'},10000+i*100);assert.equal(s.exoticResources.ink,5);s=fight(s);s=turn(s,'spell');assert.equal(s.exoticResources.ink,4);assert.ok(procs(s).includes('typewriter'));assert.equal(s.battle.effects.burn.damage,3);
  s=reduce(s,{type:'FLEE'});s=reduce(s,{type:'TOGGLE_EXOTIC',id:'typewriter'});const ink=s.exoticResources.ink;for(let i=0;i<20;i++)s=reduce(s,{type:'BROWSE',kind:'type'},50000+i*100);assert.equal(s.exoticResources.ink,ink);
 });
 test('receipt gloves grant exactly twelve bonus coins per twenty-five equipped clicks',()=>{

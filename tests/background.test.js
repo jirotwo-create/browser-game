@@ -23,8 +23,8 @@ test('background serializes multi-tab rewards, persists progress, and rejects pa
  await send({type:'SET_FX',mode:'off'});
  const muted=await send({type:'BROWSE',kind:'click'},{tab:{id:1}});assert.equal(muted.feedback.fx,'off');
  store.dreadwake.focus=0;
- let burst;for(let i=0;i<20;i++)burst=await send({type:'BROWSE',kind:'type'},{tab:{id:2}});
- assert.equal(burst.feedback.burst,true);assert.equal(burst.feedback.combo,0);assert.equal(burst.feedback.coinsEarned,5);assert.equal(burst.feedback.focusEarned,8);
+ let burst;for(let i=0;i<100;i++)burst=await send({type:'BROWSE',kind:'type'},{tab:{id:2}});
+ assert.equal(burst.feedback.burst,true);assert.equal(burst.feedback.combo,0);assert.equal(burst.feedback.coinsEarned,35);assert.equal(burst.feedback.focusEarned,8);
  assert.equal(burst.state,undefined);
  delete globalThis.chrome;
 });
