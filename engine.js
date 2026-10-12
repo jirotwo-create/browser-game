@@ -1,7 +1,7 @@
-import {EXOTICS,hasExotic,exoticBonuses,exoticOffers,shopStock,rotateShop,mergeEffect,canRerollShop} from './exotics.js';
+import {EXOTICS,hasExotic,exoticBonuses,shopStock,refreshHourlyShop,mergeEffect} from './exotics.js';
 import {SKILLS,RUNES,rank,requirements,runeUnlocked,focusCost,moveSkill,moveReady,treePoints,PRESETS} from './skills.js';
 export {SKILLS} from './skills.js';
-export const VERSION = 3;
+export const VERSION = 4;
 export const GEAR = [
  {id:'rust',name:'Graveborn Blade',slot:'weapon',tier:1,cost:0,power:0,icon:'sword',rarity:'Worn',desc:'Even rust remembers the taste of blood.'},
  {id:'rags',name:'Pilgrim’s Shroud',slot:'armor',tier:1,cost:0,power:0,icon:'armor',rarity:'Worn',desc:'A burial cloth. Not yet your own.'},
@@ -21,8 +21,8 @@ export const MONSTERS = [
  {name:'Ashwing Revenant',kind:'wing',tag:'A saint stripped of grace',hp:90,attack:15,xp:55,coins:28},
  {name:'Vesper, the Uncrowned',kind:'king',tag:'The throne demands a sacrifice',hp:130,attack:19,xp:85,coins:42}
 ];
-export function fresh() {
- const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,rotation:0,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:['rust','rags'],weapon:'rust',armor:'rags',battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};save.exoticShop.stock=exoticOffers(save).map(e=>e.id);return save;
+export function fresh(now=Date.now()) {
+ const save={version:VERSION,fx:'full',coins:12,xp:0,level:1,points:2,hp:100,focus:30,stage:1,kills:0,ownedExotics:[],equippedExotics:[],exoticResources:{ink:0,receipts:0},exoticShop:{seed:Math.floor(Math.random()*4294967295)||1,hour:null,stock:null},skills:{},loadout:[],runes:{},combatFx:null,owned:['rust','rags'],weapon:'rust',armor:'rags',battle:null,log:['You awaken at the gates of the Hollow.'],combo:0,lastType:0,bursts:0,clicks:0,keys:0,rev:0};refreshHourlyShop(save,now);return save;
 }
 export function stats(s) {
  const r=id=>s.skills[id]||0,ex=exoticBonuses(s);
@@ -36,13 +36,13 @@ export function enemy(s) {
 }
 function log(s,t) {s.log=[t,...s.log].slice(0,30);}
 function earn(s,n) {s.xp+=n;while(s.xp>=xpNeeded(s)){s.xp-=xpNeeded(s);s.level++;s.points+=2;s.hp=stats(s).hp;s.focus=stats(s).focus;log(s,`Level ${s.level}. Two skill points earned. Your wounds close.`);}}
-export function migrate(state){
+export function migrate(state,now=Date.now()){
  const s=structuredClone(state);
  s.ownedExotics=[...new Set(s.ownedExotics||[])].filter(id=>EXOTICS.some(e=>e.id===id));
  s.equippedExotics=[...new Set(s.equippedExotics||[])].filter(id=>s.ownedExotics.includes(id));
  s.exoticResources??={ink:0,receipts:0};s.exoticResources.ink=Math.max(0,Math.min(5,s.exoticResources.ink||0));s.exoticResources.receipts=Math.max(0,Math.min(24,s.exoticResources.receipts||0));
- s.exoticShop??={seed:((s.stage||1)*2654435761^(s.clicks||0))>>>0||1,rotation:0};
- if(!Array.isArray(s.exoticShop.stock))s.exoticShop.stock=exoticOffers(s).map(e=>e.id);
+ s.exoticShop??={seed:((s.stage||1)*2654435761^(s.clicks||0))>>>0||1,hour:null};
+ refreshHourlyShop(s,now);
  s.skills??={};s.runes??={};
  if(!Array.isArray(s.loadout))s.loadout=['rage','eclipse'].filter(id=>rank(s,id));
  s.loadout=s.loadout.map(id=>SKILLS.some(k=>k.id===id&&k.active)&&rank(s,id)?id:null).slice(0,3);
@@ -51,7 +51,7 @@ export function migrate(state){
  return s;
 }
 export function reduce(state, action, now=Date.now()) {
- const s=migrate(state), r=id=>rank(s,id), ex=id=>hasExotic(s,id);let st=stats(s);
+ const s=migrate(state,now), r=id=>rank(s,id), ex=id=>hasExotic(s,id);let st=stats(s);
  switch(action.type) {
  case 'SET_FX': if(['full','subtle','off'].includes(action.mode))s.fx=action.mode;break;
  case 'BROWSE':
@@ -60,20 +60,16 @@ export function reduce(state, action, now=Date.now()) {
    s.keys++;s.combo=now-s.lastType<2500?s.combo+1:1;s.lastType=now;
    if(s.combo>=20){s.combo=0;s.bursts++;const reward=5+Math.min(10,Math.floor(s.bursts/5));s.coins+=reward;s.focus=Math.min(st.focus,s.focus+8+r('echo')*2);if(ex('typewriter')){s.exoticResources.ink=Math.min(5,s.exoticResources.ink+1);log(s,`The Damned Typewriter stores ink (${s.exoticResources.ink}/5).`);}log(s,`Hex burst! +${reward} coins. Your focus rekindles.`);}
   }break;
- case 'BUY': {const g=GEAR.find(x=>x.id===action.id);if(s.battle||!g||s.owned.includes(g.id)||g.tier>shopTier(s)||s.coins<g.cost)break;s.coins-=g.cost;s.owned.push(g.id);s[g.slot]=g.id;log(s,`${g.name} acquired and equipped.`);break;}
+ case 'BUY': {const g=GEAR.find(x=>x.id===action.id);if(s.battle||!g||s.owned.includes(g.id)||g.tier>shopTier(s)||s.coins<g.cost)break;s.coins-=g.cost;s.owned.push(g.id);log(s,`${g.name} stored in your inventory.`);break;}
  case 'EQUIP': {const g=GEAR.find(x=>x.id===action.id);if(!s.battle&&g&&s.owned.includes(g.id)){s[g.slot]=g.id;log(s,`${g.name} equipped.`);}break;}
  case 'BUY_EXOTIC': {
   const e=shopStock(s).find(e=>e.id===action.id);if(s.battle||!e||s.coins<e.cost||s.ownedExotics.includes(e.id))break;
-  s.coins-=e.cost;s.ownedExotics.push(e.id);s.equippedExotics.push(e.id);log(s,`${e.name} acquired. ${e.perk} is active.`);break;
+  s.coins-=e.cost;s.ownedExotics.push(e.id);log(s,`${e.name} stored in your inventory. Equip it to activate ${e.perk}.`);break;
  }
  case 'TOGGLE_EXOTIC': {
   if(s.battle||!s.ownedExotics.includes(action.id))break;
   const before=stats(s);if(ex(action.id))s.equippedExotics=s.equippedExotics.filter(id=>id!==action.id);else s.equippedExotics.push(action.id);
   const after=stats(s);s.hp=Math.max(1,Math.min(after.hp,s.hp+after.hp-before.hp));s.focus=Math.max(0,Math.min(after.focus,s.focus+after.focus-before.focus));break;
- }
- case 'REROLL_EXOTICS': {
-  if(s.battle||s.coins<25||!canRerollShop(s))break;
-  s.coins-=25;rotateShop(s);log(s,'The impossible merchant changes its mind. Stock refreshed. −25 coins.');break;
  }
  case 'LEARN': {
   const k=SKILLS.find(x=>x.id===action.id);if(s.battle||!k||r(k.id)>=k.max||s.points<k.cost||requirements(s,k))break;
@@ -98,9 +94,9 @@ export function reduce(state, action, now=Date.now()) {
  }
  case 'PRESET': {
   const preset=PRESETS[action.id];if(s.battle||!preset)break;
-  let next=reduce(s,{type:'RESPEC'});
+  let next=reduce(s,{type:'RESPEC'},now);
   // Learn foundations first, then deepen them; prerequisites and available points remain authoritative.
-  for(let pass=0;pass<3;pass++)for(const id of preset.path)next=reduce(next,{type:'LEARN',id});
+  for(let pass=0;pass<3;pass++)for(const id of preset.path)next=reduce(next,{type:'LEARN',id},now);
   const selected=preset.loadout.filter(id=>rank(next,id));next.loadout=[...selected,...next.loadout.filter(id=>id&&!selected.includes(id))].slice(0,3);
   log(next,`${preset.name} build applied. Unspent points remain yours.`);return next;
  }
@@ -120,7 +116,7 @@ export function reduce(state, action, now=Date.now()) {
   const hit=(n,type='damage',label=fx.title)=>{const amount=Math.min(b.hp,Math.max(0,Math.round(n)));b.hp-=amount;if(amount){event(type,amount,label);log(s,`${label} deals ${amount} damage.`);}return amount;};
   const barrier=(n,label='Barrier')=>{const added=Math.round(n*(1+r('fortress')*.2));b.barrier=Math.max(b.barrier,added);event('barrier',added,label);log(s,`${label} absorbs up to ${added} damage.`);};
   const status=(name,data)=>{b.effects[name]=data;event(name,0);};
-  const victory=()=>{s.kills++;s.stage++;const bonus=(ex('probate')?Math.floor(b.coins*.35):0)+(ex('tax')?taxedStatuses.size*6:0);s.coins+=b.coins+bonus;fx.victory=true;fx.coins=b.coins+bonus;fx.xp=b.xp;heal(r('carnage')*8,'Blood Harvest');gainFocus(r('carnage')*4);if(bonus)log(s,`Exotic inheritance: +${bonus} bonus coins.`);rotateShop(s);log(s,`${b.name} vanquished. +${b.coins+bonus} coins · +${b.xp} XP.`);s.battle=null;earn(s,b.xp);};
+  const victory=()=>{s.kills++;s.stage++;const bonus=(ex('probate')?Math.floor(b.coins*.35):0)+(ex('tax')?taxedStatuses.size*6:0);s.coins+=b.coins+bonus;fx.victory=true;fx.coins=b.coins+bonus;fx.xp=b.xp;heal(r('carnage')*8,'Blood Harvest');gainFocus(r('carnage')*4);if(bonus)log(s,`Exotic inheritance: +${bonus} bonus coins.`);log(s,`${b.name} vanquished. +${b.coins+bonus} coins · +${b.xp} XP.`);s.battle=null;earn(s,b.xp);};
   // Ongoing wounds tick at the beginning of the next player turn, exactly once per accepted action.
   for(const type of ['bleed','burn']){const effect=b.effects[type];if(effect){hit(effect.damage,type,type==='bleed'?'Bleeding':'Ghostfire');if(--effect.turns<=0)delete b.effects[type];if(b.hp<=0)break;}}
   if(b.hp>0&&ex('echoBlade')&&marks.previousDamage){proc('echoBlade','Yesterday’s wound opens again.');hit(marks.previousDamage*.3,'exoticDamage','You Already Bled');}

@@ -25,21 +25,25 @@ export const hasExotic=(s,id)=>s.equippedExotics?.includes(id)||false;
 export function exoticBonuses(s){const total={attack:0,defense:0,hp:0,focus:0};for(const id of new Set(s.equippedExotics||[])){const e=EXOTICS.find(x=>x.id===id);if(e)for(const stat of Object.keys(total))total[stat]+=e[stat]||0;}return total;}
 function random(seed){let x=seed>>>0;return()=>{x=(x+0x6D2B79F5)>>>0;let t=x;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export const exoticTier=s=>Math.min(4,1+Math.floor((s.stage-1)/3));
-export function exoticOffers(s){
- const pool=EXOTICS.filter(e=>e.tier<=exoticTier(s)&&!s.ownedExotics?.includes(e.id));const next=random((s.exoticShop?.seed||1)^Math.imul(s.exoticShop?.rotation||0,2654435761));
- for(let i=pool.length-1;i>0;i--){const j=Math.floor(next()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
- return pool.slice(0,4);
+export const HOUR_MS=60*60*1000;
+export const hourSlot=now=>Math.floor(now/HOUR_MS);
+export const nextShopRotation=now=>(hourSlot(now)+1)*HOUR_MS;
+export function exoticOffers(s,now=Date.now()){
+ const pool=EXOTICS.filter(e=>e.tier<=exoticTier(s)&&!s.ownedExotics?.includes(e.id));
+ if(!pool.length)return [];
+ const next=random((s.exoticShop?.seed||1)^Math.imul(hourSlot(now),2654435761));
+ let selected=Math.floor(next()*pool.length);
+ if(pool.length>1&&pool[selected].id===s.exoticShop?.stock?.[0])selected=(selected+1)%pool.length;
+ return [pool[selected]];
 }
+export function refreshHourlyShop(s,now=Date.now()){
+ const hour=hourSlot(now);
+ if(s.exoticShop?.hour===hour&&Array.isArray(s.exoticShop.stock)&&s.exoticShop.stock.length<=1)return false;
+ s.exoticShop??={seed:1};s.exoticShop.stock=exoticOffers(s,now).map(e=>e.id);s.exoticShop.hour=hour;
+ delete s.exoticShop.rotation;
+ return true;
+}
+export function shopStock(s){return (s.exoticShop?.stock||[]).map(id=>EXOTICS.find(e=>e.id===id)).filter(Boolean);}
 export function mergeEffect(b,name,e){
  const old=b.effects[name];b.effects[name]={...e,damage:Math.max(old?.damage||0,e.damage||0),power:Math.max(old?.power||0,e.power||0),amp:Math.max(old?.amp||0,e.amp||0),turns:Math.max(old?.turns||0,e.turns||0),silence:!!(old?.silence||e.silence)};
 }
-export function shopStock(s){
- if(Array.isArray(s.exoticShop?.stock))return s.exoticShop.stock.map(id=>EXOTICS.find(e=>e.id===id)).filter(e=>e&&e.tier<=exoticTier(s)&&!s.ownedExotics?.includes(e.id));
- return exoticOffers(s);
-}
-export function rotateShop(s){
- const old=new Set(s.exoticShop.stock||[]);s.exoticShop.rotation++;
- const drawn=exoticOffers(s);if(drawn.length&&drawn.every(e=>old.has(e.id))){const other=EXOTICS.find(e=>e.tier<=exoticTier(s)&&!s.ownedExotics.includes(e.id)&&!old.has(e.id));if(other)drawn[drawn.length-1]=other;}
- s.exoticShop.stock=drawn.map(e=>e.id);
-}
-export function canRerollShop(s){const shown=new Set(shopStock(s).map(e=>e.id));return EXOTICS.some(e=>e.tier<=exoticTier(s)&&!s.ownedExotics.includes(e.id)&&!shown.has(e.id));}

@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 test('background serializes multi-tab rewards, persists progress, and rejects page combat commands',async()=>{
  let listener,store={},behavior;
  globalThis.chrome={
+  alarms:{create:async()=>{},onAlarm:{addListener:()=>{}}},
   sidePanel:{setPanelBehavior:async x=>{behavior=x;}},
-  runtime:{onMessage:{addListener:fn=>{listener=fn;}}},
+  runtime:{onMessage:{addListener:fn=>{listener=fn;}},onStartup:{addListener:()=>{}},onInstalled:{addListener:()=>{}}},
   storage:{local:{get:async()=>{await new Promise(r=>setTimeout(r,1));return structuredClone(store);},set:async data=>{store=structuredClone(data);}}}
  };
  await import('../background.js?initial');
@@ -15,7 +16,7 @@ test('background serializes multi-tab rewards, persists progress, and rejects pa
  assert.equal(rewards[0].state,undefined);assert.deepEqual(rewards[0].feedback,{kind:'click',combo:0,burst:false,coinsEarned:1,focusEarned:0,fx:'full'});
  assert.equal(store.dreadwake.coins,62);assert.equal(store.dreadwake.clicks,50);
  assert.equal(await send({type:'BUY',id:'fang'},{tab:{id:1}}),undefined);assert.equal(store.dreadwake.weapon,'rust');
- await send({type:'BUY',id:'fang'});assert.equal(store.dreadwake.weapon,'fang');assert.equal(store.dreadwake.coins,27);
+ await send({type:'BUY',id:'fang'});assert.ok(store.dreadwake.owned.includes('fang'));assert.equal(store.dreadwake.weapon,'rust');await send({type:'EQUIP',id:'fang'});assert.equal(store.dreadwake.weapon,'fang');assert.equal(store.dreadwake.coins,27);
  await import('../background.js?restart');
  assert.equal((await send({type:'GET'})).state.weapon,'fang');
  assert.equal(await send({type:'BROWSE',kind:'click'}),undefined);

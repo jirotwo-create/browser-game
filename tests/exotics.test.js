@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {fresh,reduce,stats,migrate,VERSION} from '../engine.js';
 import {moveReady} from '../skills.js';
 import {existsSync} from 'node:fs';
-import {EXOTICS,shopStock,exoticOffers,exoticBonuses,mergeEffect} from '../exotics.js';
+import {EXOTICS,shopStock,exoticOffers,exoticBonuses,mergeEffect,HOUR_MS,hourSlot,nextShopRotation} from '../exotics.js';
 const relics=(ids,extra={})=>({...fresh(),ownedExotics:[...ids],equippedExotics:[...ids],...extra});
 const fight=s=>{s=reduce(s,{type:'BEGIN'});s.battle.hp=s.battle.maxHp=10000;s.battle.attack=10;return s;};
 const turn=(s,move='attack')=>reduce(s,{type:'TURN',move});
@@ -15,22 +15,20 @@ test('20 unique exotics have distinct perks, valid models, additive stats, and n
  const all=relics(EXOTICS.map(e=>e.id)),clean=migrate(all);assert.equal(clean.equippedExotics.length,20);
  const totals=exoticBonuses(clean),base=stats(fresh()),full=stats(clean);for(const key of Object.keys(totals))assert.equal(full[key],base[key]+totals[key]);
 });
-test('offers persist across reloads, respect tiers, and use randomized pools without duplicates',()=>{
- const s=fresh(),initial=shopStock(s).map(e=>e.id);assert.equal(initial.length,4);assert.equal(new Set(initial).size,4);assert.deepEqual(shopStock(migrate(s)).map(e=>e.id),initial);assert.ok(shopStock(s).every(e=>e.tier===1));
- const discovered=new Set();for(let seed=1;seed<=20;seed++)for(const e of exoticOffers({...s,exoticShop:{seed,rotation:0}}))discovered.add(e.id);assert.ok(discovered.size>=6);
- assert.ok(exoticOffers({...s,stage:7,exoticShop:{seed:9,rotation:0}}).every(e=>e.tier<=3));
+test('one hourly offer persists across reloads and uses randomized eligible pools',()=>{
+ const now=Date.UTC(2026,9,12,13,30),s=fresh(now),initial=shopStock(s).map(e=>e.id);assert.equal(initial.length,1);assert.deepEqual(shopStock(migrate(s,now+1000)).map(e=>e.id),initial);assert.equal(shopStock(s)[0].tier,1);
+ const discovered=new Set();for(let seed=1;seed<=40;seed++)for(const e of exoticOffers({...s,exoticShop:{seed}},now))discovered.add(e.id);assert.ok(discovered.size>=6);
 });
-test('purchase validates stock and funds, equips without displacing exotics, and does not reshuffle other offers',()=>{
- let s={...fresh(),coins:10000};const ids=shopStock(s).map(e=>e.id),first=shopStock(s)[0],coins=s.coins;
- s=reduce(s,{type:'BUY_EXOTIC',id:first.id});assert.equal(s.coins,coins-first.cost);assert.ok(s.equippedExotics.includes(first.id));assert.deepEqual(shopStock(s).map(e=>e.id),ids.slice(1));
- s=reduce(s,{type:'BUY_EXOTIC',id:ids[1]});assert.equal(s.equippedExotics.length,2);const paid=s.coins;s=reduce(s,{type:'BUY_EXOTIC',id:ids[1]});assert.equal(s.coins,paid);
- const hidden=EXOTICS.find(e=>!ids.includes(e.id));s=reduce(s,{type:'BUY_EXOTIC',id:hidden.id});assert.equal(s.coins,paid);
- const broke={...fresh(),coins:0};assert.equal(reduce(broke,{type:'BUY_EXOTIC',id:shopStock(broke)[0].id}).ownedExotics.length,0);
+test('purchase stores exactly one exotic, does not equip it, and leaves the claimed offer until the next hour',()=>{
+ const now=Date.UTC(2026,9,12,13,30);let s={...fresh(now),coins:10000};const e=shopStock(s)[0],coins=s.coins;
+ s=reduce(s,{type:'BUY_EXOTIC',id:e.id},now);assert.equal(s.coins,coins-e.cost);assert.ok(s.ownedExotics.includes(e.id));assert.deepEqual(s.equippedExotics,[]);assert.equal(shopStock(s)[0].id,e.id);
+ const paid=s.coins;s=reduce(s,{type:'BUY_EXOTIC',id:e.id},now);assert.equal(s.coins,paid);
+ const hidden=EXOTICS.find(x=>x.id!==e.id);s=reduce(s,{type:'BUY_EXOTIC',id:hidden.id},now);assert.equal(s.coins,paid);
+ s=reduce(s,{type:'TOGGLE_EXOTIC',id:e.id},now);assert.deepEqual(s.equippedExotics,[e.id]);
+ const broke={...fresh(now),coins:0};assert.equal(reduce(broke,{type:'BUY_EXOTIC',id:shopStock(broke)[0].id},now).ownedExotics.length,0);
 });
-test('rerolls charge exactly 25 coins, change available stock, and cannot run in combat or after full collection',()=>{
- let s={...fresh(),coins:100};const old=shopStock(s).map(e=>e.id);s=reduce(s,{type:'REROLL_EXOTICS'});assert.equal(s.coins,75);assert.equal(s.exoticShop.rotation,1);assert.notDeepEqual([...shopStock(s).map(e=>e.id)].sort(),old.sort());
- s=fight(s);const blocked=reduce(s,{type:'REROLL_EXOTICS'});assert.equal(blocked.coins,s.coins);assert.equal(blocked.exoticShop.rotation,s.exoticShop.rotation);
- const complete=relics(EXOTICS.map(e=>e.id),{coins:100});assert.equal(reduce(complete,{type:'REROLL_EXOTICS'}).coins,100);
+test('manual rerolls are removed and cannot alter stock or spend coins',()=>{
+ const s={...fresh(),coins:100};const next=reduce(s,{type:'REROLL_EXOTICS'});assert.equal(next.coins,100);assert.deepEqual(next.exoticShop,s.exoticShop);
 });
 test('equip toggles pause perks, reject unowned IDs, freeze in combat, and cannot generate health or focus',()=>{
  let s=relics(['miser','typewriter'],{hp:40,focus:8});s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,30);s=reduce(s,{type:'TOGGLE_EXOTIC',id:'miser'});assert.equal(s.hp,40);
@@ -40,9 +38,9 @@ test('equip toggles pause perks, reject unowned IDs, freeze in combat, and canno
 test('cathedral sword bites every third Strike, applies bleed, and shows its perk',()=>{
  let s=fight(relics(['mouth']));s=turn(s);s=turn(s);assert.equal(procs(s).includes('mouth'),false);s=turn(s);assert.ok(procs(s).includes('mouth'));assert.equal(s.battle.effects.bleed.damage,6);assert.equal(s.battle.effects.bleed.turns,3);
 });
-test('probate and unpaid invoice stack victory bonuses and refresh shop exactly once',()=>{
- let s=fight(relics(['probate','tax']));s.battle.hp=1;s.battle.effects.bleed={damage:1,turns:1};s.battle.effects.burn={damage:1,turns:1};s.battle.effects.curse={power:1,amp:.1,turns:1};const coins=s.coins,loot=s.battle.coins,rotation=s.exoticShop.rotation;
- s=turn(s);assert.equal(s.coins,coins+loot+Math.floor(loot*.35)+18);assert.equal(s.exoticShop.rotation,rotation+1);assert.equal(s.kills,1);assert.equal(s.combatFx.coins,loot+Math.floor(loot*.35)+18);const saved=s.coins;s=turn(s);assert.equal(s.coins,saved);
+test('probate and unpaid invoice stack victory bonuses without changing hourly stock',()=>{
+ let s=fight(relics(['probate','tax']));s.battle.hp=1;s.battle.effects.bleed={damage:1,turns:1};s.battle.effects.burn={damage:1,turns:1};s.battle.effects.curse={power:1,amp:.1,turns:1};const coins=s.coins,loot=s.battle.coins,stock=structuredClone(s.exoticShop);
+ s=turn(s);assert.equal(s.coins,coins+loot+Math.floor(loot*.35)+18);assert.deepEqual(s.exoticShop,stock);assert.equal(s.kills,1);assert.equal(s.combatFx.coins,loot+Math.floor(loot*.35)+18);const saved=s.coins;s=turn(s);assert.equal(s.coins,saved);
 });
 test('yesterday sword echoes only previous primary damage and never echoes a previous echo',()=>{
  let s=fight(relics(['echoBlade']));s=turn(s);const primary=s.battle.exotic.previousDamage;s=turn(s,'guard');assert.ok(s.combatFx.events.some(e=>e.label==='You Already Bled'&&e.amount===Math.round(primary*.3)));s=turn(s,'guard');assert.equal(procs(s).includes('echoBlade'),false);
@@ -111,12 +109,19 @@ test('old saves acquire stable shop metadata and no surprise purchases during mi
  const s=migrate(old);assert.equal(s.version,VERSION);assert.equal(s.coins,93);assert.equal(s.stage,9);assert.deepEqual(s.equippedExotics,[]);assert.deepEqual(shopStock(migrate(s)).map(e=>e.id),shopStock(s).map(e=>e.id));
 });
 
-test('the real shop purchase path allows collecting and equipping all twenty exotics without replacing any',()=>{
- let s={...fresh(),stage:7,coins:100000},actions=0;
- while(s.ownedExotics.length<20&&actions++<40){const e=shopStock(s)[0];s=reduce(s,e?{type:'BUY_EXOTIC',id:e.id}:{type:'REROLL_EXOTICS'});}
- assert.equal(s.ownedExotics.length,20);assert.equal(s.equippedExotics.length,20);assert.ok(actions<40);
+test('the real hourly purchase path can stockpile and equip all twenty without replacing old possessions',()=>{
+ let now=Date.UTC(2026,9,12,13,30),s={...fresh(now),stage:7,coins:100000};
+ for(let i=0;i<20;i++){
+  now+=HOUR_MS;s=migrate(s,now);const e=shopStock(s)[0];assert.ok(e);s=reduce(s,{type:'BUY_EXOTIC',id:e.id},now);s=reduce(s,{type:'TOGGLE_EXOTIC',id:e.id},now);
+ }
+ assert.equal(s.ownedExotics.length,20);assert.equal(s.equippedExotics.length,20);
 });
-
-test('reroll does not charge when every remaining eligible item is already on display',()=>{
- let s=fresh();const shown=shopStock(s).map(e=>e.id);s.ownedExotics=EXOTICS.filter(e=>e.tier===1&&!shown.includes(e.id)).map(e=>e.id);s.coins=100;const next=reduce(s,{type:'REROLL_EXOTICS'});assert.equal(next.coins,100);assert.equal(next.exoticShop.rotation,s.exoticShop.rotation);
+test('rotation happens at xx:00 exactly, catches up missed hours, and leaves combat untouched',()=>{
+ const before=Date.UTC(2026,9,12,13,59,59,999),s=fresh(before),old=shopStock(s)[0].id;
+ assert.equal(nextShopRotation(before),Date.UTC(2026,9,12,14));assert.equal(hourSlot(before+1),hourSlot(before)+1);
+ assert.equal(shopStock(migrate(s,before))[0].id,old);const rotated=migrate(s,before+1);assert.notEqual(shopStock(rotated)[0].id,old);
+ const fighting={...s,battle:{...fight(s).battle}};const caught=migrate(fighting,before+HOUR_MS*5);assert.equal(caught.exoticShop.hour,hourSlot(before+HOUR_MS*5));assert.deepEqual(caught.battle,fighting.battle);assert.equal(caught.coins,s.coins);
+});
+test('mid-hour ownership, browsing, and forge-tier changes cannot replace the current offer',()=>{
+ const now=Date.UTC(2026,9,12,13,5);let s=fresh(now);const id=shopStock(s)[0].id;s.stage=10;s.ownedExotics=[id];s=reduce(s,{type:'BROWSE',kind:'click'},now+5000);assert.equal(shopStock(s)[0].id,id);
 });

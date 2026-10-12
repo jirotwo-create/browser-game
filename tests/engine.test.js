@@ -15,10 +15,10 @@ test('20 rhythmic keys grant coins and focus, while pauses reset a chain',()=>{
  s=reduce(s,{type:'BROWSE',kind:'type'},13000);
  s=reduce(s,{type:'BROWSE',kind:'type'},16000);assert.equal(s.combo,1);
 });
-test('equipment requires funds and progression, equips once, and cannot double charge',()=>{
+test('equipment requires funds and progression, stores gear until equipped, and cannot double charge',()=>{
  let s=fresh();s=reduce(s,{type:'BUY',id:'fang'});assert.equal(s.weapon,'rust');
  s.coins=1000;s=reduce(s,{type:'BUY',id:'god'});assert.equal(s.weapon,'rust');
- s=reduce(s,{type:'BUY',id:'fang'});assert.equal(s.weapon,'fang');assert.equal(s.coins,965);assert.equal(stats(s).attack,17);
+ s=reduce(s,{type:'BUY',id:'fang'});assert.equal(s.weapon,'rust');assert.ok(s.owned.includes('fang'));s=reduce(s,{type:'EQUIP',id:'fang'});assert.equal(s.weapon,'fang');assert.equal(s.coins,965);assert.equal(stats(s).attack,17);
  s=reduce(s,{type:'BUY',id:'fang'});assert.equal(s.coins,965);
  s=reduce(s,{type:'EQUIP',id:'rust'});assert.equal(s.weapon,'rust');
  assert.equal(shopTier({...s,stage:4}),2);assert.equal(shopTier({...s,stage:7}),3);assert.equal(shopTier({...s,stage:10}),4);
@@ -69,7 +69,7 @@ test('every skill tree is reachable and its capstone acts in combat',()=>{
  for(const sk of SKILLS)for(let i=0;i<sk.max;i++)s=reduce(s,{type:'LEARN',id:sk.id});
  assert.equal(s.skills.eclipse,1);assert.equal(s.skills.rage,1);assert.equal(s.skills.revenant,1);
  s=reduce(s,{type:'SLOT',slot:0,id:'eclipse'});s=reduce(s,{type:'SLOT',slot:1,id:'rage'});
- s.stage=10;s=reduce(s,{type:'BUY',id:'god'});s=reduce(s,{type:'BEGIN'});
+ s.stage=10;s=reduce(s,{type:'BUY',id:'god'});s=reduce(s,{type:'EQUIP',id:'god'});s=reduce(s,{type:'BEGIN'});
  const hp=s.battle.hp;s=reduce(s,{type:'TURN',move:'eclipse'});assert.ok(s.battle.hp<hp);assert.equal(s.focus,27);
  s=reduce(s,{type:'TURN',move:'rite'});assert.ok(s.hp>0);
 });

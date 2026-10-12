@@ -17,8 +17,9 @@ Requires Chromium's Side Panel API (Chrome 114+; use a current version of your c
 - **Click a webpage:** earn one coin with a spinning coin pickup, sparks, and a floating +1 at the click location. An 80 ms click debounce rejects accidental duplicate input.
 - **Keyboard Hex:** type printable keys on webpages, keeping gaps under 2.5 seconds. Every 20 eligible keys grants 5–15 coins and 8 focus (more with the Keyboard Hex talent). A live gauge appears on the webpage. Completing a hex releases an occult sigil, expanding rings, violet/gold sparks, a coin shower, and a banner showing the actual earned rewards. Holding a key and modifier shortcuts do not count. A 45 ms debounce rejects duplicate events.
 - **The Hunt:** fight one turn at a time. Strike recovers focus; Guard heals, restores focus, and reduces incoming damage. Soulfire spends focus. Every third enemy turn is a telegraphed heavy attack.
-- **Black Forge:** buy and equip standard weapons and armor. Forge tiers unlock at stages 4, 7, and 10. Owned gear can be re-equipped without charge.
-- **Impossible Stock:** four randomized exotic offers, saved until purchase or rotation. A victory refreshes stock for free; a manual reroll costs 25 coins and is disabled when every remaining eligible item is already shown. Purchases never reshuffle the other offers. Higher forge tiers expand the eligible pool. Every purchase is automatically equipped.
+- **Black Forge:** buy standard weapons and armor into your inventory. Forge tiers unlock at stages 4, 7, and 10. Purchases do not replace equipped gear.
+- **Hourly exotic offering:** exactly one exotic is on offer at a time. It changes at the top of each clock hour, with a visible countdown. Victories, purchases, browsing, and forge-tier unlocks do not reset the timer or replace the current offer. Bought offers stay claimed until the next hour. Manual rerolls have been removed.
+- **Inventory / The Reliquary:** all owned standard gear and exotics live in a dedicated tab. Search by item name or perk, filter weapons/armor/exotics/equipped items, and sort by rarity, name, or equipped status. Compare standard item stats before equipping. Equip, swap, or unequip exotics outside battle; your other possessions remain stored. Purchases are stored first and must be equipped from the inventory.
 - **Exotic collection:** twenty original one-of-a-kind weapons, armor pieces, and oddities. Equip any number at once, including multiple weapons, crowns, and accessories; every stat bonus and perk stacks. Exotic items supplement your standard weapon/armor and never consume skill slots. Unequip and re-equip freely outside combat. Nothing expires or disappears from your collection.
 - **Forbidden Arts:** 30 talents across Blood, Bone, and Void. Spend two starting points, then earn two more each level. Learning one rank of a parent unlocks its branches; capstones need eight points invested in their tree. Passives always work. Choose three learned active skills for your combat loadout; Strike, Guard, and Soulfire remain available too.
 - **Runes:** each of the eleven active skills has two alternative rune effects. Most unlock at rank 2; capstone runes need 12 invested tree points. Use one rune per ability or keep it unmodified. Switch freely outside combat.
@@ -48,12 +49,12 @@ npm start
 
 Reload the extension from its management page after editing its background script or manifest; refresh test webpages after changing `content.js`. The side panel loads `panel.html`; the standalone preview loads `index.html`. Both share the same UI, engine, and assets. The extension's service worker serializes state updates to avoid lost rewards from multiple tabs.
 
-`npm test` runs 62 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
+`npm test` runs 67 Node.js tests covering rewards, rhythm expiry, equipment gates, skill prerequisites, combat, heavy attacks, leveling, defeat recovery, capstones, all 22 rune variants, loadout validation, bleed/burn/curse/regen timing, cooldowns, barrier synergies, respec refunds, old-save migration, and progression across every forge tier. Live WebGL rendering and rotation, browser UI, and webpage-listener/reward-effect smoke checks were also performed in Chromium during implementation. This cloud machine’s administrator policy prohibits loading unpacked extensions, so end-to-end installation in its actual side panel could not be verified here. The background storage/message flow is tested with mocked Chromium APIs; install locally to check your browser’s side-panel integration.
 
 ## Project structure
 
 - `engine.js`: deterministic game rules, equipment, monsters, status resolution, save migration, and build changes.
-- `exotics.js`: the twenty-item exotic catalog, deterministic persistent shop pools, perk helpers, additive stats, and safe effect merging.
+- `exotics.js`: the twenty-item exotic catalog, deterministic persistent hourly offerings, perk helpers, additive stats, and safe effect merging.
 - `assets/exotic-models.js`: twenty original low-poly 3D exotic models; no new external assets are required.
 - `skills.js`: 30 talents, 22 rune choices, starter builds, requirements, cost/readiness checks, and numerical upgrade previews.
 - `combat-effects.js`: distinct combat animations, combat feedback, and readable status badges.
@@ -81,13 +82,14 @@ DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/b
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-browser.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-skills.cjs
 DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-exotics.cjs
+DREADWAKE_PLAYWRIGHT=/tmp/dreadwake-tools/node_modules/playwright node scripts/smoke-inventory.cjs
 ```
 
 These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to another Chromium executable if needed. They require a local server on port 4173 (`npm start`). The browser smoke test covers live 3D rotation, asset loading, combat, preferences, typing rewards, confirmed webpage effects, input privacy, reduced motion, and failure handling. It uses a mock extension transport because this environment blocks unpacked extension installation.
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.3.0**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.4.0**.
 
 ## Build examples
 
@@ -103,7 +105,7 @@ Existing saves migrate automatically. Previously learned talents and progression
 
 ## Impossible exotics
 
-All twenty items have original 3D inventory art, readable named perks, combat proc notices, and persistent ownership. There is no exotic equip limit or restriction by item kind. The first pool opens immediately; more enter at forge tiers 2 and 3. The collection is currently purchased from the rotating shop rather than dropped by monsters.
+All twenty items have original 3D inventory art, readable named perks, combat proc notices, and persistent ownership. There is no exotic equip limit or restriction by item kind. The first hourly offering opens immediately; more exotics enter the eligible pool at forge tiers 2 and 3. Eligibility is evaluated only when a new hourly offering is selected. The collection is currently purchased from the hourly shop rather than dropped by monsters.
 
 | Item | What makes it impossible |
 | --- | --- |
@@ -131,3 +133,11 @@ All twenty items have original 3D inventory art, readable named perks, combat pr
 Exotic procs are deliberately bounded: they never execute an additional combat turn or recursively activate damage-trigger counters. Purchased stat bonuses add together. Stronger existing wounds and curses are preserved when an exotic applies a weaker version. Every accepted combat action can activate several equipped perks, and the combat HUD names them. Counters reset each battle, except typewriter ink and receipt progress, which persist; unequipping pauses those browsing perks.
 
 Use `node scripts/bake-assets.cjs --exotics` (with the same optional Playwright configuration above) to regenerate only exotic renders.
+
+## Hourly shop and inventory patch
+
+The extension now requests Chromium's `alarms` permission to schedule the next clock-hour boundary and maintain hourly updates while the panel is closed. State updates from alarms, startup, browsing, and combat use one serialized queue. If the browser is asleep or closed, the next startup or game read catches up to the current hour rather than presenting expired stock. The standalone preview checks the boundary once per second and catches up on focus/reload. Clock-aligned rotations never advance combat, consume coins, or change a loadout.
+
+The hourly offering selects an eligible unowned exotic and stays fixed for that hour. With more than one eligible choice, consecutive hours do not offer the same item. A claimed item remains visible until the next hour; if all exotics are owned, the shop shows collection completion. Old four-offer saves migrate to the hourly format while preserving every owned item and current equipment.
+
+Inventory has no capacity limit. Each named item is unique; buying an already-owned item never charges you twice. The standard loadout still has one weapon and one armor piece, while all purchased exotics can be equipped at the same time. Inventory changes are locked during battle, but you can still browse your possessions.
