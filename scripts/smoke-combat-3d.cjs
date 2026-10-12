@@ -17,9 +17,28 @@ const {chromium}=require(process.env.DREADWAKE_PLAYWRIGHT||'playwright');
    }
    world.remove(e);
   }
-  return results;
+  const grips=[];
+  for(const kind of ['knight','keeper','wing','king']){
+   const e=rigMonster(monster(kind));world.add(e);animation.start({move:'attack',tree:'blood',enemyKind:kind,enemyAttack:'heavy',events:[{type:'damage',amount:1}]},0);
+   let maxGap=0;const points=[];
+   for(const ms of [0,150,300,430,600,1000,1150,1300,1450]){
+    animation.update(ms,h,e);world.updateMatrixWorld(true);
+    for(const arm of [h.userData.swordArm,...e.userData.arms]){
+     const hand=arm.userData.hand,item=hand?.userData.weapon;if(!item)continue;
+     const handle=['thorn','god'].includes(item.userData.asset)?-.73:item.userData.asset==='reaper'?-.35:0;
+     maxGap=Math.max(maxGap,item.localToWorld(new T.Vector3(0,handle,0)).distanceTo(hand.getWorldPosition(new T.Vector3())));
+    }
+    points.push(h.userData.blade.localToWorld(new T.Vector3(0,1.25,0)).toArray());
+   }
+   const idle=new T.Vector3(...points[0]),motion=Math.max(...points.map(p=>idle.distanceTo(new T.Vector3(...p))));
+   animation.start({move:'attack',tree:'blood',enemyKind:kind,events:[],victory:true},0);animation.update(1100,h,e);
+   const noRetaliation=e.userData.arms.every(a=>a.rotation.x===0&&a.userData.elbow.rotation.x===-.3);
+   const toward=ENEMY_POS.clone().sub(HERO_POS).normalize(),forward=new T.Vector3(0,0,1).applyQuaternion(h.quaternion);grips.push({kind,maxGap,motion,noRetaliation,facing:forward.dot(toward)});world.remove(e);
+  }
+  return {results,grips};
  });
- assert.equal(checks.length,70);for(const c of checks)for(const key of ['playerMoves','visible','enemyMoves','still','cleared','unchanged'])assert.ok(c[key],`${c.kind}/${c.move}: ${key}`);
+ assert.equal(checks.results.length,70);for(const c of checks.results)for(const key of ['playerMoves','visible','enemyMoves','still','cleared','unchanged'])assert.ok(c[key],`${c.kind}/${c.move}: ${key}`);
+ for(const c of checks.grips){assert.ok(c.maxGap<1e-6,`${c.kind}: grip slips from hand`);assert.ok(c.motion>1,`${c.kind}: blade does not sweep`);assert.ok(c.noRetaliation,`${c.kind}: defeated enemy attacks`);assert.ok(c.facing>.999,`${c.kind}: hero faces away from target`);}
  await page.getByRole('button',{name:'Begin the hunt'}).click();await page.locator('[data-move="attack"]').click();await page.waitForTimeout(330);assert.equal(await page.locator('.combat-visual.has-3d').count(),1);assert.equal(await page.locator('.ability-symbol').isVisible(),false);await page.locator('.scene').screenshot({path:'/tmp/dreadwake-hero-combat.png'});
  await page.waitForTimeout(2300);assert.equal(await page.locator('.combat-visual').count(),0);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.emulateMedia({reducedMotion:'reduce'});await page.locator('[data-move="guard"]').click();await page.waitForTimeout(2200);assert.equal(await page.locator('canvas.real-3d').count(),1);

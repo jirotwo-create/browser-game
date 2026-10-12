@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {mats,mesh,weapon} from './models.js';
+import {mats,mesh,holdWeapon} from './models.js';
 // Original articulated low-poly hero: obsidian plate, crimson cape and a silver executioner's blade.
 export function hero(){
  const root=new T.Group();root.name='The Unburnt';
@@ -31,9 +31,11 @@ export function hero(){
   const shoulder=facet(arm,.255,side*.06,0,0);shoulder.scale.set(1.3,.65,1);
   for(let i=0;i<2;i++)mesh(arm,new T.ConeGeometry(.075,.26,4),mats.edge,side*(.08+i*.13),.2,0,0,0,-side*.5);
   plate(arm,.17,.36,.2,side*.09,-.24,0);facet(arm,.12,side*.1,-.46,.02,mats.iron);
-  plate(arm,.2,.31,.23,side*.09,-.58,.04);facet(arm,.12,side*.09,-.79,.09,mats.iron);
+  const elbow=new T.Group();elbow.position.set(side*.09,-.46,.02);arm.add(elbow);
+  plate(elbow,.2,.31,.23,0,-.15,.02);const hand=new T.Group();hand.position.set(0,-.33,.07);elbow.add(hand);facet(hand,.12,0,0,0,mats.iron);
+  arm.userData={elbow,hand};elbow.rotation.x=-.3;hand.rotation.x=.7;
  }
- const blade=weapon('thorn');blade.scale.setScalar(.68);blade.position.set(-.09,-.37,.17);blade.rotation.z=Math.PI+.16;arms[0].add(blade);
+ const blade=holdWeapon(arms[0].userData.hand,'thorn',.68);
  root.userData={...root.userData,body,head,cape,swordArm:arms[0],castArm:arms[1],blade};
  return root;
 }

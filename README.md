@@ -92,7 +92,7 @@ These scripts use `/usr/bin/chromium` by default; set `DREADWAKE_CHROMIUM` to an
 
 ## Updating an existing installation
 
-Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.0**.
+Download and extract the updated GitHub ZIP. Replace your old extension files with the new files, retaining the same unpacked directory. Click **Reload** on Dreadwake's card in the browser's extension management page, close and reopen its side panel, then refresh the webpages you want to reward. Existing local progression is preserved; no save reset is required. The version displayed in extension settings should be **1.6.1**.
 
 ## Build examples
 
@@ -162,3 +162,7 @@ Accepted turns animate the hero first, then the monster when the rules actually 
 Animations are visual and never resolve extra turns or grant rewards. A newer turn replaces unfinished effects. Temporary geometry and materials are disposed after the sequence. Navigation and hidden documents pause rendering. Reduced motion keeps characters still and displays static spell indicators. All five bundled fallback images now show the hero alongside the monster; WebGL fallback remains static. Regenerate these with `node scripts/bake-assets.cjs --monsters`.
 
 `smoke-combat-3d.cjs` checks all fourteen base/active moves against five monster rigs, visible effects, attack poses, retaliation, cleanup, unchanged combat events, reduced motion and real panel turns at a narrow viewport.
+
+## Weapon grip and swing correction
+
+Swords attach at their handle centers to actual hand joints. The hero, knight and king now have articulated shoulders, elbows and wrists; the king and knight carry their shields on their forearms. The revenant grips its scythe shaft, and the Bellkeeper grips a single connected staff. All combatants face one another. Weapon attacks now wind up, extend through the target and recover instead of rotating a weapon offset from the hand. Counterattacks reuse the same articulated swing. Reduced motion preserves the resting grip, and defeated monsters do not play a retaliation. Grip regression checks sample the weapon-to-hand alignment throughout the attack sequence. The five static combat renders were regenerated with corrected grips.

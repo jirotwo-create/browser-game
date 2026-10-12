@@ -35,7 +35,7 @@ function draw(time,force=false){
 function loop(time=0){frame=0;if(document.hidden||!canvas?.isConnected||failed)return;draw(time,reduced.matches);if(!reduced.matches||animation?.fx)frame=requestAnimationFrame(loop);}
 reduced.addEventListener('change',()=>{cancelAnimationFrame(frame);frame=0;loop(performance.now());});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!frame)loop();});
-function replaceMonster(kind){if(actor){arena.remove(actor);dispose(actor);}actor=rigMonster(monster(kind));actor.scale.multiplyScalar(.78);actor.name='Enemy '+kind;actor.position.copy(ENEMY_POS);actor.rotation.y=-.7;arena.add(actor);current=kind;}
+function replaceMonster(kind){if(actor){arena.remove(actor);dispose(actor);}actor=rigMonster(monster(kind));actor.scale.multiplyScalar(.78);actor.name='Enemy '+kind;actor.position.copy(ENEMY_POS);actor.rotation.y=Math.atan2(HERO_POS.x-ENEMY_POS.x,HERO_POS.z-ENEMY_POS.z);arena.add(actor);current=kind;}
 export function mount3D(root=document){
  const host=root.querySelector('[data-monster]');
  if(!host){cancelAnimationFrame(frame);frame=0;return;}
@@ -65,7 +65,7 @@ export function assetRender(kind,id,width=384,height=256){
   model=kind==='skill'?talent(id):EXOTICS.some(e=>e.id===id)?exoticModel(id):['rust','fang','reaper','thorn','god'].includes(id)?weapon(id):armor(id);model.rotation.set(.12,-.52,-.15);s.add(model);
   const isWeapon=kind==='gear'&&['rust','fang','reaper','thorn','god','mouth','probate','echoBlade','meteor'].includes(id);c=new T.PerspectiveCamera(33,width/height,.1,30);c.position.set(0,.05,kind==='skill'?4:isWeapon?5:4.3);c.lookAt(isWeapon&&id==='reaper'?.3:0,0,0);
  }else{
-  s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.scale.multiplyScalar(.78);model.position.copy(ENEMY_POS);model.rotation.y=-.7;s.add(model);const h=hero();h.scale.setScalar(.82);h.position.copy(HERO_POS);h.rotation.y=1.12;s.add(h);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition.map(v=>v*1.2));c.lookAt(0,1.25,0);
+  s.background=new T.Color('#17121e');s.fog=new T.FogExp2('#21182b',.065);s.add(cathedral());model=monster(id);model.scale.multiplyScalar(.78);model.position.copy(ENEMY_POS);model.rotation.y=Math.atan2(HERO_POS.x-ENEMY_POS.x,HERO_POS.z-ENEMY_POS.z);s.add(model);const h=hero();h.scale.setScalar(.82);h.position.copy(HERO_POS);h.rotation.y=Math.atan2(ENEMY_POS.x-HERO_POS.x,ENEMY_POS.z-HERO_POS.z);s.add(h);c=new T.PerspectiveCamera(38,width/height,.1,40);c.position.set(...cameraPosition.map(v=>v*1.2));c.lookAt(0,1.25,0);
  }
  r.render(s,c);const data=r.domElement.toDataURL('image/png');dispose(model);r.dispose();r.forceContextLoss();return data;
 }

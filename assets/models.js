@@ -49,6 +49,18 @@ export function armor(id='iron'){
  if(id==='rags'){g.clear();cape(g,mats.cloth,.52).position.y=.9;mesh(g,new T.CylinderGeometry(.34,.4,.7,5),mats.cloth,0,.3,0);}
  return g;
 }
+// All held assets are positioned by their handle, never by the blade's mesh origin.
+export function holdWeapon(hand,id,scale=1){
+ const item=weapon(id);item.scale.setScalar(scale);item.position.y=(id==='reaper'?.35:.73)*scale;hand.add(item);hand.userData.weapon=item;return item;
+}
+function armRig(g,side,y,upper=.5,lower=.4,mat=mats.iron,skeletal=false){
+ const arm=new T.Group();arm.position.set(side*(skeletal?.4:.58),y,0);g.add(arm);
+ const elbow=new T.Group();elbow.position.set(side*.08,-upper,0);arm.add(elbow);
+ const hand=new T.Group();hand.position.set(0,-lower,.07);elbow.add(hand);
+ if(skeletal){bone(arm,[0,0,0],[side*.08,-upper,0],.075);bone(elbow,[0,0,0],[0,-lower,.07],.06);for(let i=0;i<3;i++)bone(hand,[(i-1)*.06,0,0],[(i-1)*.075,-.2,.15],.025);}
+ else{orb(arm,mat,0,0,0,.24,1.3,.7,1.1);box(arm,mat,side*.04,-upper/2,0,.19,upper,.23);orb(elbow,mats.dark,0,0,0,.12);box(elbow,mat,0,-lower/2,.04,.2,lower,.23);orb(hand,mats.iron,0,0,0,.125);}
+ arm.userData={elbow,hand};elbow.rotation.x=-.3;hand.rotation.x=.7;return arm;
+}
 function knight(kind){
  const g=new T.Group(),royal=kind==='king';
  cape(g,royal?mats.blood:mats.cloth,royal?.72:.63);
@@ -57,8 +69,6 @@ function knight(kind){
  for(const side of [-1,1]){
   orb(g,royal?mats.gold:mats.iron,side*.58,2.08,0,.28,1.4,.75,1.2);
   for(let i=0;i<3;i++)spike(g,royal?mats.gold:mats.edge,side*(.5+i*.12),2.3,.025,.34+i*.07,side*-.5);
-  box(g,mats.iron,side*.65,1.78,0,.19,.46,.23,side*.18);orb(g,mats.dark,side*.69,1.48,.015,.135);
-  box(g,mats.dark,side*.7,1.28,.08,.19,.35,.21,side*-.1);orb(g,mats.iron,side*.72,1.08,.13,.135);
   box(g,mats.iron,side*.22,.99,0,.23,.51,.29,side*-.07);orb(g,mats.edge,side*.24,.72,.09,.15);
   box(g,mats.dark,side*.26,.44,.04,.23,.46,.25);box(g,mats.iron,side*.27,.15,.13,.3,.22,.49);
   slab(g,[[0,0],[side*.26,-.06],[side*.31,-.5],[0,-.43]],.07,mats.iron,side*.035,1.24,.24);
@@ -67,28 +77,27 @@ function knight(kind){
  for(const side of [-1,1]){box(g,mats.eye,side*.095,2.56,.278,.11,.025,.02,side*.13);spike(g,royal?mats.gold:mats.edge,side*.27,2.82,-.04,.5,side*-.45);}
  if(royal){mesh(g,new T.CylinderGeometry(.31,.28,.15,8,true),mats.gold,0,2.84,0);for(let i=0;i<7;i++){const a=i/7*Math.PI*2;spike(g,mats.gold,Math.sin(a)*.28,3.02,Math.cos(a)*.28,.35);}}
  skull(g,0,1.79,.31,.55);
- const sword=weapon(royal?'god':'thorn');sword.scale.setScalar(royal?.95:.8);sword.position.set(-.78,.87,.22);sword.rotation.z=royal?-.22:.12;g.add(sword);
- const shield=new T.Group();slab(shield,[[0,.49],[-.34,.31],[-.29,-.34],[0,-.62],[.29,-.34],[.34,.31]],.13,mats.dark);slab(shield,[[0,.38],[-.21,.23],[-.18,-.26],[0,-.43],[.18,-.26],[.21,.23]],.14,royal?mats.gold:mats.iron,0,0,.07);skull(shield,0,.02,.19,.63);shield.position.set(.81,1.23,.31);shield.rotation.y=-.25;g.add(shield);
+ const arms=[armRig(g,-1,2.08),armRig(g,1,2.08)];g.userData.arms=arms;
+ holdWeapon(arms[0].userData.hand,royal?'god':'thorn',royal?.82:.72);
+ const shield=new T.Group();slab(shield,[[0,.49],[-.34,.31],[-.29,-.34],[0,-.62],[.29,-.34],[.34,.31]],.13,mats.dark);slab(shield,[[0,.38],[-.21,.23],[-.18,-.26],[0,-.43],[.18,-.26],[.21,.23]],.14,royal?mats.gold:mats.iron,0,0,.07);skull(shield,0,.02,.19,.63);shield.position.set(.08,-.14,.2);arms[1].userData.elbow.add(shield);
  return g;
 }
 function wretch(){
  const g=new T.Group();cape(g,mats.cloth,.47).position.y=1.6;
  for(const side of [-1,1]){
   bone(g,[side*.18,.99,0],[side*.32,.56,.11],.1);bone(g,[side*.32,.56,.11],[side*.24,.14,.2],.075);box(g,mats.bone,side*.24,.11,.27,.16,.15,.42);
-  bone(g,[side*.4,1.71,.06],[side*.61,1.13,.14],.09);bone(g,[side*.61,1.13,.14],[side*.74,.7,.39],.065);
-  for(let i=0;i<3;i++)bone(g,[side*.74+(i-1)*.06,.73,.41],[side*.78+(i-1)*.085,.45,.61],.025);
   for(let i=0;i<5;i++){const rib=mesh(g,new T.TorusGeometry(.25+i*.018,.031,3,8,Math.PI*.78),mats.bone,side*.06,1.55-i*.095,.025,0,side*Math.PI/2,Math.PI*.1);rib.scale.y=.75;}
  }
  bone(g,[0,.9,0],[0,1.71,-.08],.065);orb(g,mats.bone,0,.95,0,.22,1.4,.65,.6);skull(g,0,1.9,.22,1.2);
  for(const side of [-1,1])orb(g,mats.cyan,side*.085,1.924,.424,.038);for(let i=0;i<5;i++)spike(g,mats.bone,0,1.5+i*.075,-.21,.23,Math.PI*.52);
- g.rotation.x=.08;return g;
+ g.userData.arms=[armRig(g,-1,1.71,.58,.5,mats.bone,true),armRig(g,1,1.71,.58,.5,mats.bone,true)];g.rotation.x=.08;return g;
 }
 function keeper(){
  const g=new T.Group();mesh(g,new T.CylinderGeometry(.23,.72,1.8,7),mats.cloth,0,1.07,0);cape(g,mats.dark,.62);
  orb(g,mats.dark,0,2.19,0,.4,1,1.2,.85);orb(g,mats.dark,0,2.17,.28,.26);box(g,mats.eye,-.085,2.19,.52,.04,.025,.02);box(g,mats.eye,.085,2.19,.52,.04,.025,.02);
- for(const side of [-1,1]){mesh(g,new T.CylinderGeometry(.18,.26,.75,5),mats.cloth,side*.43,1.67,0,0,0,side*.42);skull(g,side*.46,1.15,.13,.6);}
+ const arms=[armRig(g,-1,1.85,.4,.35,mats.cloth),armRig(g,1,1.85,.4,.35,mats.cloth)];g.userData.arms=arms;
  for(let i=0;i<8;i++){const a=i*.45;orb(g,mats.gold,Math.sin(a)*.31,1.87-i*.035,.3,.036);}
- box(g,mats.dark,-.69,1.37,.09,.075,2.7,.075);slab(g,[[-.08,0],[.13,.12],[.43,.08],[.45,0],[.15,.04]],.08,mats.gold,-.7,2.72,.1);
+ const staff=new T.Group();box(staff,mats.dark,0,.2,0,.075,2.7,.075);slab(staff,[[-.08,0],[.13,.12],[.43,.08],[.45,0],[.15,.04]],.08,mats.gold,0,1.55,0);arms[0].userData.hand.add(staff);arms[0].userData.hand.userData.weapon=staff;
  mesh(g,new T.CylinderGeometry(.15,.38,.48,8,true),mats.gold,-.33,2.36,.09);mesh(g,new T.TorusGeometry(.36,.035,4,8),mats.gold,-.33,2.12,.09,Math.PI/2);orb(g,mats.dark,-.33,2.14,.09,.08);return g;
 }
 function wing(){
@@ -98,7 +107,7 @@ function wing(){
   bone(g,[side*.24,1.61,-.18],[side*.73,2.36,-.18]);bone(g,[side*.73,2.36,-.18],[side*1.8,2.85,-.18],.05);bone(g,[side*.73,2.36,-.18],[side*1.54,1.83,-.18],.04);bone(g,[side*.73,2.36,-.18],[side*1.08,1.32,-.18],.035);
   spike(g,mats.dark,side*.19,2.32,.12,.62,side*-.5);
  }
- const scythe=weapon('reaper');scythe.position.set(-.72,.84,.5);scythe.scale.setScalar(.7);scythe.rotation.z=.17;g.add(scythe);return g;
+ holdWeapon(g.userData.arms[0].userData.hand,'reaper',.7);return g;
 }
 export function monster(kind){const g=kind==='wretch'?wretch():kind==='keeper'?keeper():kind==='wing'?wing():knight(kind);g.userData.kind=kind;return g;}
 export function cathedral(){

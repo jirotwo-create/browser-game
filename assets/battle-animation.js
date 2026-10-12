@@ -4,6 +4,7 @@ const slashMoves=['attack','rend','feast','riposte','rage'];
 export const HERO_POS=new T.Vector3(-1.23,0,.65),ENEMY_POS=new T.Vector3(1.12,0,-.59);
 const wave=(t,a,b)=>t<a||t>b?0:Math.sin((t-a)/(b-a)*Math.PI);
 export function rigMonster(model){
+ if(model.userData.arms)return model;
  // Pivot existing original mesh pieces without changing their resting silhouette.
  const arms=[];model.updateMatrixWorld(true);
  for(const side of [-1,1]){
@@ -12,6 +13,19 @@ export function rigMonster(model){
   arms.push(pivot);
  }
  model.userData.arms=arms;return model;
+}
+function resetArm(arm){
+ arm.rotation.set(0,0,0);if(arm.userData.elbow)arm.userData.elbow.rotation.set(-.3,0,0);if(arm.userData.hand)arm.userData.hand.rotation.set(.7,0,0);
+}
+const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+export function swingWeapon(arm,time,start=.06,end=.8,heavy=false){
+ if(!arm.userData.elbow||time<start||time>end)return;
+ const p=(time-start)/(end-start),ready=smooth(p/.34),strike=smooth((p-.34)/.24),recover=smooth((p-.58)/.42),weight=1-recover;
+ arm.rotation.x=(-2.2*ready+1.05*strike)*weight;
+ arm.rotation.z=(-.25*ready+.55*strike)*weight;
+ arm.userData.elbow.rotation.x=-.3+(-.5*ready+.6*strike)*weight;
+ arm.userData.hand.rotation.x=.7+(.9*ready+1.1*strike)*weight;
+ arm.userData.hand.rotation.z=(heavy?-.25:-.12)*ready*weight;
 }
 export class BattleAnimation{
  constructor(world){this.world=world;this.fx=null;this.visuals=new T.Group();this.visuals.name='Combat spell effects';world.add(this.visuals);this.nodes=[];}
@@ -60,8 +74,8 @@ export class BattleAnimation{
  update(now,hero,enemy,reduced=false){
   if(!hero||!enemy)return false;
   const t=this.fx?(now-this.startTime)/1000:0,fx=this.fx;
-  hero.position.copy(HERO_POS);enemy.position.copy(ENEMY_POS);hero.rotation.set(0,1.12,0);enemy.rotation.set(0,-.7,0);for(const arm of enemy.userData.arms||[])arm.rotation.set(0,0,0);
-  const rig=hero.userData;rig.body.position.y=1.15;rig.body.rotation.set(0,0,0);rig.swordArm.rotation.set(0,0,0);rig.castArm.rotation.set(0,0,0);rig.cape.rotation.x=0;
+  hero.position.copy(HERO_POS);enemy.position.copy(ENEMY_POS);hero.rotation.set(0,Math.atan2(ENEMY_POS.x-HERO_POS.x,ENEMY_POS.z-HERO_POS.z),0);enemy.rotation.set(0,Math.atan2(HERO_POS.x-ENEMY_POS.x,HERO_POS.z-ENEMY_POS.z),0);for(const arm of enemy.userData.arms||[])resetArm(arm);
+  const rig=hero.userData;rig.body.position.y=1.15;rig.body.rotation.set(0,0,0);resetArm(rig.swordArm);resetArm(rig.castArm);rig.cape.rotation.x=0;
   if(!reduced){
    const breath=Math.sin(now*.0018);rig.body.position.y=1.15+breath*.018;rig.cape.rotation.x=.07+Math.sin(now*.002)*.04;enemy.position.y=Math.sin(now*.0015)*.018;
   }
@@ -69,13 +83,17 @@ export class BattleAnimation{
   if(t>1.9){this.clear();return false;}
   if(!reduced){
    const lunge=wave(t,.06,.8),swing=wave(t,.15,.65),retaliate=fx.enemyAttack?wave(t,.85,1.55):0;
-   if(slashMoves.includes(fx.move)){hero.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),lunge*.28);rig.swordArm.rotation.x=-swing*1.75;rig.swordArm.rotation.z=-swing*.9;rig.body.rotation.y=-swing*.45;rig.cape.rotation.x+=lunge*.35;}
+   if(slashMoves.includes(fx.move)){hero.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),lunge*.28);swingWeapon(rig.swordArm,t,.06,.8,fx.move==='rage');rig.body.rotation.y=-swing*.45;rig.cape.rotation.x+=lunge*.35;}
    else{rig.castArm.rotation.x=-wave(t,.08,.85)*1.6;rig.body.rotation.x=-wave(t,.08,.85)*.07;}
-   if(fx.move==='guard'||fx.move==='bastion')rig.swordArm.rotation.x=-wave(t,.15,1.6)*.65;
+   if(fx.move==='guard'||fx.move==='bastion'){const brace=wave(t,.15,1.6);rig.swordArm.rotation.x=-brace*.9;rig.swordArm.userData.elbow.rotation.x=-.3-brace*.5;rig.swordArm.userData.hand.rotation.x=.7+brace*.4;}
    const hit=wave(t,.4,.74);if(fx.events.some(e=>e.amount>0&&['damage','exoticDamage','bleed','burn'].includes(e.type))){enemy.rotation.z=-hit*.18;enemy.position.addScaledVector(ENEMY_POS.clone().sub(HERO_POS),hit*.055);}
    enemy.position.addScaledVector(HERO_POS.clone().sub(ENEMY_POS),retaliate*(fx.enemyAttack==='heavy'?.3:.19));enemy.rotation.x=retaliate*(fx.enemyKind==='wing'?.5:.22);
-   for(const [i,arm]of (enemy.userData.arms||[]).entries()){arm.rotation.x=-retaliate*(fx.enemyKind==='keeper'?1.4:1.1);arm.rotation.z=retaliate*(i?-.5:.5);}
+   for(const [i,arm]of (enemy.userData.arms||[]).entries()){
+    if(fx.enemyAttack&&arm.userData.hand?.userData.weapon&&fx.enemyKind!=='keeper')swingWeapon(arm,t,.85,1.55,fx.enemyAttack==='heavy');
+    else{arm.rotation.x=-retaliate*(fx.enemyKind==='keeper'?1.1:1.4);arm.rotation.z=retaliate*(i?-.25:.25);}
+   }
    if(fx.enemyKind==='wing')enemy.position.y+=retaliate*.38;
+   if(fx.events.some(e=>e.type==='counter'))swingWeapon(rig.swordArm,t,1.15,1.8);
    if(fx.events.some(e=>e.type==='hurt'))rig.body.rotation.z=wave(t,1.1,1.5)*.16;
    if(fx.events.some(e=>e.type==='dodge'))hero.position.z+=wave(t,.95,1.5)*.5;
    if(fx.victory){const collapse=Math.max(0,Math.min(1,(t-(fx.enemyAttack?1.25:.65))/.6));enemy.rotation.z=-collapse*1.35;enemy.position.y-=collapse*.4;}
