@@ -19,6 +19,13 @@
 @keyframes hellscript-magma{0%,100%{text-shadow:0 2px 2px #000,0 0 3px #ed813b88,0 0 9px #db441b55}50%{text-shadow:0 2px 2px #000,0 0 4px #ffb55abb,0 0 13px #ee542b88,0 0 21px #a4211833}}
 @media(max-width:500px){.hud{bottom:16px;right:12px;padding:12px}.top span{font-size:26px}.top em{font-size:8px}.top b{font-size:12px;padding:6px 4px}.hud .hellscript-seal{width:45px;height:51px}.hint{font-size:9px}.banner{padding:16px 12px 18px}.banner strong{font-size:30px;letter-spacing:.7px}.banner small{font-size:12px;letter-spacing:.5px}.banner em{font-size:9px;letter-spacing:1.5px}.banner .hellscript-seal{width:92px;height:92px}}
 @media(prefers-reduced-motion:reduce){.top span,.banner strong{animation:none;text-shadow:0 2px 2px #000,0 0 8px #db441b66}.hud{transition:none;transform:none}.fill{transition:none}.banner.run{animation:none;opacity:1}}
+/* Compact gauges and a transparent magma-letter splash. */
+.hud{width:min(248px,calc(100% - 24px));padding:10px 11px;border-width:3px;bottom:18px;right:14px}.top{grid-template-columns:33px minmax(0,1fr) auto;gap:6px;margin-bottom:8px;align-items:center}.hud .hellscript-seal{width:33px;height:38px;grid-row:auto}.top span{font-size:24px;letter-spacing:.5px}.top em,.hint{display:none}.top b{grid-column:auto;justify-self:end;font-size:11px;padding:4px;border-width:1px}.track{height:12px;border-width:2px}.hud:after{inset:3px}.banner{width:min(440px,calc(100% - 28px));top:30%;padding:10px 6px;border:0;border-radius:0;box-shadow:none;background:none;clip-path:none}.banner .hellscript-seal,.banner em{display:none}.banner strong{font:46px DreadwakeMetal,Georgia,serif;line-height:1.05;letter-spacing:1px;color:#ffe1a3;-webkit-text-stroke:.7px #40101a;text-shadow:2px 3px 0 #14070c,0 0 6px #f5793b99,0 0 16px #d3322266;transform:skew(-5deg);animation:hellscript-lava 3s ease-in-out infinite}.banner small{display:inline-block;margin-top:8px;padding:4px 9px;border:0;background:#16080da6;font:bold 12px Georgia,serif;line-height:1.4;letter-spacing:.8px;color:#ffe0ad;text-shadow:0 1px 2px #000,0 0 5px #db552b88}.banner.run{animation:hellscript-splash 1.35s ease-out both}
+@supports(-webkit-background-clip:text){.banner strong{background:linear-gradient(110deg,#fff0c6 0%,#ffae4c 25%,#ed582d 45%,#ffe0a0 60%,#ffad4b 80%,#fff0c6 100%);background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}}
+@keyframes hellscript-lava{0%,100%{background-position:0% 50%;text-shadow:2px 3px 0 #14070c,0 0 6px #f5793b77,0 0 12px #d3322244}50%{background-position:100% 50%;text-shadow:2px 3px 0 #14070c,0 0 7px #ff8d4b99,0 0 18px #d3322277}}
+@keyframes hellscript-splash{0%{opacity:0;transform:translate(-50%,-50%) scale(.82) rotate(-3deg)}14%{opacity:1;transform:translate(-50%,-50%) scale(1.05) rotate(1deg)}27%,70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}100%{opacity:0;transform:translate(-50%,-65%) scale(.97)}}
+@media(max-width:500px){.hud{width:min(232px,calc(100% - 24px));padding:9px 10px;bottom:12px;right:12px}.top{grid-template-columns:30px minmax(0,1fr) auto;gap:5px}.hud .hellscript-seal{width:30px;height:34px}.top span{font-size:22px}.top b{font-size:10px;padding:4px 3px}.banner{padding:8px 3px;width:calc(100% - 28px);max-width:360px}.banner strong{font-size:36px;letter-spacing:.4px}.banner small{font-size:11px;letter-spacing:.3px;margin-top:6px}}
+@media(prefers-reduced-motion:reduce){.banner strong{animation:none;text-shadow:2px 3px 0 #14070c,0 0 8px #dd542b77}.banner.run{animation:none;opacity:1;transform:translate(-50%,-50%)}.hud{transition:none}}
 </style><canvas></canvas><div class="hud"><div class="top">${globalThis.DreadwakeHellscript}<div><span>HELLSCRIPT</span><em>FEED THE INFERNAL SEAL</em></div><b>0 / 100</b></div><div class="track"><div class="fill"></div></div><div class="hint">100 KEYSTROKES · ONE INFERNAL ERUPTION</div></div><div class="banner">${globalThis.DreadwakeHellscript}<em>THE SEAL IS BROKEN</em><strong>HELLSCRIPT IGNITED</strong><small></small></div>`;
    this.canvas=shadow.querySelector('canvas');this.ctx=this.canvas.getContext('2d');this.hud=shadow.querySelector('.hud');this.banner=shadow.querySelector('.banner');
    document.documentElement.append(this.host);this.resize();
@@ -44,13 +51,12 @@
    if(data.burst){
     this.shadow.querySelector('.fill').style.width='100%';this.shadow.querySelector('.top b').textContent='100 / 100';this.hud.classList.add('charged');
     this.banner.querySelector('small').textContent=`+${data.coinsEarned} COINS  ·  +${data.focusEarned} FOCUS`;
-    this.banner.classList.remove('run');void this.banner.offsetWidth;this.banner.classList.add('run');clearTimeout(this.bannerTimer);this.bannerTimer=setTimeout(()=>this.banner.classList.remove('run'),1750);
+    this.banner.classList.remove('run');void this.banner.offsetWidth;this.banner.classList.add('run');clearTimeout(this.bannerTimer);this.bannerTimer=setTimeout(()=>this.banner.classList.remove('run'),1450);
     if(!restrained){
-     const cx=this.width*.5,cy=this.height*.32;
-     this.add({type:'infernalSeal',x:cx,y:cy,dy:0,life:1600,color:'#f15e45',size:Math.min(180,this.width*.34)});this.add({type:'ring',x:cx,y:cy,life:1300,dy:0,color:'#f45235',size:Math.min(380,this.width*.65)});
-     this.add({type:'ring',x:cx,y:cy,life:1000,dy:0,color:'#ffbe6d',size:180});this.sparks(cx,cy,34,'#ef443b',240);this.sparks(cx,cy,16,'#ffd080',180);
-     for(let i=0;i<18;i++)this.add({type:'flame',x:cx+(Math.random()-.5)*220,y:cy+110,dy:-130-Math.random()*150,dx:(Math.random()-.5)*50,life:1200+Math.random()*450,color:i%2?'#ffae54':'#f34a36'});
-     for(let i=0;i<6;i++)this.add({type:'coin',x:cx+(Math.random()-.5)*100,y:cy+40,life:1000+i*50,dx:(Math.random()-.5)*120,dy:-80-Math.random()*80,text:'',reduced:false});
+     const cx=this.width*.5,cy=this.height*.30,radius=Math.min(125,this.width*.28);
+     this.add({type:'ring',x:cx,y:cy,life:650,dy:0,color:'#f77835',size:radius});
+     this.sparks(cx,cy,16,'#ef6336',65);this.sparks(cx,cy,8,'#ffd080',45);
+     for(let i=0;i<8;i++)this.add({type:'flame',x:cx+(Math.random()-.5)*120,y:cy+30,dy:-35-Math.random()*35,dx:(Math.random()-.5)*20,life:650+Math.random()*200,color:i%2?'#ffae54':'#f34a36'});
     }
    }
    if(!this.frame)this.frame=requestAnimationFrame(t=>this.draw(t));
