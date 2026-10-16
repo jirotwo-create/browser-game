@@ -230,3 +230,7 @@ New helmets, gauntlets, greaves, capes and scriptures use original nearest-filte
 ### v1.9 — The Obsidian Court
 
 A complete infernal baroque interface theme across the Hunt, Forge, Reliquary, Forbidden Arts and Chronicle: original horned scrollwork, obsidian marble, Greek-key friezes, fluted borders, aged gold, blood lacquer controls and jagged headings. All art is bundled locally. Keyboard focus, reduced motion and layouts down to 320px are preserved. Existing saves and game balance are unchanged.
+
+### v1.10 — Prerendered infernal interface
+
+The interface now uses bundled photorealistic material artwork: blackened iron, charcoal cathedral stone, oxblood leather and a sculpted horned demon relief. Heavy beveled frames, recessed equipment sockets, jewel-like resource bars and tactile pressed controls draw on mid-to-late 1990s PC game menus, with a stylish gothic action-game atmosphere. Text remains live and searchable; keyboard focus, reduced motion and 320px panel layouts remain supported. Combat models retain their existing retro 3D style. Save data and gameplay rules are unchanged.
