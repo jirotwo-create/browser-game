@@ -1,4 +1,6 @@
-// Original horned seal, shared by the panel and the isolated webpage overlay.
+// Shared cast-metal seal. Only bundled decorative assets are exposed to webpages.
 (() => {
- globalThis.DreadwakeHellscript=`<svg class="hellscript-seal" viewBox="0 0 100 100" fill="none" aria-hidden="true"><circle cx="50" cy="50" r="46" stroke="currentColor" stroke-width="1" opacity=".5"/><path d="m50 5 26 78-68-48h84L24 83Z" stroke="currentColor" stroke-width="1" opacity=".35"/><path d="M32 39C16 33 9 18 15 8c0 15 11 17 22 16m26 0c11-7 22-9 22-16 6 10-1 25-17 31" fill="#300a0f" stroke="currentColor" stroke-width="3"/><path d="m29 38 9-11 24 0 10 12-3 24-13 16H44L31 64Z" fill="#16090d" stroke="currentColor" stroke-width="2"/><path d="m33 45 14 6-5 7-9-5zm34 0-14 6 5 7 9-5z" fill="#ffad52"/><path d="m50 55-5 9h10zm-13 8 7 10 6-5 6 5 8-10m-20 9v8m12-8v8M20 63l5 3m50 0 5-3M47 12h6m-6 77h6" stroke="currentColor" stroke-width="2"/></svg>`;
+ const asset=path=>typeof chrome!=='undefined'&&typeof chrome.runtime?.getURL==='function'?chrome.runtime.getURL(path):new URL(path,document.baseURI).href;
+ globalThis.DreadwakeHellscriptAssets={materials:asset('assets/infernal-materials.png'),iron:asset('assets/blackened-iron.png'),font:asset('assets/MetalMania-Regular.ttf')};
+ globalThis.DreadwakeHellscript=`<span class="hellscript-seal" aria-hidden="true" style="background-image:url('${globalThis.DreadwakeHellscriptAssets.materials}')"></span>`;
 })();

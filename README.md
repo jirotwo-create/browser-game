@@ -238,3 +238,7 @@ The interface now uses bundled photorealistic material artwork: blackened iron, 
 ### v1.10.1 — Magma lettering
 
 Brighter ivory text, larger descriptions and stats, clearer labels and slow ember pulses through headings and item names. Text keeps a steady bright core. Reduced-motion preferences disable the pulse while retaining a static glow.
+
+### v1.11 — Hellscript reliquary
+
+Hellscript now shares the photoreal cast-metal demon relief, oxblood leather, beveled iron frames and pulsing magma text across the side panel, webpage typing gauge and ignition reward popup. The popup uses the bundled jagged font and respects reduced motion. Its full gauge correctly reads 100 / 100; rewards remain 35 coins and the existing focus bonus. Only the three decorative images/font resources are exposed for webpage overlays.
