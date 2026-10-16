@@ -226,3 +226,7 @@ Armor budgets are split across five body types. Ordinary helmets/capes add focus
 New helmets, gauntlets, greaves, capes and scriptures use original nearest-filtered 32×32 seam/rune textures. They attach to the correct hero joints. Helmets replace the base helmet mesh, gloves follow both forearms, chest models omit duplicate arms/capes, and the chosen accessory supplies the cloak. Every new piece has a locally baked 3D inventory image. Inventory and forge support equipment-type filters; the Exotic filter includes exotic Testaments. Stat comparisons show attack, defense, health and focus changes rather than treating every type as generic armor.
 
 `tests/seven-slots.test.js` checks starter slots, independent rarity/type, v5 migration, seven simultaneous Exotics, correct stat aggregation, wrong-slot rejection, armor scaling and bounded combined perks. `scripts/smoke-seven-slots.cjs` checks all seven UI slots and type filters, mixed worn meshes, grips, swap cleanup, simultaneous rat/ward effects, persistence, combat locks and narrow layouts. Additional Testament unlocks remain deferred.
+
+### v1.9 — The Obsidian Court
+
+A complete infernal baroque interface theme across the Hunt, Forge, Reliquary, Forbidden Arts and Chronicle: original horned scrollwork, obsidian marble, Greek-key friezes, fluted borders, aged gold, blood lacquer controls and jagged headings. All art is bundled locally. Keyboard focus, reduced motion and layouts down to 320px are preserved. Existing saves and game balance are unchanged.
