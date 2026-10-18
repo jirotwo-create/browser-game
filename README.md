@@ -246,3 +246,7 @@ Hellscript now shares the photoreal cast-metal demon relief, oxblood leather, be
 ### v1.11.1 — Compact Hellscript splash
 
 Smaller side-panel and webpage Hellscript gauges. Ignition is now a brief transparent splash of jagged, black-edged molten lettering, with a compact ember burst instead of a large framed card and screen-sized rings. The splash fades in 1.35 seconds; reduced motion keeps it static. The 100-key requirement, 35-coin reward and focus bonus are unchanged.
+
+### v1.12 — The ruined gallery
+
+Renaissance hand studies and Caravaggio's Baroque *Martha and Mary Magdalene* replace repeated demon-face decorations. Original photoreal Corinthian columns frame each screen; Blood, Bone and Void now have distinct art treatments. Hellscript retains its specific demonic emblem and compact magma splash. Artwork is bundled for offline use, with source references in `assets/gallery/CREDITS.md` and an expandable credits section in Chronicle. No gameplay or save format changes.
