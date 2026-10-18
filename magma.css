@@ -1,0 +1,15 @@
+/* Moving molten veins inside the glyphs; outlines and layout stay still. */
+@supports (background-clip:text) or (-webkit-background-clip:text){
+ :is(h1,h2,h3,.brand>div,.move strong,.loadout-slot>strong,.equipment-row strong,.wallet strong,.inventory-overview strong,.journal-stats strong,.journey-values strong){
+  background-color:transparent;
+  background-image:repeating-linear-gradient(112deg,transparent 0 13px,#fff0cbb3 15px 17px,transparent 21px 38px),repeating-linear-gradient(105deg,#ffe9b0 0px,#ffce72 23px,#ef7937 46px,#ffb94f 70px,#ffe9b0 112px);
+  background-size:190px 100%,224px 100%;background-repeat:repeat;background-position:0 0,0 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  text-shadow:none;filter:drop-shadow(0 1px 1px #000) drop-shadow(0 0 3px #ef5f264d);
+  animation:molten-type-flow 3.8s linear infinite;
+ }
+ .brand{animation:none;text-shadow:none}
+ .brand small{color:#e1bfa0;-webkit-text-fill-color:#e1bfa0}.brand>.icon{color:#bd3e3f}
+ @keyframes molten-type-flow{from{background-position:0 0,0 0}to{background-position:190px 0,224px 0}}
+ @media(prefers-reduced-motion:reduce){:is(h1,h2,h3,.brand>div,.move strong,.loadout-slot>strong,.equipment-row strong,.wallet strong,.inventory-overview strong,.journal-stats strong,.journey-values strong){animation:none;background-position:30px 0,50px 0}}
+}

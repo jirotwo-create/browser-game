@@ -250,3 +250,7 @@ Smaller side-panel and webpage Hellscript gauges. Ignition is now a brief transp
 ### v1.12 — The ruined gallery
 
 Renaissance hand studies and Caravaggio's Baroque *Martha and Mary Magdalene* replace repeated demon-face decorations. Original photoreal Corinthian columns frame each screen; Blood, Bone and Void now have distinct art treatments. Hellscript retains its specific demonic emblem and compact magma splash. Artwork is bundled for offline use, with source references in `assets/gallery/CREDITS.md` and an expandable credits section in Chronicle. No gameplay or save format changes.
+
+### v1.12.1 — Flowing magma type
+
+Molten color bands and bright heat veins now visibly travel inside headings, equipment names and highlighted values. Hellscript uses the same treatment, with faster flow during its brief ignition splash. Reduced-motion preferences retain a static molten fill. Small explanatory text remains solid for readability.
