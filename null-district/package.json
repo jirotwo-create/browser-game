@@ -1,1 +1,57 @@
-{"name":"null-district","version":"1.0.0","private":true,"type":"module","scripts":{"start":"python3 -m http.server 4180 --bind 0.0.0.0","check":"node --check game.js"}}
+{
+  "name": "null-district",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check game.js && node --check desktop/main.cjs",
+    "preview": "python3 -m http.server 4180 --bind 0.0.0.0",
+    "dist:win": "electron-builder --win portable --x64 --publish never",
+    "dist:linux": "electron-builder --linux dir --x64 --publish never",
+    "postinstall": "install-electron"
+  },
+  "description": "Standalone cyberpunk PS1-style first person shooter",
+  "author": "NULL DISTRICT",
+  "main": "desktop/main.cjs",
+  "devDependencies": {
+    "electron": "44.9.2",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "games.nulldistrict.blackout",
+    "productName": "NULL DISTRICT",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/main.cjs",
+      "index.html",
+      "game.js",
+      "style.css",
+      "favicon.svg",
+      "vendor/**"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false,
+      "artifactName": "NULL-DISTRICT-${version}-Windows-x64.${ext}"
+    },
+    "portable": {
+      "requestExecutionLevel": "user"
+    },
+    "linux": {
+      "target": "dir",
+      "category": "Game"
+    }
+  }
+}
