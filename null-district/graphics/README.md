@@ -14,7 +14,11 @@ Depth testing and near-plane clipping use the GPU. This is a renderer designed a
 
 ## Art
 
-`anatomy.js` creates anatomical oval cross-sections with independently positioned rings, plus explicit facial topology and beveled polygon prisms. `models.js` uses those shapes for the human skull, modeled nose/cheeks/chin, eyes, eyebrows, hair, hands/fingers, tailored torso and jointed limbs. There is no robot helmet or visor. The sword uses a serrated extruded blade with beveled faces, raised rune geometry, horned crossguard, skull fittings and ruby pommel. The human SABLE mercenary variants have about 1,300 triangles; the K09 and its modeled arms have 388. MOURNFANG and its gripping forearm have 1,170. Buildings have tapered upper stories, polygonal tanks and ducts, awnings, rooftop antennae and shuttered shops. Paletted posters, worn metal, hazard paint and tiled pavement provide patterns that make affine distortion legible.
+`anatomy.js` creates anatomical oval cross-sections with independently positioned rings, plus explicit facial topology and beveled polygon prisms. `models.js` uses those shapes for the human skull, modeled nose/cheeks/chin, eyes, eyebrows, hair, hands/fingers, tailored torso and jointed limbs. There is no robot helmet or visor. MOURNFANG has a chipped, hooked blackened blade, moving fangs, raised rune geometry, a hollow skull crossguard with teeth/horns, a rotating ruby and a nested linked chain. Buildings retain tapered upper stories, polygonal tanks and ducts, awnings, rooftop antennae and shuttered shops.
+
+`textures.js` paints deterministic 64×64 grime maps: mottled concrete with drips and cracks, oily broken asphalt, rusted steel, stained shutters, worn leather/cloth and dirty skin. Charcoal, grey, olive and rusty brown replace the earlier bright fantasy palette; the blade core uses dark blood red. Nearest-neighbor sampling, affine interpolation, vertex snapping and RGB555 remain unchanged. Fog uses the new art palette through the existing uniform.
+
+`weapon-rig.js` anchors weapon and gripping fingers to the same transform. Left hands have mirrored anatomical geometry and opposed thumbs. A two-bone solver keeps each 0.37m upper arm/forearm attached to its wrist and constrains the grip to both shoulders' reachable volume. The carbine has trigger contact, fore-end support and a magazine reach during reload. The sword has a two-handed grip and alternating attacks. Moving fangs, glyphs, ruby, core tint and nested chain animate independently at rest; the slash trail uses the blade's measured path and reuses a fixed buffer.
 
 `district.js` batches static painted geometry by material. Animated rigs and explicitly marked collision meshes remain separate. Rendering changes preserve the mission's traversable road and cover positions.
 
@@ -33,6 +37,8 @@ node tests/render.cjs
 ```
 
 The browser test draws a depth-varying triangle through the actual GPU shaders. It reads back raw UV-encoded pixels and compares them with CPU-computed screen-space barycentric interpolation, then repeats with perspective correction and snapped raster vertices. In the test scene, the sampled U coordinate is approximately **0.333 affine** versus **0.157 perspective-correct**. It also verifies that dithering changes framebuffer pixels and that every final color channel belongs to the 32-level RGB555 palette.
+
+`tests/grips.cjs` samples 223 reload/recoil and alternating attack poses. It checks real joint positions and contact gaps, fixed arm lengths, wrapped fingers, the trigger fingertip, mirrored hand anatomy, idle framing and actual changes in the blade’s animated parts.
 
 `tests/weapons.cjs` verifies both starting weapons, human enemies, switching, melee range and damage, cooldown, ammunition, reload cancellation and restart. `tests/assets.html` is a model review scene using the same renderer and actual game models.
 

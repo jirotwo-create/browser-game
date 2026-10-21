@@ -3,6 +3,7 @@ import { PSXPipeline } from './graphics/psx-renderer.js';
 import { makePalette } from './graphics/textures.js';
 import { loft, mesh, plate, makeGuard, makeCarbine, makeSword } from './graphics/models.js';
 import { buildDistrict } from './graphics/district.js';
+import { poseCarbine, poseSword, gripDiagnostics } from './graphics/weapon-rig.js';
 const $=id=>document.getElementById(id);
 const pipeline=new PSXPipeline($('game'));
 const renderer=pipeline.renderer;
@@ -26,12 +27,12 @@ const rainPoints=[];for(let i=0;i<350;i++){const x=(rand()-.5)*50,y=rand()*19,z=
 const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.Float32BufferAttribute(rainPoints,3));const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0x7d9aad,transparent:true,opacity:.22}));scene.add(rain);
 // Authored faceted carbine and gloved arms share the same retro render target.
 const gunScene=new THREE.Scene();const gun=makeCarbine(materials);gunScene.add(gun);
-const sword=makeSword(materials);sword.visible=false;sword.position.set(.38,-.4,-1.02);sword.rotation.z=-.22;gunScene.add(sword);
-const flash=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,5),materials.acid);flash.rotation.x=-Math.PI/2;flash.position.set(.28,-.3,-1.4);flash.visible=false;gun.add(flash);
+const sword=makeSword(materials);sword.visible=false;gunScene.add(sword);
+const flash=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,5),materials.acid);flash.rotation.x=-Math.PI/2;flash.position.set(0,0,-.06);flash.visible=false;gun.userData.rig.muzzle.add(flash);
 const gunCamera=new THREE.PerspectiveCamera(72,camera.aspect,.01,5);
 const player={x:0,z:22,y:1.65,vy:0,yaw:0,pitch:0,hp:100,ammo:24,kills:0};
 let mode='menu',firing=false,looking=false,reloadTime=0,shotTime=0,recoil=0,damageTimer=0,hitTimer=0,noticeTimer=0,elapsed=0,missionTime=0,step=0,audio;
-let selectedWeapon='carbine',meleeCooldown=0,swordAttack=null,meleeStrikes=0,meleeHits=0;
+let selectedWeapon='carbine',meleeCooldown=0,swordAttack=null,meleeStrikes=0,meleeHits=0,weaponTime=0;
 const keys=new Set(),enemies=[],effects=[];let enemyId=0;
 function sound(freq=.1,duration=.1,type='sawtooth',volume=.035){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(20,freq*.24),audio.currentTime+duration);g.gain.setValueAtTime(volume,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration)}
 function notify(text){$('notice').textContent=text;noticeTimer=3}
@@ -62,7 +63,7 @@ function chooseWeapon(weapon){
 }
 function swingSword(){
  if(mode!=='playing'||meleeCooldown>0)return;
- swordAttack={elapsed:0,hit:false};meleeCooldown=.78;meleeStrikes++;
+ swordAttack={elapsed:0,hit:false,combo:meleeStrikes%2};meleeCooldown=.95;meleeStrikes++;
  sound(170,.22,'sawtooth',.035);updateHUD();
 }
 function resolveSwordHit(){
@@ -86,26 +87,24 @@ function fire(){
  const hits=ray.intersectObjects([...enemies.filter(e=>e.hp>0).map(e=>e.g),...solids.map(s=>s.mesh)],true);
  let end=camera.position.clone().add(ray.ray.direction.clone().multiplyScalar(55));
  if(hits.length){end=hits[0].point;const e=hits[0].object.userData.enemy;if(e)hitEnemy(e,1,'carbine')}
- const from=new THREE.Vector3(.28,-.25,-1.4).applyMatrix4(camera.matrixWorld);tracer(from,end);updateHUD();
+ poseCarbine(gun,{time:weaponTime,walk:step,recoil,reload:reloadTime});const from=gun.userData.rig.muzzle.getWorldPosition(new THREE.Vector3()).applyMatrix4(camera.matrixWorld);tracer(from,end);updateHUD();
 }
 function animateSword(dt){
+ weaponTime+=dt;
  const previousCooldown=meleeCooldown;meleeCooldown=Math.max(0,meleeCooldown-dt);if(previousCooldown>0&&meleeCooldown===0)updateHUD();
- let t=0;if(swordAttack){swordAttack.elapsed+=dt;t=swordAttack.elapsed;
-  if(t>=.18&&!swordAttack.hit){swordAttack.hit=true;resolveSwordHit()}
-  if(t>=.70)swordAttack=null;
+ if(swordAttack){
+  swordAttack.elapsed+=dt;
+  if(swordAttack.elapsed>=.32&&!swordAttack.hit){swordAttack.hit=true;resolveSwordHit()}
+  if(swordAttack.elapsed>=.90)swordAttack=null;
  }
- let slash=0,wind=0,recover=0;
- if(swordAttack){if(t<.13)wind=t/.13;else if(t<.38){wind=1;slash=Math.sin((t-.13)/.25*Math.PI/2)}else{recover=(t-.38)/.32;wind=1-recover;slash=1-recover}}
- sword.position.set(.38-slash*.73+wind*.1,-.4+wind*.08-slash*.1,-1.02+wind*.04+slash*.16);
- sword.rotation.set(-wind*.3+slash*.6,slash*-.65,-.22-wind*.35+slash*1.65);
- if(swordAttack&&t>.13&&t<.35){const segment=new THREE.Mesh(new THREE.PlaneGeometry(.018,.35),materials.crimson.clone());segment.position.set(.06+slash*.5,.2,-1.1);segment.rotation.z=.8+slash;gunScene.add(segment);effects.push({mesh:segment,ttl:.09,parent:gunScene})}
+ poseSword(sword,{time:weaponTime,attack:swordAttack?.elapsed||0,attacking:!!swordAttack,combo:swordAttack?.combo||0});
 }
 function updateHUD(){$('health').textContent=Math.max(0,Math.ceil(player.hp));$('healthbar').style.width=player.hp+'%';$('healthbar').style.background=player.hp<30?'#ff5a55':'#d8f36a';$('ammo').textContent=selectedWeapon==='sword'?'∞':String(player.ammo).padStart(2,'0');$('weapon-name').textContent=selectedWeapon==='sword'?'02 // MOURNFANG · THE OATH-EATER':'01 // K-09 PULSE CARBINE';$('ammo-reserve').textContent=selectedWeapon==='sword'?' / MELEE':' / ∞';$('weapon-status').textContent=selectedWeapon==='sword'?(meleeCooldown>0?'RECOVERING…':'CURSED EDGE · 2.8M REACH'):(reloadTime>0?'RELOADING…':'AUTO · 9MM ION');$('slot-carbine').classList.toggle('active',selectedWeapon==='carbine');$('slot-sword').classList.toggle('active',selectedWeapon==='sword');for(const [i,r]of relays.entries()){$('relay'+i).classList.toggle('done',r.done);$('relay'+i).querySelector('b').textContent=r.done?'STOLEN':'LOCKED'}const n=relays.filter(r=>r.done).length;$('objective').textContent=n===3?'Signal stolen. Return to the uplink at spawn.':`${n}/3 relays breached · ${enemies.filter(e=>e.hp>0).length} mercenaries active`}
 function end(win){swordAttack=null;mode=win?'won':'dead';firing=false;keys.clear();$('end-tag').textContent=win?'CONTRACT COMPLETE':'NEURAL LINK TERMINATED';$('end-title').textContent=win?'GHOST IN THE GRID':'FLATLINED';$('end-copy').textContent=win?`Three relays extracted. ${player.kills} sentries erased. ${Math.floor(missionTime/60)}m ${Math.floor(missionTime%60)}s. You were never here.`:'The city keeps its secrets. Reboot and try another approach.';$('resume').classList.add('hidden');$('pause').classList.remove('hidden');document.exitPointerLock?.();sound(win?660:90,.6,'triangle',.08)}
 function capture(){try{const p=$('game').requestPointerLock?.();p?.catch(()=>notify('MOUSE CAPTURE UNAVAILABLE · HOLD RIGHT MOUSE TO LOOK'))}catch{notify('HOLD RIGHT MOUSE TO LOOK')}}
 function start(){if(!audio){try{audio=new (window.AudioContext||window.webkitAudioContext)()}catch{}}audio?.resume();mode='playing';$('menu').classList.add('hidden');$('pause').classList.add('hidden');$('hud').classList.remove('hidden');capture();notify('FIND THE THREE RELAYS. HOLD E TO EXTRACT.');updateHUD()}
 function pause(){if(mode!=='playing')return;swordAttack=null;mode='paused';keys.clear();firing=false;$('end-tag').textContent='CONNECTION SUSPENDED';$('end-title').textContent='SIGNAL PAUSED';$('end-copy').textContent='Take a breath. The district can wait.';$('resume').classList.remove('hidden');$('pause').classList.remove('hidden');document.exitPointerLock?.()}
-function restart(){Object.assign(player,{x:0,z:22,y:1.65,vy:0,yaw:0,pitch:0,hp:100,ammo:24,kills:0});for(const r of relays){r.done=false;r.progress=0;r.halo.material=materials.cyan}for(const m of medkits){m.taken=false;m.g.visible=true}populate();selectedWeapon='carbine';gun.visible=true;sword.visible=false;swordAttack=null;meleeCooldown=meleeStrikes=meleeHits=0;reloadTime=shotTime=damageTimer=hitTimer=recoil=missionTime=0;keys.clear();$('damage').style.opacity=0;start()}
+function restart(){Object.assign(player,{x:0,z:22,y:1.65,vy:0,yaw:0,pitch:0,hp:100,ammo:24,kills:0});for(const r of relays){r.done=false;r.progress=0;r.halo.material=materials.cyan}for(const m of medkits){m.taken=false;m.g.visible=true}populate();selectedWeapon='carbine';gun.visible=true;sword.visible=false;swordAttack=null;meleeCooldown=meleeStrikes=meleeHits=weaponTime=0;reloadTime=shotTime=damageTimer=hitTimer=recoil=missionTime=0;keys.clear();$('damage').style.opacity=0;start()}
 $('start').onclick=start;$('resume').onclick=()=>{mode='playing';$('pause').classList.add('hidden');capture()};$('restart').onclick=restart;$('settings').onclick=()=>{document.body.classList.toggle('no-crt');$('settings').textContent=document.body.classList.contains('no-crt')?'CRT: OFF':'CRT: ON'};
 addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='F6'||e.code==='F7'||e.code==='F8'){e.preventDefault();const option={F6:'affine',F7:'vertexSnap',F8:'dither'}[e.code];pipeline.configure({[option]:!pipeline.options[option]});updateGraphics();return}if(e.code==='Escape'){pause();return}if(mode!=='playing')return;keys.add(e.code);if(!e.repeat&&['Digit1','Numpad1','Digit2','Numpad2','KeyQ'].includes(e.code)){chooseWeapon(e.code==='KeyQ'?(selectedWeapon==='carbine'?'sword':'carbine'):(e.code.endsWith('2')?'sword':'carbine'));return}if(e.code==='KeyR')reload();if(e.code==='Space'&&player.y<=1.651){player.vy=5;sound(140,.08,'triangle',.02)}});
 addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>{keys.clear();firing=false;pause()});
@@ -125,7 +124,7 @@ function tick(dt){elapsed+=dt;for(let i=effects.length-1;i>=0;i--){effects[i].tt
  const forward=Number(keys.has('KeyW')||keys.has('ArrowUp'))-Number(keys.has('KeyS')||keys.has('ArrowDown'));const strafe=Number(keys.has('KeyD'))-Number(keys.has('KeyA'));if(keys.has('ArrowLeft'))player.yaw+=dt*1.7;if(keys.has('ArrowRight'))player.yaw-=dt*1.7;
  const norm=Math.max(1,Math.hypot(forward,strafe)),speed=(keys.has('ShiftLeft')||keys.has('ShiftRight')?7:4.5)*dt/norm;move(player,(-Math.sin(player.yaw)*forward+Math.cos(player.yaw)*strafe)*speed,(-Math.cos(player.yaw)*forward-Math.sin(player.yaw)*strafe)*speed);
  player.vy-=dt*15;player.y=Math.max(1.65,player.y+player.vy*dt);if(player.y<=1.65)player.vy=0;step+=(Math.abs(forward)+Math.abs(strafe))*dt*9;
- camera.position.set(player.x,player.y+Math.sin(step)*.035*(!!forward||!!strafe),player.z);camera.rotation.order='YXZ';camera.rotation.set(player.pitch+recoil*.22,player.yaw,0);gun.position.set(Math.sin(step*.5)*.015,-Math.abs(Math.cos(step))*.01-(reloadTime>0?Math.sin(reloadTime/1.5*Math.PI)*.3:0),recoil);gun.rotation.z=reloadTime>0?-.4*Math.sin(reloadTime/1.5*Math.PI):0;
+ camera.position.set(player.x,player.y+Math.sin(step)*.035*(!!forward||!!strafe),player.z);camera.rotation.order='YXZ';camera.rotation.set(player.pitch+recoil*.22,player.yaw,0);poseCarbine(gun,{time:weaponTime,walk:step,recoil,reload:reloadTime});
  for(const e of enemies){if(e.hp<=0)continue;const pos=e.g.position,dist=Math.hypot(player.x-pos.x,player.z-pos.z);e.g.rotation.y=Math.atan2(player.x-pos.x,player.z-pos.z);const sight=dist<30&&canSee(pos,player);if(sight)e.alert=true;if(e.alert&&dist>4){const direction=Math.atan2(player.x-pos.x,player.z-pos.z);let p={x:pos.x,z:pos.z};const sway=Math.sin(elapsed+e.phase)*.5;move(p,Math.sin(direction+sway)*dt*1.6,Math.cos(direction+sway)*dt*1.6,.4);if(Math.hypot(p.x-player.x,p.z-player.z)>1.4)pos.set(p.x,0,p.z);e.legs[0].rotation.x=Math.sin(elapsed*7+e.phase)*.4;e.legs[1].rotation.x=-e.legs[0].rotation.x;e.knees[0].rotation.x=Math.max(0,Math.sin(elapsed*7+e.phase))*.55;e.knees[1].rotation.x=Math.max(0,-Math.sin(elapsed*7+e.phase))*.55;e.torso.rotation.z=Math.sin(elapsed*7+e.phase)*.025;}e.shot-=dt;if(e.shot<=0&&sight){e.shot=1.8+rand()*.7;tracer(new THREE.Vector3(pos.x,1.3,pos.z),camera.position.clone(),0xff564c);player.hp=Math.max(0,player.hp-(keys.has('ShiftLeft')?4:7));damageTimer=.35;sound(65,.15,'sawtooth',.03);updateHUD();if(player.hp<=0){end(false);return}}}
  for(const m of medkits)if(!m.taken&&player.hp<100&&Math.hypot(player.x-m.g.position.x,player.z-m.g.position.z)<1.3){m.taken=true;m.g.visible=false;player.hp=Math.min(100,player.hp+40);notify('MED PATCH +40 / VITAL SYSTEMS RESTORED');sound(720,.2,'sine');updateHUD()}
  let prompt='';for(const r of relays){if(r.done)continue;const close=Math.hypot(player.x-r.x,player.z-r.z)<2.7;if(close){const danger=enemies.some(e=>e.hp>0&&Math.hypot(e.g.position.x-r.x,e.g.position.z-r.z)<6);prompt=danger?'RELAY GUARDED / CLEAR NEARBY MERCENARIES':`HOLD [ E ] TO BREACH RELAY ${Math.floor(r.progress*100)}%`;if(keys.has('KeyE')&&!danger){r.progress+=dt/1.3;if(r.progress>=1){r.done=true;r.halo.visible=false;sound(880,.3,'triangle');notify('RELAY EXTRACTED / '+relays.filter(r=>r.done).length+' OF 3');updateHUD()}}else r.progress=Math.max(0,r.progress-dt*.5)}else r.progress=0}
@@ -134,4 +133,4 @@ function updateGraphics(){const s=pipeline.options;const el=$('graphics-status')
 updateGraphics();
 let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);gunCamera.aspect=camera.aspect;gunCamera.updateProjectionMatrix();pipeline.render(scene,camera,mode==='menu'?null:gunScene,gunCamera)}requestAnimationFrame(frame);
 // Read-only diagnostics for smoke tests and renderer inspection.
-window.nullDistrict={get state(){return {mode,health:player.hp,ammo:player.ammo,weapon:selectedWeapon,inventory:['carbine','sword'],meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length}},renderer,scene,pipeline,graphics:()=>({...pipeline.diagnostics,...district,guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset})};
+window.nullDistrict={get state(){return {mode,health:player.hp,ammo:player.ammo,weapon:selectedWeapon,inventory:['carbine','sword'],meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length}},renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword)}),graphics:()=>({...pipeline.diagnostics,...district,guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset})};

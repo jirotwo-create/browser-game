@@ -1,5 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
 import { organic, faceGeometry, polygonPrism } from './anatomy.js';
+import { createHeldRig, poseCarbine, poseSword } from './weapon-rig.js';
 
 // Eight-sided cross-sections create actual chamfered silhouettes, not cube props.
 export function loft(sections, axis='y') {
@@ -62,44 +63,61 @@ export function makeGuard(m,variant=0) {
  return {g,legs,knees,arms,head,torso};
 }
 export function makeCarbine(m) {
- const g=new THREE.Group();g.name='K09-angular-carbine';
- mesh(g,loft([[-.95,.12,.12],[-.82,.29,.23],[-.4,.27,.27],[-.26,.19,.18]],'z'),m.rust,.28,-.3,0);
- plate(g,m.metal,.12,.12,.42,.28,-.24,-.7);plate(g,m.hazard,.23,.085,.29,.28,-.18,-.56);
- plate(g,m.black,.06,.11,.075,.28,-.115,-.54);plate(g,m.red,.035,.025,.02,.28,-.06,-.5);
- const barrel=cylinder(g,m.metal,.068,.32,6,.28,-.3,-1.04);barrel.rotation.x=Math.PI/2;
- const muzzle=cylinder(g,m.black,.086,.11,6,.28,-.3,-1.23);muzzle.rotation.x=Math.PI/2;
- const grip=plate(g,m.coat,.12,.3,.15,.3,-.48,-.37);grip.rotation.x=-.25;
- const mag=plate(g,m.dark,.13,.23,.22,.28,-.49,-.63);mag.rotation.x=.2;
- mesh(g,loft([[-.65,.15,.17],[-.45,.22,.22]],'z'),m.skin,.31,-.51,.28);
- const sleeve=plate(g,m.coat,.22,.21,.37,.43,-.59,-.16);sleeve.rotation.z=-.25;
- plate(g,m.metal,.24,.09,.22,.34,-.54,-.23);
- // A second forearm supports the barrel, visibly modeled rather than a gun box.
- const support=mesh(g,loft([[-.65,.15,.17],[-.3,.2,.2]],'z'),m.coat,.14,-.46,-.14);support.rotation.y=-.36;
- g.userData.asset={name:'K09 bevelled carbine',triangles:countTriangles(g)};return g;
+ const g=createHeldRig(m);g.name='K09-two-handed-carbine';const r=g.userData.rig,t=r.tool;
+ mesh(t,loft([[-.43,.10,.12],[-.32,.14,.15],[.12,.13,.18],[.24,.085,.13]],'z'),m.metal,0,.17,0);
+ mesh(t,organic([[-.105,.031,.037],[.03,.037,.044],[.105,.033,.041]],8),m.glove);
+ const fore=mesh(t,loft([[-.54,.09,.09],[-.47,.125,.13],[-.20,.12,.12]],'z'),m.black,0,.15,0);fore.name='fore-end-under-support-hand';
+ cylinder(t,m.metal,.032,.29,7,0,.17,-.65).rotation.x=Math.PI/2;
+ cylinder(t,m.black,.049,.085,7,0,.17,-.84).rotation.x=Math.PI/2;
+ for(let i=0;i<4;i++)plate(t,m.metal,.13,.015,.022,0,.235,-.26-i*.05);
+ plate(t,m.black,.025,.055,.028,0,.275,-.69);
+ // Open rear sight, stock running back toward the player's right shoulder.
+ for(const x of [-.027,.027])plate(t,m.black,.018,.045,.025,x,.275,.09);
+ mesh(t,loft([[.18,.06,.055],[.42,.06,.06]],'z'),m.black,0,.15,0);
+ plate(t,m.glove,.105,.20,.04,0,.11,.42);
+ const mag=mesh(t,organic([[-.17,.042,.063],[-.025,.049,.07],[.08,.043,.065]],6),m.metal,0,-.03,-.18);mag.rotation.x=.11;r.magazine=mag;
+ for(const [a,b]of [[[0,.11,-.09],[0,.11,-.19]],[[0,.11,-.19],[0,.01,-.18]],[[0,.01,-.18],[0,.01,-.04]]]){
+  const d=new THREE.Vector3(...b).sub(new THREE.Vector3(...a));const tube=cylinder(t,m.black,.007,d.length(),5,...new THREE.Vector3(...a).addScaledVector(d,.5).toArray());tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+ }
+ const trigger=cylinder(t,m.metal,.007,.035,5,.012,.065,-.14);trigger.rotation.x=-.35;
+ r.trigger=new THREE.Object3D();r.trigger.name='trigger-contact';r.trigger.position.set(.018,.065,-.14);t.add(r.trigger);
+ r.muzzle=new THREE.Object3D();r.muzzle.name='actual-muzzle';r.muzzle.position.set(0,.17,-.89);t.add(r.muzzle);
+ g.userData.asset={name:'K09 / shouldered two-hand carbine',triangles:countTriangles(g),features:['trigger finger on trigger','opposed thumb','support hand around fore-end','shoulder elbow wrist IK','physical muzzle']};
+ poseCarbine(g);return g;
 }
 export function makeSword(m) {
- const g=new THREE.Group();g.name='MOURNFANG-cursed-greatsword';
- const outline=[[-.07,.055],[.07,.055],[.105,.36],[.064,.43],[.145,.65],[.055,.62],[.08,.86],[0,1.13],[-.08,.86],[-.055,.62],[-.145,.65],[-.064,.43],[-.105,.36]];
- const blade=mesh(g,polygonPrism(outline,.035,.045),m.obsidian);blade.name='serrated-faceted-obsidian-blade';
- // Cutting edges and a crimson fuller are actual thin raised polygon meshes.
+ const g=createHeldRig(m,{sword:true});g.name='MOURNFANG-living-relic';const r=g.userData.rig,t=r.tool;
+ const bladeRoot=new THREE.Group();bladeRoot.position.y=.145;t.add(bladeRoot);
+ // Chipped, asymmetrical blackened steel with a hooked back edge and a narrow
+ // stabbing tip. Highlights come from worn metal textures, not pastel facets.
+ const outline=[[-.065,0],[.085,.02],[.105,.24],[.065,.30],[.14,.52],[.055,.48],[.085,.72],[.02,1.02],[-.04,.88],[-.105,.68],[-.065,.62],[-.145,.43],[-.09,.46],[-.115,.24],[-.06,.28]];
+ const blade=mesh(bladeRoot,polygonPrism(outline,.032,.025),m.obsidian);blade.name='blackened-hooked-blade';
+ mesh(bladeRoot,polygonPrism([[.065,.02],[.085,.24],[.049,.3],[.12,.51],[.042,.47],[.068,.71],[.02,1.02],[.045,.70],[.017,.45],[.079,.49],[.025,.29],[.06,.23]],.006,.002),m.edge,0,0,.024);
+ const core=m.crimson.clone();core.uniforms.tint.value.setRGB(.36,.022,.016);
+ const glyphs=[],fangs=[],links=[];
+ mesh(bladeRoot,polygonPrism([[-.012,.05],[.014,.1],[-.004,.26],[.019,.38],[.002,.55],[.018,.69],[.008,.85],[-.003,.70],[-.014,.56],[0,.39],[-.021,.25]],.004,0),core,0,0,.05);
+ for(let i=0;i<7;i++){const y=.09+i*.104;const rune=mesh(bladeRoot,polygonPrism([[-.021,0],[.014,.01],[-.008,.024],[.017,.041],[.003,.039],[-.025,.02],[-.007,.01]],.003,0),core,0,y,.055);rune.userData.baseY=y;glyphs.push(rune)}
  for(const side of [-1,1]){
-  mesh(g,polygonPrism([[side*.065,.08],[side*.105,.36],[side*.064,.43],[side*.145,.65],[side*.055,.62],[side*.08,.86],[0,1.13],[side*.047,.83],[side*.031,.59],[side*.09,.63],[side*.034,.42],[side*.07,.35]],.009,.005),m.edge,0,0,.025);
-  mesh(g,polygonPrism([[0,.12],[side*.018,.25],[side*.012,.8],[0,1.03]],.008,.008),m.crimson,0,0,.082);
-  const guard=mesh(g,polygonPrism([[0,.04],[side*.13,.01],[side*.27,.1],[side*.30,.23],[side*.22,.15],[side*.13,.115],[0,.12]],.055,.035),m.obsidian);guard.name='horned-crossguard';
+  const wing=mesh(t,polygonPrism([[0,.11],[side*.12,.07],[side*.25,.14],[side*.29,.29],[side*.21,.21],[side*.11,.19],[0,.22]],.035,.014),m.obsidian);wing.name='forged-demonic-crossguard';
+  for(let i=0;i<3;i++){const hinge=new THREE.Group();hinge.position.set(side*(.072+i*.005),.37+i*.18,.005);t.add(hinge);const fang=mesh(hinge,polygonPrism([[0,0],[side*.07,.035],[side*.035,.13],[side*.016,.049]],.015,.006),m.edge);hinge.userData={side,rest:side*.1};hinge.rotation.z=hinge.userData.rest;fang.name='articulated-blade-fang';fangs.push(hinge)}
  }
- for(let i=0;i<6;i++){
-  const y=.23+i*.098;mesh(g,polygonPrism([[-.014,y],[.012,y+.016],[-.004,y+.028],[.018,y+.047],[.003,y+.044],[-.018,y+.024],[0,y+.014]],.003,0),m.crimson,0,0,.095);
- }
- mesh(g,organic([[-.31,.035,.035],[-.1,.039,.039],[.015,.032,.032]],8),m.leather);
- for(let i=0;i<6;i++){const wrap=cylinder(g,m.edge,.038,.012,7,0,-.27+i*.042,0);wrap.rotation.z=.18}
- const skull=mesh(g,new THREE.IcosahedronGeometry(.069,0),m.edge,0,.065,.055,[1,1.1,.75]);skull.name='demon-skull-guard';
- for(const side of [-1,1]){mesh(g,new THREE.IcosahedronGeometry(.015,0),m.crimson,side*.024,.079,.111);const horn=mesh(g,new THREE.ConeGeometry(.025,.12,4),m.obsidian,side*.06,.15,.03);horn.rotation.z=-side*.45}
- mesh(g,new THREE.IcosahedronGeometry(.065,0),m.obsidian,0,-.35,0);mesh(g,new THREE.OctahedronGeometry(.038,0),m.crimson,0,-.35,.046);
- const hand=mesh(g,organic([[-.23,.05,.055],[-.13,.06,.065],[-.085,.045,.048]],8),m.skin,.025,0,.022);hand.name='sword-gripping-hand';
- for(let i=0;i<4;i++){const finger=mesh(g,organic([[-.035,.013,.017],[.032,.017,.022]],6),m.skin,.035,-.105-i*.029,.045);finger.rotation.z=Math.PI/2}
- const arm=mesh(g,organic([[-.59,.085,.10,.14,.09],[-.43,.073,.08,.08,.06],[-.23,.047,.054,0,.02]],9),m.coat,.025,0,.02);arm.name='sculpted-sword-forearm';
- g.userData.asset={name:'MOURNFANG / the Oath-Eater',triangles:countTriangles(g),type:'cursed fantasy sword',features:['serrated blade','faceted cutting edges','raised runes','demonic crossguard','ruby pommel','modeled gripping fingers']};
- return g;
+ mesh(t,organic([[-.34,.028,.03],[-.19,.033,.034],[.10,.034,.035],[.15,.025,.027]],8),m.leather);
+ for(let i=0;i<10;i++){const wrap=cylinder(t,m.black,.035,.011,8,0,-.30+i*.041,0);wrap.rotation.z=.15}
+ // A hollow-eyed iron skull with cheek bones, a nasal cavity and exposed fangs.
+ mesh(t,polygonPrism([[-.055,.115],[-.065,.185],[-.04,.225],[.04,.225],[.065,.185],[.055,.115],[.025,.09],[-.025,.09]],.035,.015),m.edge,0,0,.04);
+ for(const side of [-1,1]){mesh(t,polygonPrism([[0,0],[side*.031,.006],[side*.024,.027],[side*.003,.022]],.003,0),m.black,side*.008,.165,.086);mesh(t,new THREE.IcosahedronGeometry(.009,0),core,side*.025,.178,.091);const horn=mesh(t,new THREE.ConeGeometry(.018,.13,4),m.obsidian,side*.059,.257,.028);horn.rotation.z=-side*.5}
+ mesh(t,polygonPrism([[0,.145],[-.012,.123],[.012,.123]],.004,0),m.black,0,0,.089);
+ for(const x of [-.03,-.015,0,.015,.03]){const tooth=mesh(t,new THREE.ConeGeometry(.007,.035,3),m.edge,x,.108,.077);tooth.rotation.z=Math.PI}
+ mesh(t,new THREE.IcosahedronGeometry(.047,0),m.obsidian,0,-.375,0);
+ const ruby=mesh(t,new THREE.OctahedronGeometry(.026,0),core,0,-.378,.04);
+ let chain=t;for(let i=0;i<5;i++){const link=new THREE.Group();link.position.set(i===0?-.225:0,i===0?.13:-.046,.02);chain.add(link);const ring=mesh(link,new THREE.TorusGeometry(.022,.005,3,6),m.edge);ring.rotation.y=i%2?Math.PI/2:0;links.push(link);chain=link}
+ mesh(chain,new THREE.ConeGeometry(.016,.065,4),m.obsidian,0,-.055,0).rotation.z=Math.PI;
+ r.tip=new THREE.Object3D();r.tip.position.set(.02,1.165,0);t.add(r.tip);
+ const ribbon=new THREE.BufferGeometry();ribbon.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));
+ const trail=mesh(g,ribbon,new THREE.MeshBasicMaterial({color:0x68221a,transparent:true,opacity:.24,side:THREE.DoubleSide,depthWrite:false}));trail.frustumCulled=false;trail.visible=false;
+ g.userData.relic={core,ruby,glyphs,fangs,links,trail,previousTip:null,previousBase:null};
+ g.userData.asset={name:'MOURNFANG / living Oath-Eater',triangles:countTriangles(g),type:'animated cursed greatsword',features:['two-handed anatomical grip','chipped hooked steel','articulated blade fangs','flowing blood runes','pulsing hollow skull','spiked hanging chain','rotating ruby','swept physical blade trail']};
+ poseSword(g);return g;
 }
 export function makeCrate(m,w=2,h=1.4,d=2){const g=new THREE.Group();mesh(g,loft([[0,w*.88,d*.9],[.2,w,d],[h-.2,w,d],[h,w*.88,d*.9]]),m.rust);plate(g,m.hazard,w*.8,.28,.04,0,h*.62,d/2+.025);for(const s of [-1,1])plate(g,m.metal,.15,h*.8,d*.88,s*w*.36,h/2,0);return g}
 export function countTriangles(group){let n=0;group.traverse(o=>{if(o.isMesh)n+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3});return n}
