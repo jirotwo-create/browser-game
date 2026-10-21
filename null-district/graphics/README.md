@@ -14,7 +14,7 @@ Depth testing and near-plane clipping use the GPU. This is a renderer designed a
 
 ## Art
 
-`models.js` constructs angular meshes from chamfered and tapered eight-sided sections, independent flat-shaded triangles and face UVs. The SABLE patrolman has 784 triangles; the K09 and its modeled arms have 388. Buildings have tapered upper stories, polygonal tanks and ducts, awnings, rooftop antennae and shuttered shops. Paletted posters, worn metal, hazard paint and tiled pavement provide patterns that make affine distortion legible.
+`anatomy.js` creates anatomical oval cross-sections with independently positioned rings, plus explicit facial topology and beveled polygon prisms. `models.js` uses those shapes for the human skull, modeled nose/cheeks/chin, eyes, eyebrows, hair, hands/fingers, tailored torso and jointed limbs. There is no robot helmet or visor. The sword uses a serrated extruded blade with beveled faces, raised rune geometry, horned crossguard, skull fittings and ruby pommel. The human SABLE mercenary variants have about 1,300 triangles; the K09 and its modeled arms have 388. MOURNFANG and its gripping forearm have 1,170. Buildings have tapered upper stories, polygonal tanks and ducts, awnings, rooftop antennae and shuttered shops. Paletted posters, worn metal, hazard paint and tiled pavement provide patterns that make affine distortion legible.
 
 `district.js` batches static painted geometry by material. Animated rigs and explicitly marked collision meshes remain separate. Rendering changes preserve the mission's traversable road and cover positions.
 
@@ -33,5 +33,7 @@ node tests/render.cjs
 ```
 
 The browser test draws a depth-varying triangle through the actual GPU shaders. It reads back raw UV-encoded pixels and compares them with CPU-computed screen-space barycentric interpolation, then repeats with perspective correction and snapped raster vertices. In the test scene, the sampled U coordinate is approximately **0.333 affine** versus **0.157 perspective-correct**. It also verifies that dithering changes framebuffer pixels and that every final color channel belongs to the 32-level RGB555 palette.
+
+`tests/weapons.cjs` verifies both starting weapons, human enemies, switching, melee range and damage, cooldown, ammunition, reload cancellation and restart. `tests/assets.html` is a model review scene using the same renderer and actual game models.
 
 `tests/mission.cjs` exercises real-input combat, all three relay breaches and extraction. `tests/desktop.cjs` validates local packaged module loading, the affine comparison control, movement, mouse capture, firing, reloading, pause/restart, fullscreen, renderer isolation and offline operation. Set `NULL_DISTRICT_URL` to use another preview port; set `PLAYWRIGHT_MODULE` to use another Playwright installation.
