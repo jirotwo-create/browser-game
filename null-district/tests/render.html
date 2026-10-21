@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Raster pipeline verification</title><link rel="icon" href="../favicon.svg"></head><body><canvas id="raster"></canvas><script type="module">
+import * as T from '../vendor/three.module.js';
+import {PSXPipeline} from '../graphics/psx-renderer.js';
+const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(320,240);pipe.configure({vertexSnap:false,dither:false});
+const scene=new T.Scene();scene.background=new T.Color(0,0,0);const camera=new T.PerspectiveCamera(60,4/3,.1,50);
+const points=[[-1,-.8,-2],[2,-.8,-6],[-.5,1,-2.5]];const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(points.flat(),3));g.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,0,1],2));g.computeVertexNormals();const material=pipe.material(0xffffff,undefined,1,1,{debugUV:{value:1}});scene.add(new T.Mesh(g,material));
+const projected=points.map(p=>{const v=new T.Vector3(...p).project(camera);return [(v.x*.5+.5)*320,(v.y*.5+.5)*240]});
+const pixel=projected.reduce((a,p)=>[a[0]+p[0]/3,a[1]+p[1]/3],[0,0]).map(Math.floor);
+function barycentric(p,tri){const [a,b,c]=tri;const det=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);const u=((b[1]-c[1])*(p[0]-c[0])+(c[0]-b[0])*(p[1]-c[1]))/det;const v=((c[1]-a[1])*(p[0]-c[0])+(a[0]-c[0])*(p[1]-c[1]))/det;return [u,v,1-u-v]}
+function sample(affine,snap=false){pipe.configure({affine,vertexSnap:snap});pipe.render(scene,camera);const data=new Uint8Array(4);pipe.renderer.readRenderTargetPixels(pipe.target,...pixel,1,1,data);return [...data.slice(0,2)].map(n=>n/255)}
+function canvasPixels(){const gl=pipe.renderer.getContext(),data=new Uint8Array(320*240*4);gl.readPixels(0,0,320,240,gl.RGBA,gl.UNSIGNED_BYTE,data);return data}
+window.verifyPipeline=()=>{
+ const weights=barycentric(pixel.map(n=>n+.5),projected),recip=weights.map((w,i)=>w/-points[i][2]),denom=recip.reduce((a,b)=>a+b,0);
+ const expectedAffine=[weights[1],weights[2]],expectedPerspective=[recip[1]/denom,recip[2]/denom];
+ const affine=sample(true),perspective=sample(false),snapped=sample(true,true);
+ const snappedWeights=barycentric(pixel.map(n=>n+.5),projected.map(p=>p.map(n=>Math.floor(n)+.5)));
+ const snapExpected=[snappedWeights[1],snappedWeights[2]];
+ pipe.configure({affine:true,vertexSnap:false,dither:false});pipe.render(scene,camera);const undithered=canvasPixels();pipe.configure({dither:true});pipe.render(scene,camera);const dithered=canvasPixels();let changed=0,badPalette=0;
+ const levels=new Set(Array.from({length:32},(_,i)=>Math.round(i/31*255)));
+ for(let i=0;i<dithered.length;i++){if(i%4===3)continue;if(dithered[i]!==undithered[i])changed++;if(!levels.has(dithered[i]))badPalette++}
+ return {affine,perspective,snapped,expectedAffine,expectedPerspective,snapExpected,changed,badPalette,diagnostics:pipe.diagnostics};
+};
+</script></body></html>

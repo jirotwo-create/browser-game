@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 (async()=>{
  const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
  const page=await b.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
- await page.goto('http://127.0.0.1:4180');await page.waitForFunction(()=>!!window.nullDistrict);await page.waitForTimeout(700);
+ await page.goto((process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180'));await page.waitForFunction(()=>!!window.nullDistrict);await page.waitForTimeout(700);
  await page.screenshot({path:'/tmp/null-district-menu.png'});
  await page.evaluate(()=>{document.getElementById('game').requestPointerLock=()=>Promise.resolve()});
  await page.getByRole('button',{name:'ENTER THE DISTRICT'}).click();

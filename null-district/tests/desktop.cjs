@@ -17,6 +17,16 @@ const path = require('node:path');
     page.on('request', request => { if (/^https?:/.test(request.url())) remote.push(request.url()); });
     await page.waitForFunction(() => !!window.nullDistrict);
     assert.equal(new URL(page.url()).protocol, 'null-district:');
+    const graphics = await page.evaluate(() => nullDistrict.graphics());
+    assert.equal(graphics.interpolation, 'screen-space affine');
+    assert.equal(graphics.colorDepth, 'RGB555');
+    assert.equal(graphics.resolution[1], 240);
+    assert.ok(graphics.guard.triangles > 100 && graphics.guard.triangles < 1000);
+    await page.keyboard.press('F6');
+    assert.equal(await page.evaluate(() => nullDistrict.graphics().affine), false);
+    await page.keyboard.press('F6');
+    assert.equal(await page.evaluate(() => nullDistrict.graphics().affine), true);
+
     assert.equal(await page.evaluate(async () => { const r = await fetch('null-district://game/'); return r.ok && (await r.text()).includes('NULL DISTRICT'); }), true, 'Root navigation must load the game');
     assert.equal(await page.evaluate(() => typeof require), 'undefined', 'Renderer must not expose Node.js');
     await page.click('#start');
@@ -53,6 +63,7 @@ const path = require('node:path');
       return { sandbox: prefs.sandbox, nodeIntegration: prefs.nodeIntegration, contextIsolation: prefs.contextIsolation };
     });
     assert.deepEqual(security, { sandbox: true, nodeIntegration: false, contextIsolation: true });
-    console.log('PASS: standalone desktop launch, local modules/WebGL, pointer capture, movement, shooting, reload, pause/restart, fullscreen, isolated renderer, no remote requests.');
+    await page.screenshot({path:'/tmp/null-desktop-psx.png'});
+    console.log('PASS: affine toggle/retro graphics, standalone desktop launch, local modules/WebGL, pointer capture, movement, shooting, reload, pause/restart, fullscreen, isolated renderer, no remote requests.');
   } finally { await app.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
