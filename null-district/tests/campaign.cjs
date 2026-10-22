@@ -1,11 +1,11 @@
 const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-tools/node_modules/playwright');const assert=require('node:assert/strict');
 const BASE=process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180';
-(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1440,height:900}});p.setDefaultTimeout(10000);const errors=[];p.on('pageerror',e=>{if(errors.length<5)console.error('Game error:',e.message);errors.push(e.message)});let watchdog=setTimeout(()=>{console.error('Campaign watchdog');browser.close().finally(()=>process.exit(1))},300000);
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1440,height:900}});p.setDefaultTimeout(10000);const errors=[];p.on('pageerror',e=>{if(errors.length<5)console.error('Game error:',e.message);errors.push(e.message)});let watchdog=setTimeout(()=>{console.error('Campaign watchdog');browser.close().finally(()=>process.exit(1))},900000);
 try{
- await p.bringToFront();await p.goto(BASE);await p.waitForFunction(()=>window.nullDistrict);await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await p.click('#start');
+ await p.bringToFront();await p.goto(BASE);await p.waitForFunction(()=>window.nullDistrict);await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());if(Number(process.env.START_CHAPTER)>1)await p.click(`[data-level="${Number(process.env.START_CHAPTER)-1}"]`);await p.click('#start');
  const state=()=>p.evaluate(()=>nullDistrict.state);
  async function look(yaw,pitch=0){const s=await state();let d=yaw-s.yaw;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const dx=-d/.0024,dy=-(pitch-s.pitch)/.0024,n=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/350));for(let i=0;i<n;i++){await p.mouse.move(720,450);await p.mouse.down({button:'right'});await p.mouse.move(720+dx/n,450+dy/n);await p.mouse.up({button:'right'})}}
- async function target(){return p.evaluate(async()=>{const T=await import('/vendor/three.module.js');const s=nullDistrict.state,origin=new T.Vector3(s.position.x,s.position.y,s.position.z),groups=[],walls=[];nullDistrict.scene.traverse(o=>{if(o.isMesh&&o.userData.enemy?.hp>0)groups.push(o);if(o.userData.collider)walls.push(o)});for(const t of [...s.targets].sort((a,b)=>Math.hypot(a.x-s.position.x,a.z-s.position.z)-Math.hypot(b.x-s.position.x,b.z-s.position.z))){const d=Math.hypot(t.x-s.position.x,t.z-s.position.z);if(d>18)continue;for(const height of t.type==='hound'?[.8,.6,1]:t.type==='gargoyle'?[1.7,1.4,2]:[1.23,1.65,.85]){const aim=new T.Vector3(t.x,height,t.z),ray=new T.Raycaster(origin,aim.clone().sub(origin).normalize()),hit=ray.intersectObjects([...groups,...walls],false)[0];if(hit?.object.userData.enemy?.id===t.id)return {...t,height}}}return null})}
+ async function target(){return p.evaluate(async()=>{const T=await import('/vendor/three.module.js');const s=nullDistrict.state,origin=new T.Vector3(s.position.x,s.position.y,s.position.z),groups=[],walls=[];nullDistrict.scene.traverse(o=>{if(o.isMesh&&o.userData.enemy?.hp>0)groups.push(o);if(o.userData.collider)walls.push(o)});for(const t of [...s.targets].sort((a,b)=>Math.hypot(a.x-s.position.x,a.z-s.position.z)-Math.hypot(b.x-s.position.x,b.z-s.position.z))){const d=Math.hypot(t.x-s.position.x,t.z-s.position.z);if(d>18)continue;for(const height of t.type==='hound'?[.8,.6,1]:t.type==='gargoyle'?[1.7,1.4,2]:[1.23,1.65,.85]){const aim=new T.Vector3(t.x,height,t.z),ray=new T.Raycaster(origin,aim.clone().sub(origin).normalize()),hit=ray.intersectObjects([...groups,...walls],true)[0];if(hit?.object.userData.enemy?.id===t.id)return {...t,height}}}return null})}
  async function fight(){
   const t=await target();if(!t)return false;let s=await state();assert.equal(s.mode,'playing',JSON.stringify(s));
   if(s.ammo===0){await p.keyboard.down('KeyR');await p.waitForTimeout(80);await p.keyboard.up('KeyR');await p.waitForFunction(()=>nullDistrict.state.ammo===24).catch(async e=>{throw Error('Reload failed '+await p.locator('#weapon-status').textContent()+' '+JSON.stringify(await state()))});s=await state()}
@@ -29,7 +29,7 @@ try{
       cost.set(vk,g);from.set(vk,u);open.push(v);
      }
     }
-    if(!end)return null;const path=[];while(key(...end)!==key(...start)){path.unshift({x:end[0]*step,z:end[1]*step});end=from.get(key(...end));}return path;
+    if(!end)return null;const path=[];while(key(...end)!==key(...start)){path.unshift({x:end[0]*step,z:end[1]*step});end=from.get(key(...end));}for(let index=Math.min(2,path.length-1);index>=0;index--){const goal=path[index],count=Math.ceil(Math.hypot(goal.x-s.position.x,goal.z-s.position.z)/.08);let clear=true;for(let j=1;j<=count;j++)if(!valid(s.position.x+(goal.x-s.position.x)*j/count,s.position.z+(goal.z-s.position.z)*j/count)){clear=false;break}if(clear)return [goal];}return path.slice(0,1);
    },{x,z});
    assert.ok(path,'No traversable route '+x+','+z);const waypoint=path[Math.min(2,path.length-1)]||{x,z};s=await state();const distance=Math.hypot(waypoint.x-s.position.x,waypoint.z-s.position.z);await look(Math.atan2(-(waypoint.x-s.position.x),-(waypoint.z-s.position.z)));await p.keyboard.down('KeyW');await p.waitForTimeout(Math.min(180,Math.max(45,distance/4.5*850)));await p.keyboard.up('KeyW');
   }
@@ -41,14 +41,18 @@ try{
   for(const node of initial.nodes){
    const approach={x:node.x+(node.x<0?1.6:node.x>0?-1.6:1.6),z:node.z};
    await route(approach.x,approach.z);for(let i=0;i<100&&await fight();i++){}
-   await p.keyboard.down('KeyE');await p.waitForTimeout(1500);await p.keyboard.up('KeyE');
+   await p.keyboard.down('KeyE');await p.waitForFunction(({x,z})=>nullDistrict.state.nodes.some(r=>r.x===x&&r.z===z&&r.done),node,{timeout:12000}).catch(async e=>{throw Error('Objective interaction failed '+await p.locator('#prompt').textContent()+' '+JSON.stringify(await state()))});await p.keyboard.up('KeyE');
    assert.equal((await state()).nodes.find(r=>r.x===node.x&&r.z===node.z).done,true,'Objective must complete through held E');console.log('Node',node.x,node.z,'HP',(await state()).health);
   }
   assert.equal((await state()).relays,3);await route(initial.exit.x,initial.exit.z);await p.keyboard.down('KeyE');await p.waitForFunction(()=>['intermission','won'].includes(nullDistrict.state.mode));await p.keyboard.up('KeyE');
  }
- await chapter();assert.equal((await state()).mode,'intermission');const kills=(await state()).kills;await p.click('#next-level');assert.equal((await state()).level,2);assert.equal((await state()).kills,kills);assert.deepEqual((await state()).inventory,['carbine','sword']);assert.equal((await state()).relays,0);
- await chapter();assert.equal((await state()).mode,'won');await p.screenshot({path:'/tmp/null14-campaign-victory.png'});assert.deepEqual(errors,[]);console.log('PASS: real-input combat, navigation, all 6 nodes, Chapter 01 -> 02 transition, carried inventory/kills and final cathedral victory.');
+ const first=await state(),total=await p.evaluate(()=>nullDistrict.graphics().chapters.length);let finalEnemies=0;
+ for(let chapterIndex=first.level;chapterIndex<=total;chapterIndex++){
+  finalEnemies=(await state()).enemies;await chapter();
+  if(chapterIndex<total){assert.equal((await state()).mode,'intermission');const kills=(await state()).kills;await p.click('#next-level');const next=await state();assert.equal(next.level,chapterIndex+1);assert.equal(next.kills,kills);assert.equal(next.health,100);assert.equal(next.ammo,24);assert.deepEqual(next.inventory,['carbine','sword']);assert.equal(next.relays,0);}
+ }
+ assert.equal((await state()).mode,'won');await p.screenshot({path:'/tmp/null16-campaign-victory.png'});assert.deepEqual(errors,[]);console.log(`PASS: real-input combat, navigation, ${(total-first.level+1)*3} objectives, sequential chapter transitions, carried inventory/kills and final broadcast victory.`);
  // Restart and chapter select must dispose the old chapter and reset the current one.
- await p.click('#restart');let s=await state();assert.equal(s.level,2);assert.equal(s.relays,0);assert.equal(s.enemies,12);assert.equal(s.health,100);assert.equal(s.ammo,24);
+ await p.click('#restart');let s=await state();assert.equal(s.level,total);assert.equal(s.relays,0);assert.equal(s.enemies,finalEnemies);assert.equal(s.health,100);assert.equal(s.ammo,24);
  await p.keyboard.press('Escape');await p.click('#to-menu');await p.click('[data-level="0"]');await p.click('#start');s=await state();assert.equal(s.level,1);assert.equal(s.enemies,9);assert.equal(s.kills,0);assert.equal(s.projectiles.length,0);console.log('PASS: chapter restart and menu selection reset enemies, objectives, projectiles and campaign counters.');
 }finally{clearTimeout(watchdog);await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

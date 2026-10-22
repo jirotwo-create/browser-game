@@ -1,5 +1,6 @@
 import * as T from '../vendor/three.module.js';
 import { mesh, plate, cylinder, loft, batchStatic, makeCrate } from './models.js';
+import { URBAN_LEVELS, buildUrbanLevel } from './urban-levels.js';
 import { buildDistrict } from './district.js';
 import { neonTube, lightPool, sigil } from './neon.js';
 
@@ -9,8 +10,12 @@ export const LEVELS=[
   enemies:[['sable',-3,9],['razor',4,0],['netrunner',-4,-10],['riot',3,-20],['sable',0,-27],['arbalist',5,-9],['warlock',-4,-23],['hound',0,-15],['knight',5,-27]]},
  {id:'cathedral-of-static',name:'CATHEDRAL OF STATIC',sector:'VOID / THE ASHEN COURT',title:'SEVER THE COVENANT',objective:'Unbind three seals. Reach the cathedral heart.',node:'SEAL',complete:'SEALS UNBOUND',bounds:{x:12.2,minZ:-40,maxZ:25},spawn:{x:0,z:21},exit:{x:0,z:-37},fog:'#282333',
   relays:[[-9,-6],[9,-18],[0,-31]],medkits:[[-8,16],[8,0],[-8,-22],[5,-32]],
-  enemies:[['hound',-3,9],['revenant',4,4],['knight',-7,-6],['arbalist',8,-8],['warlock',-6,-18],['netrunner',7,-19],['riot',-8,6],['razor',8,14],['revenant',3,-24],['hound',-5,-26],['arbalist',7,-29],['gargoyle',0,-34]]}
+  enemies:[['hound',-3,9],['revenant',4,4],['knight',-7,-6],['arbalist',8,-8],['warlock',-6,-18],['netrunner',7,-19],['riot',-8,6],['razor',8,14],['revenant',3,-24],['hound',-5,-26],['arbalist',7,-29],['gargoyle',0,-34]]},
+ ...URBAN_LEVELS
 ];
+for(const [i,l]of LEVELS.entries()){l.verb??=i===0?'BREACH RELAY':'UNBIND SEAL';l.doneLabel??=i===0?'STOLEN':'UNBOUND';l.exitPrompt??=i===0?'OPEN THE RIFT':'LEAVE THE CATHEDRAL';l.returnText??=`${l.complete}. ${i===0?'Return to the neon gate at spawn.':'Reach the marked exit in the north.'}`;}
+LEVELS[0].transitionTitle='THROUGH THE VEIL';LEVELS[0].transition='The rift key opens a path beneath the city. Beyond the neon: a cathedral of bone, iron and living code. Your weapons cross with you.';
+LEVELS[1].transitionTitle='BACK ABOVE THE VEIL';LEVELS[1].transition='The covenant breaks, but its signal survives in the city above. The night market trades in stolen memories. Find the blacklist and follow the broadcast.';
 function buildCathedral(world,m,solids,sign){
  const collider=(x,z,w,d,h=5)=>{const o=mesh(world,new T.BoxGeometry(w,h,d),m.black,x,h/2,z);o.visible=false;o.userData.collider=true;solids.push({x,z,w,d,mesh:o});};
  for(let x=-20;x<20;x+=4)for(let z=-44;z<32;z+=4){const o=mesh(world,new T.PlaneGeometry(4,4),m.road,x+2,0,z+2);o.rotation.x=-Math.PI/2;}
@@ -53,4 +58,4 @@ function buildCathedral(world,m,solids,sign){
  batchStatic(world);return {staticBatches:world.children.filter(o=>o.name==='batched-painted-district').length,neonInstallations:26,riftSigils:9};
 }
 function organicColumn(h){return loft([[0,1.25,1.25],[.4,.8,.8],[h-.6,.75,.75],[h,.95,.95]])}
-export function buildLevel(index,world,materials,solids,sign){return index===0?buildDistrict(world,materials,solids,sign):buildCathedral(world,materials,solids,sign)}
+export function buildLevel(index,world,materials,solids,sign){if(index===0)return buildDistrict(world,materials,solids,sign);if(index===1)return buildCathedral(world,materials,solids,sign);if(index>=2&&index<LEVELS.length)return buildUrbanLevel(index-2,world,materials,solids,sign);throw Error('Unknown chapter '+index)}

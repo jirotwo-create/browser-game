@@ -74,6 +74,20 @@ const path = require('node:path');
     await page.click('#restart');
     assert.equal(await page.evaluate(() => nullDistrict.state.level), 2);
     assert.equal(await page.evaluate(() => nullDistrict.state.enemies), 12);
+    // Japanese text is bundled and available through the offline local protocol.
+    const font = await page.evaluate(async () => {
+      const response = await fetch('null-district://game/graphics/fonts/DistrictJP.woff');
+      return {ok:response.ok,size:(await response.arrayBuffer()).byteLength,ready:nullDistrict.graphics().signFontReady};
+    });
+    assert.ok(font.ok && font.size > 10000 && font.ready);
+    assert.equal(await page.locator('[data-level]').count(), 5);
+    for (const chapter of [2,3,4]) {
+      await page.keyboard.press('Escape'); await page.click('#to-menu');
+      await page.click(`[data-level="${chapter}"]`); await page.click('#start');
+      assert.equal(await page.evaluate(() => nullDistrict.state.level), chapter+1);
+      assert.ok(await page.evaluate(() => nullDistrict.graphics().animatedAdvertisements >= 20));
+      assert.ok(await page.evaluate(() => nullDistrict.graphics().signFontReady));
+    }
     // CDP keyboard events bypass Electron's native before-input-event hook.
     await app.evaluate(({ BrowserWindow }) => {
       const contents = BrowserWindow.getAllWindows()[0].webContents;
