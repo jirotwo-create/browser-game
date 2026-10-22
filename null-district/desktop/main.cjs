@@ -11,7 +11,7 @@ protocol.registerSchemesAsPrivileged([{ scheme, privileges: {
 let window;
 function createWindow() {
   window = new BrowserWindow({
-    title: 'NULL DISTRICT — Blackout Protocol',
+    title: 'NULL DISTRICT — Chrome & Ash',
     width: 1440, height: 900, minWidth: 960, minHeight: 640,
     backgroundColor: '#080b13', autoHideMenuBar: true, show: false,
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },

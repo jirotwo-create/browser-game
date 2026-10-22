@@ -1,11 +1,11 @@
 {
   "name": "null-district",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js",
+    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js && node --check graphics/enemies.js && node --check graphics/levels.js && node --check graphics/neon.js && node --check systems/combat.js",
     "preview": "python3 -m http.server 4180 --bind 0.0.0.0",
     "dist:win": "electron-builder --win portable --x64 --publish never",
     "dist:linux": "electron-builder --linux dir --x64 --publish never",
@@ -31,7 +31,8 @@
       "style.css",
       "favicon.svg",
       "vendor/**",
-      "graphics/**"
+      "graphics/**",
+      "systems/**"
     ],
     "asar": true,
     "compression": "maximum",

@@ -16,7 +16,7 @@ const assert=require('node:assert/strict');
  await page.keyboard.press('KeyR');await page.waitForTimeout(1700);assert.equal(await page.evaluate(()=>nullDistrict.state.ammo),24,'reload');
  await page.screenshot({path:'/tmp/null-district-game.png'});
  await page.keyboard.press('Escape');assert.equal(await page.evaluate(()=>nullDistrict.state.mode),'paused');
- await page.getByRole('button',{name:'RESTART CONTRACT'}).click();assert.deepEqual(await page.evaluate(()=>({hp:nullDistrict.state.health,ammo:nullDistrict.state.ammo,kills:nullDistrict.state.kills,relays:nullDistrict.state.relays})),{hp:100,ammo:24,kills:0,relays:0});
+ await page.getByRole('button',{name:'RESTART CHAPTER'}).click();assert.deepEqual(await page.evaluate(()=>({hp:nullDistrict.state.health,ammo:nullDistrict.state.ammo,kills:nullDistrict.state.kills,relays:nullDistrict.state.relays})),{hp:100,ammo:24,kills:0,relays:0});
  const canvas=await page.evaluate(()=>{const r=nullDistrict.renderer;const pixels=new Uint8Array(4*r.domElement.width*r.domElement.height);r.getContext().readPixels(0,0,r.domElement.width,r.domElement.height,r.getContext().RGBA,r.getContext().UNSIGNED_BYTE,pixels);return {width:r.domElement.width,height:r.domElement.height}});assert.ok(canvas.width>0&&canvas.height>0);
  assert.deepEqual(errors,[]);await b.close();console.log('PASS: WebGL startup, no JS/shader errors, move, drag aim, firing, reload, pause, restart.');
 })().catch(e=>{console.error(e);process.exit(1)});

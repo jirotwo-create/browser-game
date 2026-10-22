@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import { addNeonDistrict } from './neon.js';
 import { loft, mesh, plate, cylinder, makeCrate, batchStatic } from './models.js';
 
 export function buildDistrict(world,m,solids,sign) {
@@ -47,6 +48,7 @@ export function buildDistrict(world,m,solids,sign) {
  sign('UPLINK',0,3.8,30.9,'#e4ca81',5,1.2,Math.PI);
  // Graphic wall mural: designed as a tiny palette-limited poster, not a photo.
  const c=document.createElement('canvas');c.width=64;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#bc8c52';ctx.fillRect(0,0,64,96);ctx.fillStyle='#414051';ctx.beginPath();ctx.moveTo(14,80);ctx.lineTo(4,96);ctx.lineTo(60,96);ctx.lineTo(48,72);ctx.lineTo(45,26);ctx.lineTo(37,12);ctx.lineTo(21,12);ctx.lineTo(13,26);ctx.fill();ctx.fillStyle='#99918c';ctx.beginPath();ctx.moveTo(16,30);ctx.lineTo(37,24);ctx.lineTo(43,57);ctx.lineTo(30,73);ctx.lineTo(16,54);ctx.fill();ctx.fillStyle='#ad5c59';ctx.fillRect(10,37,39,8);ctx.fillStyle='#e4ca81';ctx.font='bold 8px monospace';ctx.fillText('SABLE',18,88);const t=new THREE.CanvasTexture(c);t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;const mural=mesh(world,new THREE.PlaneGeometry(2.4,3.6),m.wall.clone(),-7,3,17);mural.material.uniforms={...m.wall.uniforms,tex:{value:t},unlit:{value:.6},repeatUV:{value:1}};mural.rotation.y=.4;
+ const neon=addNeonDistrict(world,m,sign);
  batchStatic(world);
- return {staticBatches:world.children.filter(o=>o.name==='batched-painted-district').length};
+ return {...neon,staticBatches:world.children.filter(o=>o.name==='batched-painted-district').length};
 }

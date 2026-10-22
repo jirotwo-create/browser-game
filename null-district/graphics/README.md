@@ -42,4 +42,15 @@ The browser test draws a depth-varying triangle through the actual GPU shaders. 
 
 `tests/weapons.cjs` verifies both starting weapons, human enemies, switching, melee range and damage, cooldown, ammunition, reload cancellation and restart. `tests/assets.html` is a model review scene using the same renderer and actual game models.
 
-`tests/mission.cjs` exercises real-input combat, all three relay breaches and extraction. `tests/desktop.cjs` validates local packaged module loading, the affine comparison control, movement, mouse capture, firing, reloading, pause/restart, fullscreen, renderer isolation and offline operation. Set `NULL_DISTRICT_URL` to use another preview port; set `PLAYWRIGHT_MODULE` to use another Playwright installation.
+`tests/mission.cjs` runs the two-chapter campaign playthrough, including all six objectives and both exits. `tests/desktop.cjs` validates local packaged module loading, the affine comparison control, movement, mouse capture, firing, reloading, pause/restart, fullscreen, renderer isolation and offline operation. Set `NULL_DISTRICT_URL` to use another preview port; set `PLAYWRIGHT_MODULE` to use another Playwright installation.
+
+
+## Chrome & Ash / chapter content
+
+Version 1.4 leaves `psx-renderer.js` unchanged. `neon.js` builds cyan/magenta/violet tube installations, polygonal pavement light pools and dimensional sigils. The pools blend vertex-painted geometry into the same low-resolution target; there is no bloom pass or replacement of the affine shader. `levels.js` defines both chapters' bounds, objectives, supplies, exits and enemy placements, and builds the independent Gothic cathedral map. The district retains its grungy painted surfaces beneath neon shops and conduits.
+
+`enemies.js` authors four modern/cyberpunk humans, three fantasy humans and three monsters. Equipment, clothing and topology distinguish the humans; the quadruped hound, open-ribbed revenant and winged stone demon have separate anatomy. Actual archetype geometry ranges from 526 to 1,788 triangles. Walking joints, attack wind-ups, the hound tail, netrunner halo and sentinel wings animate in-game.
+
+`systems/combat.js` separates combat decisions from rendering: range/LOS acquisition, locked aim, wind-up, cooldown, melee facing, firearm cones and projectile launch. The game handles moving projectiles with segment/sphere and solid-cover intersections. Level teardown disposes old geometry, owned materials and sign textures before rebuilding, while retaining shared weapon/texture resources. `nullDistrict.navigation()` and `state` provide read-only diagnostics for navigation and playthrough tests.
+
+`tests/combat.mjs`, `tests/roster.cjs` and `tests/campaign.cjs` cover the new attack mechanics, actual models and complete two-chapter progression. `tests/roster.html` renders a hostile archive with the exact game factories and pipeline. Legacy rendering and grip tests remain applicable.

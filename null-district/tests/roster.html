@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Chrome & Ash / enemy roster</title><link rel="icon" href="../favicon.svg"><style>body{margin:0;padding:28px;background:#11151e;color:#e1e4da;font:12px monospace}h1{font:26px monospace;color:#2feaff;margin:0 0 8px}p{color:#9d9dab}#grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}article{background:#1a202b;border-top:2px solid #b642bf}article img{width:100%;display:block;image-rendering:pixelated}article div{padding:12px;height:58px}strong{display:block;font-size:12px;color:#e0e5df;margin-bottom:7px}small{font-size:10px;color:#43cbd5}canvas{display:none}</style></head><body><h1>CHROME & ASH / HOSTILE ARCHIVE</h1><p>Actual game models · four cyberpunk humans / three fantasy humans / three monsters</p><div id="grid"></div><canvas id="raster"></canvas><script type="module">
+import * as T from '../vendor/three.module.js';import{PSXPipeline}from'../graphics/psx-renderer.js';import{makePalette}from'../graphics/textures.js';import{ENEMY_TYPES,makeEnemy,animateEnemy}from'../graphics/enemies.js';
+const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(320,370);const{materials}=makePalette(pipe);const scene=new T.Scene();scene.background=new T.Color('#1a202b');const camera=new T.PerspectiveCamera(42,320/370,.01,20);camera.position.set(.55,1.25,4.5);camera.lookAt(0,1.08,0);const data=[];
+for(const[type,info]of Object.entries(ENEMY_TYPES)){
+ const rig=makeEnemy(materials,type,data.length);scene.add(rig.g);rig.g.rotation.y=-.16;rig.g.updateMatrixWorld(true);
+ const enemy={...rig,type,info,phase:0,attack:{elapsed:info.windup*.8}};
+ animateEnemy(enemy,.1,true);const first=rig.legs.map(l=>l.rotation.x);animateEnemy(enemy,.5,true);const second=rig.legs.map(l=>l.rotation.x);animateEnemy({...enemy,attack:null},0,false);
+ const box=new T.Box3().setFromObject(rig.g),size=box.getSize(new T.Vector3()).toArray();
+ let meshes=0;rig.g.traverse(o=>{if(o.isMesh)meshes++});
+ camera.position.z=type==='gargoyle'?5.8:4.5;camera.lookAt(0,1.08,0);pipe.render(scene,camera);const article=document.createElement('article'),img=document.createElement('img');img.src=pipe.renderer.domElement.toDataURL('image/png');article.append(img);const text=document.createElement('div');const title=document.createElement('strong');title.textContent=info.name;const label=document.createElement('small');label.textContent=info.faction+' / '+info.role+' / '+info.hp+' HP';text.append(title,label);article.append(text);document.getElementById('grid').append(article);scene.remove(rig.g);
+ data.push({type,...rig.g.userData.asset,size,meshes,first,second});
+}
+window.rosterReview={data,graphics:pipe.diagnostics};
+</script></body></html>

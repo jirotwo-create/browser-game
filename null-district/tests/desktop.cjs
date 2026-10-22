@@ -54,6 +54,26 @@ const path = require('node:path');
     await page.click('#restart');
     await page.waitForFunction(() => nullDistrict.state.mode === 'playing');
     assert.equal(await page.evaluate(() => nullDistrict.state.relays), 0);
+    await page.keyboard.press('Escape');
+    await page.click('#to-menu');
+    await page.click('[data-level="1"]');
+    await page.click('#start');
+    const chapter2 = await page.evaluate(() => nullDistrict.state);
+    assert.equal(chapter2.level, 2);
+    assert.equal(chapter2.enemies, 12);
+    assert.equal(chapter2.relays, 0);
+    assert.deepEqual(chapter2.inventory, ['carbine', 'sword']);
+    assert.ok(chapter2.targets.some(e => e.type === 'gargoyle'));
+    assert.ok(chapter2.targets.some(e => e.type === 'revenant'));
+    assert.equal(await page.evaluate(() => nullDistrict.graphics().roster.length), 10);
+    assert.ok(await page.evaluate(() => nullDistrict.graphics().neonInstallations > 20));
+    await page.keyboard.press('Digit2');
+    await page.mouse.click(650, 400);
+    await page.waitForFunction(() => nullDistrict.state.meleeStrikes > 0);
+    await page.keyboard.press('Escape');
+    await page.click('#restart');
+    assert.equal(await page.evaluate(() => nullDistrict.state.level), 2);
+    assert.equal(await page.evaluate(() => nullDistrict.state.enemies), 12);
     // CDP keyboard events bypass Electron's native before-input-event hook.
     await app.evaluate(({ BrowserWindow }) => {
       const contents = BrowserWindow.getAllWindows()[0].webContents;
