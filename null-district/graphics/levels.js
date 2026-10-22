@@ -1,6 +1,7 @@
 import * as T from '../vendor/three.module.js';
 import { mesh, plate, cylinder, loft, batchStatic, makeCrate } from './models.js';
 import { URBAN_LEVELS, buildUrbanLevel } from './urban-levels.js';
+import { LENGTH_SCALE } from '../systems/missions.js';
 import { buildDistrict } from './district.js';
 import { neonTube, lightPool, sigil } from './neon.js';
 
@@ -10,9 +11,17 @@ export const LEVELS=[
   enemies:[['sable',-3,9],['razor',4,0],['netrunner',-4,-10],['riot',3,-20],['sable',0,-27],['arbalist',5,-9],['warlock',-4,-23],['hound',0,-15],['knight',5,-27]]},
  {id:'cathedral-of-static',name:'CATHEDRAL OF STATIC',sector:'VOID / THE ASHEN COURT',title:'SEVER THE COVENANT',objective:'Unbind three seals. Reach the cathedral heart.',node:'SEAL',complete:'SEALS UNBOUND',bounds:{x:12.2,minZ:-40,maxZ:25},spawn:{x:0,z:21},exit:{x:0,z:-37},fog:'#282333',
   relays:[[-9,-6],[9,-18],[0,-31]],medkits:[[-8,16],[8,0],[-8,-22],[5,-32]],
-  enemies:[['hound',-3,9],['revenant',4,4],['knight',-7,-6],['arbalist',8,-8],['warlock',-6,-18],['netrunner',7,-19],['riot',-8,6],['razor',8,14],['revenant',3,-24],['hound',-5,-26],['arbalist',7,-29],['gargoyle',0,-34]]},
+  enemies:[['hound',-3,9],['revenant',4,4],['knight',-7,-6],['arbalist',8,-8],['warlock',-6,-18],['netrunner',7,-19],['riot',-8,6],['razor',8,14],['revenant',1,-24],['hound',-5,-26],['arbalist',7,-29],['gargoyle',0,-34]]},
  ...URBAN_LEVELS
-];
+].map(l=>({...l}));
+const briefs=[
+ 'Tap surveillance, sabotage both transformers, steal the key and survive the extraction ambush. Carry it back and defend the charging gate.',
+ 'Recover the relic, cut two blood seals with Mournfang, deliver the offering, defend the ritual and destroy the heart and its warden.',
+ 'Locate three stolen memory cases. Carry them to the fence, protect decryption, disable the tracker and recover the blacklist.',
+ 'Sabotage two train brake relays, retrieve the ignition cell and escort the courier along the east platform. Deliver its freight core.',
+ 'Steal access, destroy both jammers, reroute the feed and hold the upload zone. Defeat the regent, sever its antenna and shut down the network.'];
+for(const [i,l]of LEVELS.entries()){l.objective=briefs[i];l.returnText='MISSION COMPLETE / Reach the marked exit.';l.bounds={...l.bounds,minZ:l.bounds.minZ*LENGTH_SCALE,maxZ:l.bounds.maxZ*LENGTH_SCALE};l.spawn={...l.spawn,z:l.spawn.z*LENGTH_SCALE};l.exit={...l.exit,z:l.exit.z*LENGTH_SCALE};l.medkits=l.medkits.map(([x,z])=>[x,z*LENGTH_SCALE]);l.enemies=l.enemies.map(([t,x,z])=>[t,x,z*LENGTH_SCALE]);}
+
 for(const [i,l]of LEVELS.entries()){l.verb??=i===0?'BREACH RELAY':'UNBIND SEAL';l.doneLabel??=i===0?'STOLEN':'UNBOUND';l.exitPrompt??=i===0?'OPEN THE RIFT':'LEAVE THE CATHEDRAL';l.returnText??=`${l.complete}. ${i===0?'Return to the neon gate at spawn.':'Reach the marked exit in the north.'}`;}
 LEVELS[0].transitionTitle='THROUGH THE VEIL';LEVELS[0].transition='The rift key opens a path beneath the city. Beyond the neon: a cathedral of bone, iron and living code. Your weapons cross with you.';
 LEVELS[1].transitionTitle='BACK ABOVE THE VEIL';LEVELS[1].transition='The covenant breaks, but its signal survives in the city above. The night market trades in stolen memories. Find the blacklist and follow the broadcast.';

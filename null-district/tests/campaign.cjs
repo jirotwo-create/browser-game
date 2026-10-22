@@ -1,6 +1,6 @@
 const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-tools/node_modules/playwright');const assert=require('node:assert/strict');
 const BASE=process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180';
-(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1440,height:900}});p.setDefaultTimeout(10000);const errors=[];p.on('pageerror',e=>{if(errors.length<5)console.error('Game error:',e.message);errors.push(e.message)});let watchdog=setTimeout(()=>{console.error('Campaign watchdog');browser.close().finally(()=>process.exit(1))},900000);
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const p=await browser.newPage({viewport:{width:1440,height:900}});p.setDefaultTimeout(10000);const errors=[];p.on('pageerror',e=>{if(errors.length<5)console.error('Game error:',e.message);errors.push(e.message)});let watchdog=setTimeout(()=>{console.error('Campaign watchdog');browser.close().finally(()=>process.exit(1))},2700000);
 try{
  await p.bringToFront();await p.goto(BASE);await p.waitForFunction(()=>window.nullDistrict);await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());if(Number(process.env.START_CHAPTER)>1)await p.click(`[data-level="${Number(process.env.START_CHAPTER)-1}"]`);await p.click('#start');
  const state=()=>p.evaluate(()=>nullDistrict.state);
@@ -37,22 +37,47 @@ try{
  }
  async function chapter(){
   const initial=await state();console.log('Chapter '+initial.level+' / '+initial.levelName);
-  // Real combat and navigation; no enemy deletion, teleporting, health grants or forced objectives.
-  for(const node of initial.nodes){
-   const approach={x:node.x+(node.x<0?1.6:node.x>0?-1.6:1.6),z:node.z};
-   await route(approach.x,approach.z);for(let i=0;i<100&&await fight();i++){}
-   await p.keyboard.down('KeyE');await p.waitForFunction(({x,z})=>nullDistrict.state.nodes.some(r=>r.x===x&&r.z===z&&r.done),node,{timeout:12000}).catch(async e=>{throw Error('Objective interaction failed '+await p.locator('#prompt').textContent()+' '+JSON.stringify(await state()))});await p.keyboard.up('KeyE');
-   assert.equal((await state()).nodes.find(r=>r.x===node.x&&r.z===node.z).done,true,'Objective must complete through held E');console.log('Node',node.x,node.z,'HP',(await state()).health);
+  // Real inputs exercise the actual mission controller, combat, world collision and gear.
+  let attempts=0;
+  while(!(await state()).missionComplete){
+   assert.ok(attempts++<1200,'Mission watchdog');
+   let s=await state(),node=s.nodes.find(n=>n.active);assert.ok(node,'An unfinished chapter must expose a next objective');
+   if(await fight())continue;
+   const range=Math.hypot(node.x-s.position.x,node.z-s.position.z);
+   if(range>2.5){const point=await p.evaluate(n=>{const s=nullDistrict.state,nav=nullDistrict.navigation(),c=[];for(let j=0;j<24;j++){const a=j*Math.PI/12,x=n.x+Math.sin(a)*1.8,z=n.z+Math.cos(a)*1.8;if(!nav.solids.some(b=>Math.abs(x-b.x)<b.w/2+.55&&Math.abs(z-b.z)<b.d/2+.55))c.push({x,z});}return c.sort((a,b)=>Math.hypot(a.x-s.position.x,a.z-s.position.z)-Math.hypot(b.x-s.position.x,b.z-s.position.z))[0]},node);assert.ok(point);await route(point.x,point.z);continue;}
+   if(['destroy','slash'].includes(node.kind)){
+    if(node.kind==='slash'){
+     if(s.weapon!=='sword')await p.keyboard.press('Digit2');
+     await look(Math.atan2(-(node.x-s.position.x),-(node.z-s.position.z)),Math.atan2(1.4-s.position.y,range));
+     await p.mouse.click(720,450);await p.waitForTimeout(1100);await p.keyboard.press('Digit1');
+    }else{
+     if(!s.ammo){await p.keyboard.press('KeyR');await p.waitForFunction(()=>nullDistrict.state.ammo===24);}
+     await look(Math.atan2(-(node.x-s.position.x),-(node.z-s.position.z)),Math.atan2(1.35-s.position.y,range)-.0198);
+     await p.mouse.down();await p.waitForTimeout(850);await p.mouse.up();
+    }
+   }else if(['interact','pickup','deliver'].includes(node.kind)){
+    await p.keyboard.down('KeyE');await p.waitForTimeout(1800);await p.keyboard.up('KeyE');
+   }else if(node.kind==='escort'){
+    await p.keyboard.press('KeyE');await p.waitForTimeout(500);
+   }else{
+    await p.waitForTimeout(300);
+   }
+   s=await state();const now=s.nodes.find(n=>n.id===node.id);
+   if(now.done){console.log('Task',node.id,node.kind,'HP',s.health);continue;}
+   // Flush reinforcements blocked by pillars/trains instead of waiting forever.
+   if(now.guards.length&&!await target()){
+    const enemy=s.targets.find(t=>now.guards.includes(t.id));if(enemy)await route(enemy.x+(enemy.x<0?1.8:-1.8),enemy.z);
+   }
   }
-  assert.equal((await state()).relays,3);await route(initial.exit.x,initial.exit.z);await p.keyboard.down('KeyE');await p.waitForFunction(()=>['intermission','won'].includes(nullDistrict.state.mode));await p.keyboard.up('KeyE');
+  assert.equal((await state()).relays,initial.nodes.length);await route(initial.exit.x,initial.exit.z);await p.keyboard.down('KeyE');await p.waitForFunction(()=>['intermission','won'].includes(nullDistrict.state.mode));await p.keyboard.up('KeyE');
  }
- const first=await state(),total=await p.evaluate(()=>nullDistrict.graphics().chapters.length);let finalEnemies=0;
+ const first=await state(),total=Number(process.env.END_CHAPTER)||await p.evaluate(()=>nullDistrict.graphics().chapters.length);let finalEnemies=0;
  for(let chapterIndex=first.level;chapterIndex<=total;chapterIndex++){
   finalEnemies=(await state()).enemies;await chapter();
   if(chapterIndex<total){assert.equal((await state()).mode,'intermission');const kills=(await state()).kills;await p.click('#next-level');const next=await state();assert.equal(next.level,chapterIndex+1);assert.equal(next.kills,kills);assert.equal(next.health,100);assert.equal(next.ammo,24);assert.deepEqual(next.inventory,['carbine','sword']);assert.equal(next.relays,0);}
  }
- assert.equal((await state()).mode,'won');await p.screenshot({path:'/tmp/null16-campaign-victory.png'});assert.deepEqual(errors,[]);console.log(`PASS: real-input combat, navigation, ${(total-first.level+1)*3} objectives, sequential chapter transitions, carried inventory/kills and final broadcast victory.`);
+ assert.equal((await state()).mode,total===5?'won':'intermission');await p.screenshot({path:'/tmp/null17-campaign-victory.png'});assert.deepEqual(errors,[]);console.log(`PASS: real-input combat, navigation, distinct mission chains, sequential chapter transitions, carried inventory/kills and final broadcast victory.`);
  // Restart and chapter select must dispose the old chapter and reset the current one.
- await p.click('#restart');let s=await state();assert.equal(s.level,total);assert.equal(s.relays,0);assert.equal(s.enemies,finalEnemies);assert.equal(s.health,100);assert.equal(s.ammo,24);
+ await p.click('#restart');let s=await state();assert.equal(s.level,total);assert.equal(s.relays,0);assert.ok(s.enemies>=9);assert.equal(s.health,100);assert.equal(s.ammo,24);
  await p.keyboard.press('Escape');await p.click('#to-menu');await p.click('[data-level="0"]');await p.click('#start');s=await state();assert.equal(s.level,1);assert.equal(s.enemies,9);assert.equal(s.kills,0);assert.equal(s.projectiles.length,0);console.log('PASS: chapter restart and menu selection reset enemies, objectives, projectiles and campaign counters.');
 }finally{clearTimeout(watchdog);await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

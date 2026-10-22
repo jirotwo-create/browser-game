@@ -7,6 +7,7 @@ import { createSignSystem, prepareSignFonts } from './graphics/signage.js';
 import { LEVELS, buildLevel } from './graphics/levels.js';
 import { ENEMY_TYPES, makeEnemy, animateEnemy } from './graphics/enemies.js';
 import { sigil } from './graphics/neon.js';
+import { createMission, LENGTH_SCALE } from './systems/missions.js';
 import { stepEnemy, playerHitDistance } from './systems/combat.js';
 import { poseCarbine, poseSword, gripDiagnostics } from './graphics/weapon-rig.js';
 const $=id=>document.getElementById(id);
@@ -24,18 +25,46 @@ function box(w,h,d,x,y,z,m,solid=false,parent=world){const b=new THREE.Mesh(geom
 await prepareSignFonts();
 const signage=createSignSystem(pipeline,world);const sign=signage.sign;
 let district={},levelIndex=0,selectedLevel=0,campaignKillsAtStart=0;
-const relays=[],medkits=[],projectiles=[];let extraction,gate;
+let mission;const relays=[],medkits=[],projectiles=[];let extraction,gate;
 const level=()=>LEVELS[levelIndex];
 function buildObjectives(){
- for(const [i,[x,z]]of level().relays.entries()){
-  const fantasy=levelIndex===1,g=new THREE.Group();g.userData.collider=true;g.position.set(x,0,z);world.add(g);
-  mesh(g,loft([[0,1.2,.9],[.2,1.1,.8],[1.7,1.1,.7],[2.1,.8,.55]]),fantasy?materials.obsidian:materials.rust);
-  plate(g,materials.circuit,.8,.7,.04,0,1.5,.4);plate(g,materials.neonCyan,1,.08,.05,0,.4,.45);
-  solids.push({x,z,w:1.1,d:.8,mesh:g});
-  const screen=sign(`0${i+1} / ${level().node}`,x,2.7,z,fantasy?'#da52ff':'#26efff',2,.5);
-  const halo=sigil(world,fantasy?materials.arcane:materials.neonCyan,x,2.2,z,.27);
-  relays.push({x,z,g,screen,halo,done:false,progress:0});
+ mission=createMission(levelIndex,{spawnWave:(n,types)=>{
+  return types.map((type,i)=>{
+   let point;
+   // Search real collision space; reinforcements arrive outside the player's body.
+   for(let radius=7;radius<=18&&!point;radius+=2)for(let j=0;j<24;j++){
+    const angle=(j+i*7)*Math.PI/12,x=n.x+Math.sin(angle)*radius,z=n.z+Math.cos(angle)*radius;
+    if(!blocked(x,z,.65)&&Math.hypot(x-player.x,z-player.z)>5&&!enemies.some(e=>e.hp>0&&Math.hypot(x-e.g.position.x,z-e.g.position.z)<1.5)){point={x,z};break;}
+   }
+   if(!point)throw Error('No safe reinforcement spawn for '+n.id);
+   const e=spawn(type,point.x,point.z);e.alert=true;return e;
+  });
+ },onComplete:n=>{player.hp=Math.min(100,player.hp+12);notify(n.label.toUpperCase()+' / COMPLETE · VITALS +12');sound(880,.3,'triangle');updateHUD();}});
+ for(const [i,n]of mission.nodes.entries()){
+  const {x,z}=n,g=new THREE.Group();g.position.set(x,0,z);world.add(g);
+  const combat=['destroy','slash'].includes(n.kind),pickup=n.kind==='pickup';
+  if(n.kind==='slash'){
+   mesh(g,new THREE.OctahedronGeometry(.5,0),materials.obsidian,0,1.4,0);
+   for(const side of [-1,1]){const horn=mesh(g,new THREE.ConeGeometry(.2,1.4,5),materials.bone,side*.6,1.1,0);horn.rotation.z=side*-.4;}
+  }else if(n.kind==='destroy'){
+   mesh(g,loft([[0,1.1,.9],[.3,1.4,1.1],[1.5,.8,.8],[1.9,.5,.5]]),materials.rust);
+   mesh(g,new THREE.OctahedronGeometry(.38,0),materials.neonAmber,0,1.5,.4);
+  }else if(pickup){mesh(g,new THREE.OctahedronGeometry(.33,0),materials.neonGreen,0,1.1,0);plate(g,materials.metal,.7,.12,.5,0,.5,0);}
+  else if(n.kind==='escort'){
+   mesh(g,loft([[0,1.3,1.7],[.8,1.1,1.5]]),materials.metal);plate(g,materials.neonCyan,1,.12,1.6,0,.45,0);
+   for(const dx of [-.6,.6])mesh(g,new THREE.OctahedronGeometry(.25,0),materials.neonPink,dx,.25,.5);
+  }else if(['hold','purge'].includes(n.kind)){
+   const ring=mesh(g,new THREE.RingGeometry(3.8,4,24),materials.arcane,0,.035,0);ring.rotation.x=-Math.PI/2;
+  }else{
+   mesh(g,loft([[0,1.1,.8],[1.5,1,.7],[1.8,.7,.5]]),materials.rust);plate(g,materials.circuit,.8,.6,.04,0,1.3,.4);
+  }
+  // Interactions do not obstruct routes. Damageable cores stop bullets, like cover.
+  if(combat)g.traverse(o=>{if(o.isMesh)o.userData.missionNode=n;});
+  const screen=sign(`${String(i+1).padStart(2,'0')} / ${n.kind.toUpperCase()}`,x,2.7,z,'#26efff',2.8,.5);
+  const halo=sigil(world,n.kind==='slash'?materials.arcane:materials.neonCyan,x,2.1,z,.27);
+  Object.assign(n,{g,screen,halo});relays.push(n);
  }
+ $('mission-list').replaceChildren(...relays.map((n,i)=>{const el=document.createElement('span');el.id='relay'+i;el.textContent=String(i+1).padStart(2,'0')+' ';const b=document.createElement('b');b.textContent=n.label;el.append(b);return el;}));
  const {x,z}=level().exit;
  extraction=box(4,.025,4,x,.03,z,materials.dark);
  for(const dx of [-2,2])box(.1,.04,4,x+dx,.06,z,materials.neonCyan);
@@ -47,7 +76,7 @@ function buildObjectives(){
 // Rain rendered as low resolution streaks.
 const rainPoints=[];for(let i=0;i<350;i++){const x=(rand()-.5)*50,y=rand()*19,z=(rand()-.5)*68;rainPoints.push(x,y,z,x-.05,y-.5,z)}
 const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.Float32BufferAttribute(rainPoints,3));const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0x7d9aad,transparent:true,opacity:.22}));scene.add(rain);
-// Authored faceted carbine and gloved arms share the same retro render target.
+// Player equipment uses the independent native-resolution foreground pass.
 const gearMaterials=makeGearPalette();const gunScene=new THREE.Scene();const gun=makeCarbine(gearMaterials);gunScene.add(gun);
 const sword=makeSword(gearMaterials);sword.visible=false;gunScene.add(sword);
 const flash=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,5),gearMaterials.acid);flash.rotation.x=-Math.PI/2;flash.position.set(0,0,-.06);flash.visible=false;gun.userData.rig.muzzle.add(flash);
@@ -63,7 +92,7 @@ function spawn(type,x,z){
  const enemy={...rig,id:++enemyId,type,info,hp:info.hp,shot:1+rand()*2,attack:null,alert:false,phase:rand()*10};
  rig.g.traverse(o=>{if(o.isMesh)o.userData.enemy=enemy});
  const tell=new THREE.Mesh(new THREE.RingGeometry(.47,.53,10),info.role==='melee'?materials.neonAmber:materials.neonPink);tell.rotation.x=-Math.PI/2;tell.visible=false;world.add(tell);enemy.tell=tell;
- enemies.push(enemy);
+ enemies.push(enemy);return enemy;
 }
 function disposeLevel(){
  const geometries=new Set(),ownedMaterials=new Set(),baseMaterials=new Set(Object.values(materials)),baseTextures=new Set([...Object.values(textures),pipeline.white]);
@@ -75,7 +104,10 @@ function disposeLevel(){
 function loadLevel(index,{carry=false}={}){
  const kills=carry?player.kills:0,time=carry?missionTime:0;disposeLevel();levelIndex=index;enemyId=0;seed=923+index*49;
  pipeline.fogColor.set(level().fog).convertLinearToSRGB();
- district=buildLevel(index,world,materials,solids,sign);buildObjectives();
+ district=buildLevel(index,world,materials,solids,sign);
+ // Lengthen the authored routes and sight lines without stretching characters or gear.
+ const architecture=new THREE.Group();architecture.name='extended-chapter-architecture';architecture.add(...world.children.slice());architecture.scale.z=LENGTH_SCALE;world.add(architecture);
+ for(const s of solids){s.z*=LENGTH_SCALE;s.d*=LENGTH_SCALE;}world.updateMatrixWorld(true);buildObjectives();
  for(const [type,x,z]of level().enemies)spawn(type,x,z);
  Object.assign(player,{...level().spawn,y:1.65,vy:0,yaw:0,pitch:0,hp:100,ammo:24,kills});campaignKillsAtStart=kills;
  selectedWeapon='carbine';gun.visible=true;sword.visible=false;swordAttack=null;flash.visible=false;
@@ -152,6 +184,16 @@ function resolveSwordHit(){
   if(ray.intersectObjects(solids.map(s=>s.mesh),true).some(h=>h.distance<distance-.12))continue;
   meleeHits++;hitEnemy(enemy,3,'sword');
  }
+ strikeObjectives();
+}
+function strikeObjectives(){
+ const forward=new THREE.Vector3();camera.getWorldDirection(forward);
+ for(const n of relays){if(!mission.active(n)||!['destroy','slash'].includes(n.kind))continue;
+  const to=new THREE.Vector3(n.x,1.4,n.z).sub(camera.position),distance=to.length();
+  if(distance>2.8||to.clone().normalize().dot(forward)<.66)continue;
+  ray.set(camera.position,to.clone().normalize());if(ray.intersectObjects(solids.map(s=>s.mesh),true).some(h=>h.distance<distance-.2))continue;
+  if(mission.hit(n,3,'sword')){hitTimer=.18;sound(90,.1,'sawtooth');updateHUD();}
+ }
 }
 function fire(){
  if(selectedWeapon==='sword'){swingSword();return}
@@ -159,9 +201,9 @@ function fire(){
  if(player.ammo<=0){reload();return}
  player.ammo--;shotTime=.14;recoil=.09;flash.visible=true;sound(105,.13,'sawtooth',.055);
  camera.rotation.set(player.pitch+recoil*.22,player.yaw,0);camera.updateMatrixWorld();ray.setFromCamera(new THREE.Vector2(0,0),camera);
- const hits=ray.intersectObjects([...enemies.filter(e=>e.hp>0).map(e=>e.g),...solids.map(s=>s.mesh)],true);
+ const hits=ray.intersectObjects([...enemies.filter(e=>e.hp>0).map(e=>e.g),...solids.map(s=>s.mesh),...relays.filter(n=>mission.active(n)&&['destroy','slash'].includes(n.kind)).map(n=>n.g)],true);
  let end=camera.position.clone().add(ray.ray.direction.clone().multiplyScalar(55));
- if(hits.length){end=hits[0].point;const e=hits[0].object.userData.enemy;if(e)hitEnemy(e,1,'carbine')}
+ if(hits.length){end=hits[0].point;const e=hits[0].object.userData.enemy;if(e)hitEnemy(e,1,'carbine');const n=hits[0].object.userData.missionNode;if(n){if(mission.hit(n,1,'carbine')){hitTimer=.18;updateHUD()}else notify('BLOOD SEAL / USE MOURNFANG');}}
  poseCarbine(gun,{time:weaponTime,walk:step,recoil,reload:reloadTime});const from=gun.userData.rig.muzzle.getWorldPosition(new THREE.Vector3()).applyMatrix4(camera.matrixWorld);tracer(from,end);updateHUD();
 }
 function animateSword(dt){
@@ -179,10 +221,10 @@ function updateHUD(){
  $('ammo').textContent=selectedWeapon==='sword'?'∞':String(player.ammo).padStart(2,'0');$('weapon-name').textContent=selectedWeapon==='sword'?'02 // MOURNFANG · THE OATH-EATER':'01 // K-09 PULSE CARBINE';
  $('ammo-reserve').textContent=selectedWeapon==='sword'?' / MELEE':' / ∞';$('weapon-status').textContent=selectedWeapon==='sword'?(meleeCooldown>0?'RECOVERING…':'CURSED EDGE · 2.8M REACH'):(reloadTime>0?'RELOADING…':'AUTO · 9MM ION');
  $('slot-carbine').classList.toggle('active',selectedWeapon==='carbine');$('slot-sword').classList.toggle('active',selectedWeapon==='sword');
- for(const [i,r]of relays.entries()){$('relay'+i).classList.toggle('done',r.done);$('relay'+i).querySelector('b').textContent=r.done?(level().doneLabel):level().node;}
- const n=relays.filter(r=>r.done).length;
- $('objective').textContent=n===3?level().returnText:`${n}/3 ${level().node.toLowerCase()}s secured · ${enemies.filter(e=>e.hp>0).length} hostiles`;
- if(gate)gate.visible=n===3;
+ for(const [i,r]of relays.entries()){const el=$('relay'+i);el.classList.toggle('done',r.done);el.classList.toggle('active',mission.active(r));el.querySelector('b').textContent=(r.done?'✓ ':mission.active(r)?'› ':'')+r.label;}
+ const n=relays.filter(r=>r.done).length,active=relays.filter(r=>mission.active(r));
+ $('objective').textContent=mission.complete?level().returnText:`${n}/${relays.length} · ${active.map(r=>r.label).join(' / ')}`;
+ if(gate)gate.visible=mission.complete;
 }
 function end(win){
  swordAttack=null;firing=false;keys.clear();document.exitPointerLock?.();
@@ -220,7 +262,7 @@ const map=$('map').getContext('2d');function drawMap(){
  map.clearRect(0,0,140,140);map.strokeStyle='#35444e';for(let i=0;i<140;i+=14){map.beginPath();map.moveTo(i,0);map.lineTo(i,140);map.moveTo(0,i);map.lineTo(140,i);map.stroke()}
  const bounds=level().bounds,sx=60/bounds.x,sz=126/(bounds.maxZ-bounds.minZ),mx=x=>70+x*sx,mz=z=>7+(z-bounds.minZ)*sz;
  map.fillStyle='#40525e';for(const b of solids)map.fillRect(mx(b.x-b.w/2),mz(b.z-b.d/2),b.w*sx,b.d*sz);
- for(const r of relays){map.fillStyle=r.done?'#d8f36a':levelIndex===0?'#26eeff':'#c14dff';map.fillRect(mx(r.x)-2,mz(r.z)-2,4,4)}
+ for(const r of relays){map.fillStyle=r.done?'#d8f36a':mission.active(r)?'#26eeff':'#454b5f';map.fillRect(mx(r.x)-2,mz(r.z)-2,4,4)}
  map.strokeStyle=relays.every(r=>r.done)?'#f43cba':'#667787';map.strokeRect(mx(level().exit.x)-5,mz(level().exit.z)-4,10,8);
  for(const e of enemies){if(e.hp<=0)continue;map.fillStyle=e.info.species==='human'?'#ff625d':'#c64aff';map.fillRect(mx(e.g.position.x)-1.5,mz(e.g.position.z)-1.5,3,3)}
  map.save();map.translate(mx(player.x),mz(player.z));map.rotate(-player.yaw);map.fillStyle='#e9f7dc';map.beginPath();map.moveTo(0,-5);map.lineTo(-3,3);map.lineTo(3,3);map.fill();map.restore();$('pos').textContent=`${Math.round(player.x).toString().padStart(2,'0')} : ${Math.round(player.z).toString().padStart(2,'0')}`;
@@ -228,7 +270,9 @@ const map=$('map').getContext('2d');function drawMap(){
 function tick(dt){elapsed+=dt;signage.update(elapsed);for(let i=effects.length-1;i>=0;i--){effects[i].ttl-=dt;if(effects[i].velocity){effects[i].mesh.position.addScaledVector(effects[i].velocity,dt);effects[i].velocity.y-=dt*5}if(effects[i].ttl<=0){(effects[i].parent||world).remove(effects[i].mesh);effects[i].mesh.geometry.dispose();effects[i].mesh.material.dispose();effects.splice(i,1)}}
  const rainPos=rain.geometry.attributes.position;for(let i=0;i<rainPos.count;i+=2){let y=rainPos.getY(i)-dt*13;if(y<0)y=19;rainPos.setY(i,y);rainPos.setY(i+1,y-.5)}rainPos.needsUpdate=true;
  for(const m of medkits)if(!m.taken)m.g.rotation.y=elapsed;
- for(const r of relays){r.halo.visible=!r.done&&Math.sin(elapsed*3)>-.6}
+ for(const r of relays){const active=mission.active(r);r.halo.visible=active&&Math.sin(elapsed*3)>-.6;r.g.visible=active;r.screen.visible=active;r.g.position.z=r.z;r.halo.position.z=r.z;r.screen.position.z=r.z;
+  if(r.kind==='pickup')r.g.rotation.y=elapsed;
+ }
  if(mode==='menu'){camera.position.set(3+Math.sin(elapsed*.12)*2,3,20);camera.lookAt(-1,4,-18);return}
  if(mode!=='playing')return;missionTime+=dt;shotTime=Math.max(0,shotTime-dt);recoil=Math.max(0,recoil-dt*.8);flash.visible=selectedWeapon==='carbine'&&shotTime>.095;animateSword(dt);
  if(reloadTime>0){reloadTime=Math.max(0,reloadTime-dt);if(reloadTime===0){player.ammo=24;$('weapon-status').textContent='AUTO · 9MM ION';sound(340,.1,'square',.02);updateHUD()}}
@@ -244,10 +288,10 @@ function tick(dt){elapsed+=dt;signage.update(elapsed);for(let i=effects.length-1
  }
  tickProjectiles(dt);if(mode!=='playing')return;updateFocus();
  for(const m of medkits)if(!m.taken&&player.hp<100&&Math.hypot(player.x-m.g.position.x,player.z-m.g.position.z)<1.3){m.taken=true;m.g.visible=false;player.hp=Math.min(100,player.hp+40);notify('MED PATCH +40 / VITAL SYSTEMS RESTORED');sound(720,.2,'sine');updateHUD()}
- let prompt='';for(const r of relays){if(r.done)continue;const close=Math.hypot(player.x-r.x,player.z-r.z)<2.7;if(close){const danger=enemies.some(e=>e.hp>0&&Math.hypot(e.g.position.x-r.x,e.g.position.z-r.z)<6);prompt=danger?`${level().node} GUARDED / CLEAR NEARBY HOSTILES`:`HOLD [ E ] TO ${level().verb} ${Math.floor(r.progress*100)}%`;if(keys.has('KeyE')&&!danger){r.progress+=dt/1.3;if(r.progress>=1){r.done=true;r.halo.visible=false;sound(880,.3,'triangle');notify(level().node+' / '+relays.filter(r=>r.done).length+' OF 3');updateHUD()}}else r.progress=Math.max(0,r.progress-dt*.5)}else r.progress=0}
- if(relays.every(r=>r.done)&&Math.hypot(player.x-level().exit.x,player.z-level().exit.z)<2.7){prompt=`[ E ] ${level().exitPrompt}${levelIndex<LEVELS.length-1?' / NEXT CHAPTER':' / FINISH CAMPAIGN'}`;if(keys.has('KeyE'))end(true)}$('prompt').textContent=prompt;$('prompt').style.display=prompt?'block':'none';damageTimer=Math.max(0,damageTimer-dt);$('damage').style.opacity=damageTimer*1.8;hitTimer=Math.max(0,hitTimer-dt);$('hitmarker').style.opacity=hitTimer>0?1:0;noticeTimer-=dt;if(noticeTimer<=0)$('notice').textContent='';drawMap();}
+ let prompt=mission.tick(dt,player,keys.has('KeyE'),enemies);updateHUD();
+ if(mission.complete&&Math.hypot(player.x-level().exit.x,player.z-level().exit.z)<2.7){prompt=`[ E ] ${level().exitPrompt}${levelIndex<LEVELS.length-1?' / NEXT CHAPTER':' / FINISH CAMPAIGN'}`;if(keys.has('KeyE'))end(true)}$('prompt').textContent=prompt;$('prompt').style.display=prompt?'block':'none';damageTimer=Math.max(0,damageTimer-dt);$('damage').style.opacity=damageTimer*1.8;hitTimer=Math.max(0,hitTimer-dt);$('hitmarker').style.opacity=hitTimer>0?1:0;noticeTimer-=dt;if(noticeTimer<=0)$('notice').textContent='';drawMap();}
 function updateGraphics(){const s=pipeline.options;const el=$('graphics-status');if(el)el.textContent=`F6 AFFINE: ${s.affine?'ON':'OFF'}  /  F7 VERTEX SNAP: ${s.vertexSnap?'ON':'OFF'}  /  F8 DITHER: ${s.dither?'ON':'OFF'}`}
 loadLevel(0);updateGraphics();
 let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);gunCamera.aspect=innerWidth/innerHeight;gunCamera.updateProjectionMatrix();pipeline.render(scene,camera,mode==='menu'?null:gunScene,gunCamera)}requestAnimationFrame(frame);
 // Read-only diagnostics for smoke tests and renderer inspection.
-window.nullDistrict={get state(){return {mode,level:levelIndex+1,levelId:level().id,levelName:level().name,exit:{...level().exit},nodes:relays.map(r=>({x:r.x,z:r.z,done:r.done})),health:player.hp,ammo:player.ammo,weapon:selectedWeapon,inventory:['carbine','sword'],meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species,type:e.type,name:e.info.name,maxHp:e.info.hp,attack:e.attack?{elapsed:e.attack.elapsed,windup:e.info.windup}:null})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length,projectiles:projectiles.map(p=>({type:p.type,x:p.mesh.position.x,y:p.mesh.position.y,z:p.mesh.position.z}))}},navigation:()=>({bounds:{...level().bounds},solids:solids.map(({x,z,w,d})=>({x,z,w,d}))}),renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword)}),graphics:()=>({...pipeline.diagnostics,...district,chapter:level().name,chapters:LEVELS.map(l=>({id:l.id,name:l.name})),...signage.diagnostics(),roster:Object.entries(ENEMY_TYPES).map(([type,info])=>({type,...info})),guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset})};
+window.nullDistrict={get state(){return {mode,level:levelIndex+1,levelId:level().id,levelName:level().name,exit:{...level().exit},nodes:relays.map(r=>({id:r.id,label:r.label,kind:r.kind,x:r.x,z:r.z,endZ:r.endZ,done:r.done,active:mission.active(r),progress:r.progress,hp:r.hp,started:r.started,wave:r.wave,guards:r.guards.filter(e=>e.hp>0).map(e=>e.id)})),missionComplete:mission.complete,health:player.hp,ammo:player.ammo,weapon:selectedWeapon,inventory:['carbine','sword'],meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species,type:e.type,name:e.info.name,maxHp:e.info.hp,attack:e.attack?{elapsed:e.attack.elapsed,windup:e.info.windup}:null})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length,projectiles:projectiles.map(p=>({type:p.type,x:p.mesh.position.x,y:p.mesh.position.y,z:p.mesh.position.z}))}},navigation:()=>({bounds:{...level().bounds},solids:solids.map(({x,z,w,d})=>({x,z,w,d}))}),renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword)}),graphics:()=>({...pipeline.diagnostics,...district,chapter:level().name,chapters:LEVELS.map(l=>({id:l.id,name:l.name})),...signage.diagnostics(),roster:Object.entries(ENEMY_TYPES).map(([type,info])=>({type,...info})),guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset})};

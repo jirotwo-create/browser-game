@@ -13,11 +13,18 @@ window.verifyPipeline=()=>{
  const weights=barycentric(pixel.map(n=>n+.5),projected),recip=weights.map((w,i)=>w/-points[i][2]),denom=recip.reduce((a,b)=>a+b,0);
  const expectedAffine=[weights[1],weights[2]],expectedPerspective=[recip[1]/denom,recip[2]/denom];
  const affine=sample(true),perspective=sample(false),snapped=sample(true,true);
+ const relief=[];
+ for(const scale of [.3,1,4]){
+  g.attributes.position.array.set(points.flat().map(v=>v*scale));g.attributes.position.needsUpdate=true;
+  material.uniforms.groundRelief.value=0;const full=sample(true),correct=sample(false);
+  material.uniforms.groundRelief.value=1;const limited=sample(true);relief.push({scale,full,correct,limited});
+ }
+ g.attributes.position.array.set(points.flat());g.attributes.position.needsUpdate=true;material.uniforms.groundRelief.value=0;
  const snappedWeights=barycentric(pixel.map(n=>n+.5),projected.map(p=>p.map(n=>Math.floor(n)+.5)));
  const snapExpected=[snappedWeights[1],snappedWeights[2]];
  pipe.configure({affine:true,vertexSnap:false,dither:false});pipe.render(scene,camera);const undithered=canvasPixels();pipe.configure({dither:true});pipe.render(scene,camera);const dithered=canvasPixels();let changed=0,badPalette=0;
  const levels=new Set(Array.from({length:32},(_,i)=>Math.round(i/31*255)));
  for(let i=0;i<dithered.length;i++){if(i%4===3)continue;if(dithered[i]!==undithered[i])changed++;if(!levels.has(dithered[i]))badPalette++}
- return {affine,perspective,snapped,expectedAffine,expectedPerspective,snapExpected,changed,badPalette,diagnostics:pipe.diagnostics};
+ return {relief,affine,perspective,snapped,expectedAffine,expectedPerspective,snapExpected,changed,badPalette,diagnostics:pipe.diagnostics};
 };
 </script></body></html>

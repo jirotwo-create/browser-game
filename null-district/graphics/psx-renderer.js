@@ -12,6 +12,7 @@ varying vec3 affineUV;
 varying vec2 perspectiveUV;
 varying vec4 affineColor;
 varying float fogDepth;
+varying vec3 surfaceView;
 void main() {
   vec4 view = modelViewMatrix * vec4(position, 1.0);
   vec4 clip = projectionMatrix * view;
@@ -23,6 +24,7 @@ void main() {
   affineUV = vec3(uv * repeatUV * clip.w, clip.w);
   perspectiveUV = uv * repeatUV;
   fogDepth = -view.z;
+  surfaceView = view.xyz;
   if (vertexSnap > 0.5 && clip.w > 0.0) {
     vec2 raster = (clip.xy / clip.w * 0.5 + 0.5) * rasterSize;
     clip.xy = ((floor(raster) + 0.5) / rasterSize * 2.0 - 1.0) * clip.w;
@@ -33,14 +35,20 @@ const fragmentShader = `
 uniform sampler2D tex;
 uniform float affine;
 uniform float debugUV;
+uniform float groundRelief;
 uniform vec3 fogColor;
 uniform vec2 fogRange;
 varying vec3 affineUV;
 varying vec2 perspectiveUV;
 varying vec4 affineColor;
 varying float fogDepth;
+varying vec3 surfaceView;
 void main() {
-  vec2 uv = mix(perspectiveUV, affineUV.xy / affineUV.z, affine);
+  // Close pavement keeps a little swim, without the near-plane triangle smear.
+  // Walls, enemies and distant ground retain the original full affine mapping.
+  float groundWeight = mix(0.12, 1.0, smoothstep(2.0, 7.0, length(surfaceView)));
+  float warp = affine * mix(1.0, groundWeight, groundRelief);
+  vec2 uv = mix(perspectiveUV, affineUV.xy / affineUV.z, warp);
   if (debugUV > 0.5) { gl_FragColor = vec4(uv, 0.0, 1.0); return; }
   vec3 sampled = texture2D(tex, uv).rgb;
   vec3 lit = sampled * affineColor.rgb / affineColor.w;
@@ -101,7 +109,7 @@ export class PSXPipeline {
   }
   material(color=0xffffff,tex=this.white,repeat=1,unlit=0,extra={}) {
     const material=new THREE.ShaderMaterial({
-      uniforms:{rasterSize:{value:this.size},vertexSnap:{value:Number(this.options.vertexSnap)},repeatUV:{value:repeat},tint:{value:new THREE.Color(color).convertLinearToSRGB()},unlit:{value:unlit},tex:{value:tex},affine:{value:Number(this.options.affine)},debugUV:{value:0},fogColor:{value:this.fogColor},fogRange:{value:new THREE.Vector2(18,65)},...extra},
+      uniforms:{rasterSize:{value:this.size},vertexSnap:{value:Number(this.options.vertexSnap)},repeatUV:{value:repeat},tint:{value:new THREE.Color(color).convertLinearToSRGB()},unlit:{value:unlit},tex:{value:tex},affine:{value:Number(this.options.affine)},debugUV:{value:0},groundRelief:{value:0},fogColor:{value:this.fogColor},fogRange:{value:new THREE.Vector2(18,65)},...extra},
       vertexShader,fragmentShader,vertexColors:true,
     });
     this.materials.add(material);return material;

@@ -1,11 +1,11 @@
 {
   "name": "null-district",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js && node --check graphics/enemies.js && node --check graphics/levels.js && node --check graphics/neon.js && node --check systems/combat.js && node --check graphics/gear-materials.js && node --check graphics/sculpt.js && node --check graphics/urban-levels.js && node --check graphics/signage.js",
+    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js && node --check graphics/enemies.js && node --check graphics/levels.js && node --check graphics/neon.js && node --check systems/combat.js && node --check graphics/gear-materials.js && node --check graphics/sculpt.js && node --check graphics/urban-levels.js && node --check graphics/signage.js && node --check systems/missions.js",
     "preview": "python3 -m http.server 4180 --bind 0.0.0.0",
     "dist:win": "electron-builder --win portable --x64 --publish never",
     "dist:linux": "electron-builder --linux dir --x64 --publish never",

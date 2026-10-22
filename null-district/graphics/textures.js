@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three.module.js';
 
 // 64px scans / paint studies: soot, concrete, oily gunmetal and worn fabric.
-// Texture coordinates, filtering and the PSX raster/affine pipeline are untouched.
+// Nearest-filtered paint; close pavement receives the pipeline's ground-only relief.
 export function paintTexture(kind) {
  const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');
  let seed=[...kind].reduce((n,a)=>Math.imul(n,31)+a.charCodeAt(0),743)>>>0;
@@ -56,9 +56,9 @@ export function paintTexture(kind) {
  const t=new THREE.CanvasTexture(c);t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=1;t.name=`grunge-64-${kind}`;return t;
 }
 export function makePalette(pipeline){
- // Art-direction palette only. No shader, UV, snapping or distortion settings change.
+ // Only the pavement material opts into near-ground affine relief.
  pipeline.fogColor.set('#252b3b').convertLinearToSRGB();
  const textures=Object.fromEntries(['wall','windows','road','hazard','coat','shutter','circuit','metal','rust','skin','glove','blade','leather'].map(k=>[k,paintTexture(k)]));
- const m=(color,texture,unlit=0)=>pipeline.material(color,textures[texture],1,unlit);
+ const m=(color,texture,unlit=0)=>pipeline.material(color,textures[texture],1,unlit,{groundRelief:{value:texture==='road'?1:0}});
  return {textures,materials:{neonCyan:m(0x21edff,undefined,1),neonPink:m(0xff298c,undefined,1),neonViolet:m(0x9d4dff,undefined,1),neonAmber:m(0xffa33d,undefined,1),neonGreen:m(0x69ffac,undefined,1),arcane:m(0xc04bff,undefined,1),stone:m(0x99958e,'wall'),bone:m(0xd0c7a0,'skin'),robe:m(0x6b3153,'coat'),beast:m(0x773c53,'leather'),wall:m(0xc8c9b7,'wall'),windows:m(0xb2b4a0,'windows'),road:m(0xc0c3af,'road'),metal:m(0xc3c4ad,'metal'),rust:m(0xb6a88b,'rust'),hazard:m(0xb5ad81,'hazard'),coat:m(0xb2b7a2,'coat'),glove:m(0xafb29f,'glove'),shutter:m(0xb8bca4,'shutter'),circuit:m(0xa8b893,'circuit',1),dark:m(0x7e8575,'coat'),black:m(0x6d766a,'glove'),skin:m(0xd2c7ad,'skin'),skinDeep:m(0x9c8b71,'skin'),skinPale:m(0xe0d5bd,'skin'),eye:pipeline.material(0x9e9f8c),lip:pipeline.material(0x655344),hair:m(0x555b4e,'coat'),obsidian:m(0x777f73,'blade'),edge:m(0xa2a98f,'metal'),crimson:pipeline.material(0x771b15,undefined,1,1),leather:m(0x96977e,'leather'),pink:pipeline.material(0xb19b85,undefined,1,1),cyan:pipeline.material(0x8c9c81,undefined,1,1),acid:pipeline.material(0xbcb286,undefined,1,1),red:pipeline.material(0xa94b30,undefined,1,1)}};
 }
