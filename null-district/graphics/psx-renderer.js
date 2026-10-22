@@ -66,7 +66,7 @@ void main() {
 
 export class PSXPipeline {
   constructor(canvas, { height = 240 } = {}) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(1);
     // Palette values are authored in display space, like the original 5-bit GPU.
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
@@ -78,6 +78,11 @@ export class PSXPipeline {
     this.white = new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1); this.white.needsUpdate=true;
     this.target = new THREE.WebGLRenderTarget(320,height,{ minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:true,stencilBuffer:false });
     this.target.texture.generateMipmaps=false;
+    this.processed=this.target.clone();this.processed.texture.generateMipmaps=false;
+    this.outputSize=new THREE.Vector2(320,height);
+    this.present=new THREE.Scene();this.presentCamera=new THREE.Camera();
+    this.presentMaterial=new THREE.ShaderMaterial({uniforms:{frame:{value:this.processed.texture}},vertexShader:'varying vec2 uvOut;void main(){uvOut=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:'uniform sampler2D frame;varying vec2 uvOut;void main(){gl_FragColor=texture2D(frame,uvOut);}',depthTest:false,depthWrite:false});
+    this.present.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.presentMaterial));
     this.post = new THREE.Scene();
     this.postCamera = new THREE.Camera();
     this.postMaterial = new THREE.ShaderMaterial({
@@ -89,8 +94,9 @@ export class PSXPipeline {
   }
   resize(width,height) {
     const w=Math.max(160,Math.round(this.height*width/height/8)*8);
-    this.size.set(w,this.height); this.target.setSize(w,this.height);
-    this.renderer.setSize(w,this.height,false);
+    this.size.set(w,this.height); this.target.setSize(w,this.height);this.processed.setSize(w,this.height);
+    this.outputSize.set(Math.max(1,Math.round(width)),Math.max(1,Math.round(height)));
+    this.renderer.setSize(this.outputSize.x,this.outputSize.y,false);
     return w/this.height;
   }
   material(color=0xffffff,tex=this.white,repeat=1,unlit=0,extra={}) {
@@ -107,8 +113,11 @@ export class PSXPipeline {
   }
   render(scene,camera,foreground,foregroundCamera) {
     const r=this.renderer;r.setRenderTarget(this.target);r.autoClear=true;r.render(scene,camera);
-    if(foreground){r.autoClear=false;r.clearDepth();r.render(foreground,foregroundCamera)}
-    r.setRenderTarget(null);r.autoClear=true;r.render(this.post,this.postCamera);
+    // Quantize/dither at the original world raster, then nearest-upscale it.
+    r.setRenderTarget(this.processed);r.render(this.post,this.postCamera);
+    r.setRenderTarget(null);r.render(this.present,this.presentCamera);
+    // Player anatomy and equipment are composited afterwards at native size.
+    if(foreground){r.autoClear=false;r.clearDepth();r.render(foreground,foregroundCamera);r.autoClear=true;}
   }
-  get diagnostics(){return {resolution:this.size.toArray(),...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
+  get diagnostics(){return {resolution:this.size.toArray(),gearResolution:this.outputSize.toArray(),gearPass:'native / perspective / unquantized',...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
 }

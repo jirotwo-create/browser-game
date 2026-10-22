@@ -2,9 +2,21 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-![Neon Schism: the grungy market after the rift opens](screenshots/neon-schism.png)
+![Native-resolution MOURNFANG against the unchanged pixelated cathedral](screenshots/black-steel-mournfang.png)
 
-![Cathedral of Static: Gothic ruins, arcane seals and neon machinery](screenshots/cathedral-of-static.png)
+![Sharp faceted carbine against the unchanged neon district](screenshots/native-carbine.png)
+
+Version 1.5 separates **the player and gear** from **the world and enemies**. The environment and enemies retain affine texture warping, vertex snapping, nearest-neighbor pixelation, dithering and RGB555. Player arms, hands, carbine, sword and their attached effects render afterwards at the window’s native resolution with normal perspective interpolation, antialiased edges and continuous color. Retro toggles affect the world; they do not distort or pixelate the player’s gear.
+
+**MOURNFANG, the black-steel sovereign**, is now a traditional straight, symmetrical double-edged longsword with a diamond-section blade and polished black steel. A moving specular sheen crosses its bevels, with view-dependent cool/warm reflections. The elaborate hilt retains and expands the cursed fittings: sculpted death mask, hollow burning eyes, horn crown, articulated silver talons, gilded filigree, ten animated blood runes, faceted gems, wrapped grip, crowned pommel, thorn finial and twin nine-link chains carrying jeweled tooth charms. Idle animation, two-handed contact, alternating slashes and blade-following trails remain.
+
+The carbine gains additional sculpted mechanical planes, venting, fasteners, metallic inlays, connected sights and a moving bolt. The stock follows the shoulder outside the sight line. Player hands have denser faceted fingers and palms while retaining the same physical grip constraints.
+
+All ten enemy types now use raised triangular surface topology, with more anatomical torso/arm/leg sections for human types. They range from 1,578 to 6,468 triangles, with joints and independently moving props preserved. Static sibling surfaces are merged by material within each joint to reduce draw calls. Environment geometry, textures, lighting palette, layouts and combat tuning are unchanged from version 1.4.
+
+![Reworked polygonal enemy roster, still rendered through the retro world pass](screenshots/faceted-hostile-archive.png)
+
+[See the animated black-steel sword in actual gameplay](screenshots/black-steel-animated.gif).
 
 Version 1.4 turns NULL DISTRICT into **Chrome & Ash**, a two-chapter collision of grunge cyberpunk and high/dark fantasy. Dirty concrete, corroded steel and worn fabric remain beneath a much stronger layer of cyan/magenta/violet signage, neon conduits, pixel-lit pavement and dimensional sigils. The affine shader, vertex snapping, dithering and RGB555 pipeline are unchanged.
 
@@ -31,13 +43,13 @@ Both chapters are selectable from the main menu. Starting Chapter 02 directly is
 | Breachborn | Ossuary revenant | Skeletal, jointed undead claw fighter; 4 HP |
 | Breachborn | Cathedral winged sentinel | Large horned stone demon with animated wings and orbs; 9 HP |
 
-These are actual polygonal meshes, not sprite substitutions. Seven human types retain exposed sculpted faces; three monster types use independent skeletons/silhouettes. Body counts range from 526 to 1,788 triangles. Melee and ranged attacks have visible wind-ups and expanding ground warnings. Moving out of reach, strafing the locked aim or taking cover can evade attacks. Bolts and orbs travel through the world and stop at solid cover; swept collision prevents fast projectiles tunneling through the player. Targeting an enemy displays its faction, name and remaining health.
+These are actual polygonal meshes, not sprite substitutions. Seven human types retain exposed sculpted faces; three monster types use independent skeletons/silhouettes. Body counts range from 1,578 to 6,468 triangles. Melee and ranged attacks have visible wind-ups and expanding ground warnings. Moving out of reach, strafing the locked aim or taking cover can evade attacks. Bolts and orbs travel through the world and stop at solid cover; swept collision prevents fast projectiles tunneling through the player. Targeting an enemy displays its faction, name and remaining health.
 
-The two starting weapons retain their articulated first-person grips and fixed-length arm IK. MOURNFANG still animates its fangs, runes, ruby and linked chain at rest, and alternates slashes with a blade-following trail. Armored enemies need two sword hits. Dreadwake remains untouched.
+The two starting weapons retain their articulated first-person grips and fixed-length arm IK. MOURNFANG animates its talons, runes, ruby, linked chains and steel sheen at rest, and alternates slashes with a blade-following trail. Armored enemies need two sword hits. Dreadwake remains untouched.
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.4.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.4.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.5.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.5.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -72,7 +84,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.4.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.5.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 
@@ -88,6 +100,8 @@ node tests/desktop.cjs
 Desktop tests use Playwright from `/workspace/dreadwake-tools` by default; set `PLAYWRIGHT_MODULE` to another installation. Linux desktop tests need a display (or Xvfb); Windows can use its normal desktop. The desktop smoke test exercises local module loading, WebGL, real mouse capture, movement, both starting weapons, a sword swing, shooting, reload, pause/restart, fullscreen and renderer isolation. Set `ELECTRON_EXECUTABLE` and `NULL_DISTRICT_APP` to test a packaged build.
 
 With `npm run preview` running, `node tests/render.cjs` verifies real GPU affine interpolation against CPU barycentrics, vertex snapping and RGB555 output.
+
+`node tests/composite.cjs` reads back real GPU pixels: the world remains nearest-scaled pixel blocks, retro toggles leave native gear unchanged, gear preserves more than 32 channel levels, and the animated black-steel sheen changes actual framebuffer pixels.
 
 `node tests/grips.cjs` checks 223 recoil/reload/alternating-swing poses for fixed arm lengths, wrist attachment, trigger contact, wrapped fingers, correct left/right anatomy, visible hands and animated blade parts.
 

@@ -7,8 +7,8 @@ for(const[type,info]of Object.entries(ENEMY_TYPES)){
  animateEnemy(enemy,.1,true);const first=rig.legs.map(l=>l.rotation.x);animateEnemy(enemy,.5,true);const second=rig.legs.map(l=>l.rotation.x);animateEnemy({...enemy,attack:null},0,false);
  const box=new T.Box3().setFromObject(rig.g),size=box.getSize(new T.Vector3()).toArray();
  let meshes=0;rig.g.traverse(o=>{if(o.isMesh)meshes++});
- camera.position.z=type==='gargoyle'?5.8:4.5;camera.lookAt(0,1.08,0);pipe.render(scene,camera);const article=document.createElement('article'),img=document.createElement('img');img.src=pipe.renderer.domElement.toDataURL('image/png');article.append(img);const text=document.createElement('div');const title=document.createElement('strong');title.textContent=info.name;const label=document.createElement('small');label.textContent=info.faction+' / '+info.role+' / '+info.hp+' HP';text.append(title,label);article.append(text);document.getElementById('grid').append(article);scene.remove(rig.g);
- data.push({type,...rig.g.userData.asset,size,meshes,first,second});
+ camera.position.z=type==='gargoyle'?4.8:3.4;camera.lookAt(0,1.08,0);pipe.render(scene,camera);const article=document.createElement('article'),img=document.createElement('img');img.src=pipe.renderer.domElement.toDataURL('image/png');article.append(img);const text=document.createElement('div');const title=document.createElement('strong');title.textContent=info.name;const label=document.createElement('small');label.textContent=info.faction+' / '+info.role+' / '+info.hp+' HP';text.append(title,label);article.append(text);document.getElementById('grid').append(article);scene.remove(rig.g);
+ data.push({type,...rig.g.userData.asset,size,meshes,first,second,attachedProps:rig.props.every(p=>{for(let q=p;q;q=q.parent)if(q===rig.g)return true;return false})});
 }
 window.rosterReview={data,graphics:pipe.diagnostics};
 </script></body></html>

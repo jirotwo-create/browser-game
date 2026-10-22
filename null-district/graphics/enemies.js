@@ -1,5 +1,6 @@
 import * as T from '../vendor/three.module.js';
 import { makeGuard, mesh, plate, cylinder, countTriangles } from './models.js';
+import { chiselCharacter } from './sculpt.js';
 import { organic, polygonPrism } from './anatomy.js';
 
 // Combat tuning lives beside the authored silhouettes: a type is more than a recolor.
@@ -111,7 +112,8 @@ function monster(m,type){
 export function makeEnemy(m,type='sable',variant=0){
  const info=ENEMY_TYPES[type];if(!info)throw Error('Unknown enemy archetype '+type);
  const rig=info.species==='human'?human(m,type,variant):monster(m,type);
- rig.g.name=type+'-enemy';rig.g.userData.asset={...info,type,triangles:countTriangles(rig.g)};
+ for(const prop of rig.props)prop.userData.independentPose=true;
+ chiselCharacter(rig.g);rig.g.name=type+'-enemy';rig.g.userData.asset={...info,type,triangles:countTriangles(rig.g)};
  return rig;
 }
 export function animateEnemy(e,time,moving){

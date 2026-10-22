@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three.module.js';
+import { makeGearPalette } from './graphics/gear-materials.js';
 import { PSXPipeline } from './graphics/psx-renderer.js';
 import { makePalette } from './graphics/textures.js';
 import { loft, mesh, plate, makeCarbine, makeSword } from './graphics/models.js';
@@ -45,9 +46,9 @@ function buildObjectives(){
 const rainPoints=[];for(let i=0;i<350;i++){const x=(rand()-.5)*50,y=rand()*19,z=(rand()-.5)*68;rainPoints.push(x,y,z,x-.05,y-.5,z)}
 const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.Float32BufferAttribute(rainPoints,3));const rain=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0x7d9aad,transparent:true,opacity:.22}));scene.add(rain);
 // Authored faceted carbine and gloved arms share the same retro render target.
-const gunScene=new THREE.Scene();const gun=makeCarbine(materials);gunScene.add(gun);
-const sword=makeSword(materials);sword.visible=false;gunScene.add(sword);
-const flash=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,5),materials.acid);flash.rotation.x=-Math.PI/2;flash.position.set(0,0,-.06);flash.visible=false;gun.userData.rig.muzzle.add(flash);
+const gearMaterials=makeGearPalette();const gunScene=new THREE.Scene();const gun=makeCarbine(gearMaterials);gunScene.add(gun);
+const sword=makeSword(gearMaterials);sword.visible=false;gunScene.add(sword);
+const flash=new THREE.Mesh(new THREE.ConeGeometry(.12,.3,5),gearMaterials.acid);flash.rotation.x=-Math.PI/2;flash.position.set(0,0,-.06);flash.visible=false;gun.userData.rig.muzzle.add(flash);
 const gunCamera=new THREE.PerspectiveCamera(72,camera.aspect,.01,5);
 const player={x:0,z:22,y:1.65,vy:0,yaw:0,pitch:0,hp:100,ammo:24,kills:0};
 let mode='menu',firing=false,looking=false,reloadTime=0,shotTime=0,recoil=0,damageTimer=0,hitTimer=0,noticeTimer=0,elapsed=0,missionTime=0,step=0,audio;
@@ -242,6 +243,6 @@ function tick(dt){elapsed+=dt;for(let i=effects.length-1;i>=0;i--){effects[i].tt
  if(relays.every(r=>r.done)&&Math.hypot(player.x-level().exit.x,player.z-level().exit.z)<2.7){prompt=levelIndex===0?'[ E ] OPEN THE RIFT / CHAPTER 02':'[ E ] SEVER THE HEART / SEAL THE GATE';if(keys.has('KeyE'))end(true)}$('prompt').textContent=prompt;$('prompt').style.display=prompt?'block':'none';damageTimer=Math.max(0,damageTimer-dt);$('damage').style.opacity=damageTimer*1.8;hitTimer=Math.max(0,hitTimer-dt);$('hitmarker').style.opacity=hitTimer>0?1:0;noticeTimer-=dt;if(noticeTimer<=0)$('notice').textContent='';drawMap();}
 function updateGraphics(){const s=pipeline.options;const el=$('graphics-status');if(el)el.textContent=`F6 AFFINE: ${s.affine?'ON':'OFF'}  /  F7 VERTEX SNAP: ${s.vertexSnap?'ON':'OFF'}  /  F8 DITHER: ${s.dither?'ON':'OFF'}`}
 loadLevel(0);updateGraphics();
-let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);gunCamera.aspect=camera.aspect;gunCamera.updateProjectionMatrix();pipeline.render(scene,camera,mode==='menu'?null:gunScene,gunCamera)}requestAnimationFrame(frame);
+let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);gunCamera.aspect=innerWidth/innerHeight;gunCamera.updateProjectionMatrix();pipeline.render(scene,camera,mode==='menu'?null:gunScene,gunCamera)}requestAnimationFrame(frame);
 // Read-only diagnostics for smoke tests and renderer inspection.
 window.nullDistrict={get state(){return {mode,level:levelIndex+1,levelId:level().id,levelName:level().name,exit:{...level().exit},nodes:relays.map(r=>({x:r.x,z:r.z,done:r.done})),health:player.hp,ammo:player.ammo,weapon:selectedWeapon,inventory:['carbine','sword'],meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species,type:e.type,name:e.info.name,maxHp:e.info.hp,attack:e.attack?{elapsed:e.attack.elapsed,windup:e.info.windup}:null})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length,projectiles:projectiles.map(p=>({type:p.type,x:p.mesh.position.x,y:p.mesh.position.y,z:p.mesh.position.z}))}},navigation:()=>({bounds:{...level().bounds},solids:solids.map(({x,z,w,d})=>({x,z,w,d}))}),renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword)}),graphics:()=>({...pipeline.diagnostics,...district,chapter:level().name,roster:Object.entries(ENEMY_TYPES).map(([type,info])=>({type,...info})),guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset})};

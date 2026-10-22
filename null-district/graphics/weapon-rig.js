@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import { gearClock } from './gear-materials.js';
 import { organic } from './anatomy.js';
 const Y=new THREE.Vector3(0,1,0);
 const add=(parent,geo,material)=>{const m=new THREE.Mesh(geo,material);parent.add(m);return m};
@@ -6,13 +7,13 @@ const anchor=(parent,name,p)=>{const o=new THREE.Object3D();o.name=name;o.positi
 
 function phalanx(parent,a,b,r,material){
  const from=new THREE.Vector3(...a),to=new THREE.Vector3(...b),d=to.clone().sub(from);
- const mesh=add(parent,organic([[0,r,r*.9],[.6,r*.91,r*.82],[1,r*.78,r*.75]],6),material);
+ const mesh=add(parent,organic([[0,r,r*.9],[.6,r*.91,r*.82],[1,r*.78,r*.75]],8),material);
  mesh.position.copy(from);mesh.quaternion.setFromUnitVectors(Y,d.clone().normalize());mesh.scale.y=d.length();return mesh;
 }
 export function makeGripHand(materials,{trigger=false,name='hand',handedness='right'}={}){
  const hand=new THREE.Group();hand.name=name;hand.userData.handedness=handedness;
  const anatomy=new THREE.Group();anatomy.scale.x=handedness==='left'?-1:1;hand.add(anatomy);
- const palm=add(anatomy,organic([[-.085,.032,.035,.055,.025],[-.045,.046,.055,.06,.025],[.045,.043,.051,.06,.018],[.07,.031,.038,.06,.012]],8),materials.glove);palm.name='palm-around-grip';
+ const palm=add(anatomy,organic([[-.085,.032,.035,.055,.025],[-.045,.046,.055,.06,.025],[.045,.043,.051,.06,.018],[.07,.031,.038,.06,.012]],12),materials.glove);palm.name='palm-around-grip';
  const tips=[];
  for(let i=0;i<4;i++){
   const y=.047-i*.033;
@@ -28,8 +29,8 @@ export function makeGripHand(materials,{trigger=false,name='hand',handedness='ri
 }
 function makeArm(root,side,materials){
  const shoulder=new THREE.Vector3(side*.21,-.22,.01);
- const upper=add(root,organic([[0,.060,.064],[.45,.062,.065],[1,.046,.050]],8),materials.coat);
- const fore=add(root,organic([[0,.046,.050],[.43,.048,.052],[1,.030,.034]],8),materials.coat);
+ const upper=add(root,organic([[0,.060,.064],[.45,.062,.065],[1,.046,.050]],10),materials.coat);
+ const fore=add(root,organic([[0,.046,.050],[.43,.048,.052],[1,.030,.034]],10),materials.coat);
  upper.name=(side>0?'right':'left')+'-upper-arm';fore.name=(side>0?'right':'left')+'-forearm';
  const shoulderNode=anchor(root,side>0?'right-shoulder':'left-shoulder',shoulder.toArray());
  const elbowNode=anchor(root,side>0?'right-elbow':'left-elbow',[0,0,0]);
@@ -98,16 +99,17 @@ export function poseCarbine(root,{time=0,walk=0,recoil=0,reload=0}={}){
  r.grip.rotation.set(-.055-recoil*.55, .07, -.025-loading*.07);
  r.support.position.set(-.03,.11-reach*.28,-.24+reach*.12);
  r.support.quaternion.copy(supportOrientation).slerp(magazineOrientation,reach*.9);
+ if(r.bolt)r.bolt.position.z=.025+recoil*.35;
  if(r.magazine)r.magazine.position.y=-.03-reach*.14;
  r.mode=loading?'reload':'ready';solveHeldRig(root);
 }
 export function poseSword(root,{time=0,attack=0,attacking=false,combo=0}={}){
- const r=root.userData.rig;
+ const r=root.userData.rig;gearClock.value=time;
  let wind=0,slash=0;
  if(attacking){if(attack<.22)wind=attack/.22;else if(attack<.48){wind=1;slash=Math.sin((attack-.22)/.26*Math.PI/2)}else{const t=Math.max(0,1-(attack-.48)/.42);wind=t;slash=t}}
  const reverse=combo%2===1?-.5:1;
  r.grip.position.set(.16+wind*.10-slash*.37*reverse,-.18+wind*.075-slash*.08,-.62+wind*.05-slash*.055);
- r.grip.rotation.set(-.70-wind*.25+slash*.67,-.12+wind*.20-slash*.40*reverse,-.18-wind*.30*reverse+slash*1.55*reverse);
+ r.grip.rotation.set(-.56-wind*.25+slash*.67,-.12+wind*.20-slash*.40*reverse,-.18-wind*.30*reverse+slash*1.55*reverse);
  r.grip.position.y+=Math.sin(time*1.7)*.005;
  r.support.position.set(0,-.16,0);r.support.quaternion.identity();
  r.mode=attacking?'attack':'ready';
@@ -118,7 +120,7 @@ export function poseSword(root,{time=0,attack=0,attacking=false,combo=0}={}){
   a.ruby.rotation.y=time*.48;a.ruby.rotation.z=Math.sin(time*.8)*.16;
   for(let i=0;i<a.fangs.length;i++){const p=a.fangs[i];p.rotation.z=p.userData.rest+(Math.sin(time*2+i*.8)*.08+slash*.2)*p.userData.side}
   for(let i=0;i<a.glyphs.length;i++){const p=a.glyphs[i];p.position.y=p.userData.baseY+Math.sin(time*2.5-i)*.008;p.scale.setScalar(.9+.12*Math.sin(time*3-i));}
-  for(let i=0;i<a.links.length;i++){a.links[i].rotation.z=Math.sin(time*1.8+i*.45)*(.1+i*.025)+slash*.25;}
+  for(let i=0;i<a.links.length;i++){a.links[i].rotation.z=Math.sin(time*1.8+i*.45)*(.07+(i%9)*.015)+slash*.12;}
  }
  solveHeldRig(root);
  if(a){

@@ -1,12 +1,13 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Grip and living blade verification</title><link rel="icon" href="../favicon.svg"></head><body><canvas id="raster"></canvas><script type="module">
 import * as T from '../vendor/three.module.js';import{PSXPipeline}from'../graphics/psx-renderer.js';import{makePalette}from'../graphics/textures.js';import{makeCarbine,makeSword}from'../graphics/models.js';import{poseCarbine,poseSword,gripDiagnostics}from'../graphics/weapon-rig.js';
-const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(1440,900);const{materials}=makePalette(pipe);const gun=makeCarbine(materials),sword=makeSword(materials);const scene=new T.Scene();scene.add(gun,sword);const camera=new T.PerspectiveCamera(72,1.6,.01,5);
+import{makeGearPalette}from'../graphics/gear-materials.js';
+const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(1440,900);const materials=makeGearPalette();const gun=makeCarbine(materials),sword=makeSword(materials);const scene=new T.Scene();scene.add(gun,sword);const camera=new T.PerspectiveCamera(72,1.6,.01,5);
 window.verifyGrips=()=>{
  const samples=[];for(let i=0;i<=40;i++){poseCarbine(gun,{time:i*.05,walk:i*.2,recoil:i%2?.09:0,reload:i===0?0:1.5-i/40*1.49});samples.push({weapon:'carbine',...gripDiagnostics(gun)})}
  for(let combo=0;combo<2;combo++)for(let i=0;i<=90;i++){poseSword(sword,{time:i*.02,attack:i/100,attacking:true,combo});samples.push({weapon:'sword',...gripDiagnostics(sword)})}
  poseCarbine(gun);poseSword(sword);
  const framing=[gun,sword].map(g=>[g.userData.rig.rightHand,g.userData.rig.leftHand].map(hand=>{const p=hand.userData.contacts.palm.getWorldPosition(new T.Vector3()).project(camera);return p.toArray()}));
- const snapshot=()=>{const r=sword.userData.relic;return {ruby:r.ruby.quaternion.toArray(),fang:r.fangs[0].rotation.z,chain:r.links[3].rotation.z,glyph:r.glyphs[0].position.y,heat:r.core.uniforms.tint.value.toArray()}};
+ const snapshot=()=>{const r=sword.userData.relic;return {ruby:r.ruby.quaternion.toArray(),fang:r.fangs[0].rotation.z,chain:r.links[3].rotation.z,glyph:r.glyphs[0].position.y,heat:r.core.uniforms.tint.value.toArray(),sheen:r.steel.uniforms.time.value}};
  poseSword(sword,{time:.1});const first=snapshot();poseSword(sword,{time:1.1});const second=snapshot();
  const clampRange=samples.flatMap(s=>s.arms.map(a=>a.reach));
  const handedness=[gun,sword].map(g=>[g.userData.rig.rightHand,g.userData.rig.leftHand].map(h=>({name:h.userData.handedness,palmX:h.worldToLocal(h.userData.contacts.palm.getWorldPosition(new T.Vector3())).x})));

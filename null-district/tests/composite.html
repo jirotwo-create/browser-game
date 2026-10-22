@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>World / player compositor verification</title><link rel="icon" href="../favicon.svg"></head><body><canvas id="raster"></canvas><script type="module">
+import * as T from '../vendor/three.module.js';import{PSXPipeline}from'../graphics/psx-renderer.js';import{makeGearPalette,gearClock}from'../graphics/gear-materials.js';import{makeSword}from'../graphics/models.js';
+const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(960,720);const scene=new T.Scene();scene.background=new T.Color(0,0,0);const camera=new T.PerspectiveCamera(60,4/3,.1,20);
+const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute([-2,-2,-2,4,-2,-6,-1,2,-2.5],3));g.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,0,1],2));g.computeVertexNormals();scene.add(new T.Mesh(g,pipe.material(0xffffff,undefined,1,1,{debugUV:{value:1}})));
+const foreground=new T.Scene(),fc=new T.OrthographicCamera(-1,1,1,-1,.1,10);fc.position.z=2;
+const native=new T.ShaderMaterial({vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;void main(){gl_FragColor=vec4(v.x,v.y,.37,1.);}'});
+const plane=new T.Mesh(new T.PlaneGeometry(.8,1.6),native);plane.position.x=.5;foreground.add(plane);
+function read(){const gl=pipe.renderer.getContext(),pixels=new Uint8Array(960*720*4);gl.readPixels(0,0,960,720,gl.RGBA,gl.UNSIGNED_BYTE,pixels);return pixels}
+window.verifyComposite=()=>{
+ pipe.configure({affine:true,vertexSnap:true,dither:true});pipe.render(scene,camera,foreground,fc);const first=read();
+ pipe.configure({affine:false,vertexSnap:false,dither:false});pipe.render(scene,camera,foreground,fc);const second=read();let nativeChanged=0,worldChanged=0;const levels=new Set();
+ for(let y=100;y<620;y++)for(let x=560;x<880;x++){const i=(y*960+x)*4;levels.add(first[i]);for(let k=0;k<3;k++)if(first[i+k]!==second[i+k])nativeChanged++;}
+ for(let i=0;i<first.length;i+=4)if(i/4%960<450&&first[i]!==second[i])worldChanged++;
+ pipe.configure({affine:true,vertexSnap:true,dither:true});pipe.render(scene,camera);const worldOnly=read();let blocksBroken=0;
+ for(let y=30;y<660;y+=3)for(let x=30;x<450;x+=3){const base=(y*960+x)*4;for(let j=0;j<3;j++)for(let k=0;k<3;k++)for(let c=0;c<3;c++)if(worldOnly[((y+j)*960+x+k)*4+c]!==worldOnly[base+c])blocksBroken++;}
+ const gear=new T.Scene(),m=makeGearPalette(),sword=makeSword(m),gc=new T.PerspectiveCamera(72,4/3,.01,5);gear.add(sword);
+ gearClock.value=.1;pipe.render(new T.Scene(),camera,gear,gc);const dark=read();gearClock.value=3.4;pipe.render(new T.Scene(),camera,gear,gc);const shine=read();let sheenPixels=0;for(let i=0;i<dark.length;i+=4)if(Math.abs(dark[i]-shine[i])+Math.abs(dark[i+1]-shine[i+1])+Math.abs(dark[i+2]-shine[i+2])>15)sheenPixels++;
+ return {nativeChanged,worldChanged,levels:levels.size,blocksBroken,sheenPixels,diagnostics:pipe.diagnostics};
+};
+</script></body></html>
