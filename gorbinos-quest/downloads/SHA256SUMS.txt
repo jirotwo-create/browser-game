@@ -1,0 +1,2 @@
+b7a9f656a70660850b12c6597912df2c4f1aebd5c7138356c82a412dae304d06  GorbinosQuest-Linux.tar.gz
+269ccadb1bbb9733039899ef459cbf79232b2cb8400b8f6d8103ca989c496b1b  GorbinosQuest-Windows.zip
