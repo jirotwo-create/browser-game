@@ -4,6 +4,8 @@ A complete first-person remake of the earlier 2D fan game. Explore a connected, 
 
 ## Download
 
+- **[Android — install APK](downloads/GorbinosQuest-Android.apk?raw=true)**. Full touch edition for Android 7.0+ ARM phones/tablets. Landscape controls, phone detail settings, and background autosave. [Mobile controls and validation](MOBILE.md). Device runtime testing is still pending.
+
 - **[Windows 64-bit — download ZIP](downloads/GorbinosQuest-Windows.zip?raw=true)**. Extract it and run `GorbinosQuest.exe`. No engine, browser, account or Internet connection required.
 - **[Linux x86-64 — download archive](downloads/GorbinosQuest-Linux.tar.gz?raw=true)**. Extract and run `GorbinosQuest.x86_64`; use `chmod +x` if needed.
 
@@ -43,6 +45,8 @@ The hidden ending also requires all three workers to be freed. Two other endings
 Headshots deal additional damage. Volatile organ tanks explode and can chain into nearby tanks. Four ordinary enemy types vary between ranged security, fast charging hounds, artillery growths and armored clerks. The final boss fires aimed spreads and radial volleys. Audit Sight can interrupt enemies, reveal memories through walls, and turn nearby bullets into scrip.
 
 ## Controls
+
+Android uses a left joystick, right-side swipe look, and touch buttons. Every menu is touch-accessible. See the [Android guide](MOBILE.md). The table below applies to desktop.
 
 | Input | Action |
 | --- | --- |

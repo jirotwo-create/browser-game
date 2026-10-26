@@ -3,6 +3,8 @@ extends Node
 const ROOT_SAVE = "user://null_dividend_v2.json"
 const WORLD_SIZE = 140.0
 var rng = RandomNumberGenerator.new()
+var mobile_enabled = OS.has_feature("android") or "--touch" in OS.get_cmdline_user_args()
+var touch_controls
 var world: Node3D
 var viewport: SubViewport
 var screen: SubViewportContainer
@@ -102,6 +104,10 @@ func _ready():
  hud.g=self
  var layer=CanvasLayer.new();add_child(layer);layer.add_child(hud)
  setup_audio()
+ if mobile_enabled:
+  touch_controls=load("res://touch_controls.gd").new();touch_controls.g=self;layer.add_child(touch_controls)
+  get_tree().quit_on_go_back=false
+  Engine.max_fps=60
  load_preferences()
  Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
  if "--smoke" in OS.get_cmdline_user_args(): new_game()
@@ -391,9 +397,10 @@ func new_game():
  save_game()
 func set_state(s):
  state=s
- Input.mouse_mode=Input.MOUSE_MODE_CAPTURED if s=="play" else Input.MOUSE_MODE_VISIBLE
+ if is_instance_valid(touch_controls):touch_controls.reset()
+ Input.mouse_mode=Input.MOUSE_MODE_CAPTURED if s=="play" and not mobile_enabled else Input.MOUSE_MODE_VISIBLE
 func _input(event):
- if event is InputEventMouseMotion and state=="play":
+ if event is InputEventMouseMotion and state=="play" and not mobile_enabled:
   yaw-=event.relative.x*sensitivity;pitch=clamp(pitch-event.relative.y*sensitivity,-1.45,1.45)
   player.rotation.y=yaw;camera.rotation.x=pitch
  if event is InputEventKey and event.pressed and not event.echo:
@@ -431,12 +438,7 @@ func _input(event):
     if state=="play":dash()
    KEY_F1:
     if state=="play":set_state("help")
-   KEY_F3:
-    reduced=not reduced
-    for m in mats:m.set_shader_parameter("snap",not reduced)
-    # Materials are duplicated per mesh; the viewport resolution is the main effect toggle.
-    screen.stretch_shrink=1 if reduced else 2
-    save_preferences()
+   KEY_F3:toggle_quality()
    KEY_F5:
     if state=="play":save_game();message("MEMORY COMMITTED / game saved")
    KEY_F9:
@@ -479,6 +481,7 @@ func _physics_process(dt):
    magazines[equipped]+=amount
    if equipped!=0:reserves[equipped]-=amount
  var movement=Vector2(float(key(KEY_D) or key(KEY_RIGHT))-float(key(KEY_A) or key(KEY_LEFT)),float(key(KEY_S) or key(KEY_DOWN))-float(key(KEY_W) or key(KEY_UP))).normalized()
+ if is_instance_valid(touch_controls):movement=(movement+touch_controls.move).limit_length(1.0)
  var dir=player.transform.basis*Vector3(movement.x,0,movement.y)
  var moving=movement.length()>0
  var move_speed=12.5 if key(KEY_SHIFT) else 8.5
@@ -492,7 +495,7 @@ func _physics_process(dt):
  if player.position.y< -10:respawn()
  var bob=sin(time*(13 if key(KEY_SHIFT) else 10))*0.045 if moving and player.is_on_floor() else 0
  camera.position.y=lerp(camera.position.y,1.05 if key(KEY_CTRL) else 1.62+bob,dt*12)
- var aim=Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+ var aim=Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or (is_instance_valid(touch_controls) and touch_controls.aiming)
  camera.fov=lerp(camera.fov,62.0 if aim else 84.0,dt*10)
  gun_root.position=Vector3((-0.15 if aim else 0)+sin(time*6)*0.005,(-0.02 if moving else 0)+bob*0.4,recoil*0.15)
  gun_root.rotation.x=recoil*0.16
@@ -500,7 +503,7 @@ func _physics_process(dt):
  if moving and player.is_on_floor():
   step_t-=dt
   if step_t<=0:step_t=0.29 if key(KEY_SHIFT) else 0.43;sound(65,0.025)
- if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):fire()
+ if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or (is_instance_valid(touch_controls) and touch_controls.held.fire):fire()
  update_enemies(dt)
  update_projectiles(dt)
  find_interaction()
@@ -511,7 +514,13 @@ func _physics_process(dt):
     quests.arena=2;credits+=70;unlock_weapon(4);message("PERFORMANCE REVIEW COMPLETE / +70 scrip. DEBT COLLECTOR unlocked.");save_game()
  save_t+=dt
  if save_t>25:save_t=0;save_game()
-func key(code):return Input.is_physical_key_pressed(code)
+func key(code):
+ if Input.is_physical_key_pressed(code):return true
+ if is_instance_valid(touch_controls):
+  if code==KEY_SPACE:return touch_controls.held.jump
+  if code==KEY_SHIFT:return touch_controls.sprint
+  if code==KEY_CTRL:return touch_controls.crouch
+ return false
 func ray(from,to,mask=3,exclude=[]):
  var q=PhysicsRayQueryParameters3D.create(from,to,mask,exclude)
  return player.get_world_3d().direct_space_state.intersect_ray(q)
@@ -698,6 +707,7 @@ func pulse():
    b.t=0;credits+=1
  message("AUDIT SIGHT / %d minds interrupted. Nearby bullets liquidated."%count,Color('#86f3cf'))
 func message(text,color=Color('#e5f585')):
+ if mobile_enabled:text=text.replace("[E]","USE").replace("Press TAB","Tap MAP")
  notices.append({"text":text,"color":color,"t":6.0})
  if notices.size()>3:notices.pop_front()
 func find_interaction():
@@ -803,7 +813,7 @@ func talk(id):
 func unlock_weapon(index):
  if owned[index]:reserves[index]+=capacities[index]*2;return
  owned[index]=true;reserves[index]+=capacities[index]*3
- message("WEAPON ACQUIRED / "+weapon_names[index]+" / press "+str(index+1),Color('#7dfbc7'));sound(760,0.25)
+ message("WEAPON ACQUIRED / "+weapon_names[index]+(" / use > to select" if mobile_enabled else " / press "+str(index+1)),Color('#7dfbc7'));sound(760,0.25)
 func spawn_arena_wave():
  arena_wave+=1;arena_enemies=[]
  for i in range(3+arena_wave):
@@ -900,12 +910,25 @@ func new_game_from_data(d):
  if boss_started and not boss_dead and not enemies.any(func(e):return e.boss and e.alive):spawn_enemy(Vector3(0,1,-105),3,"final_beneficiary",true)
  if quests.arena==1:arena_wave=0;spawn_arena_wave()
  build_gun();invuln=2;reload_t=0;fire_cd=0;set_state("play");message("DIVIDEND RESTORED / your city remembers you.")
+func toggle_quality():
+ reduced=not reduced
+ screen.stretch_shrink=(2 if reduced else 3) if mobile_enabled else (1 if reduced else 2)
+ save_preferences()
+func _notification(what):
+ if not mobile_enabled or not is_instance_valid(player):return
+ if what==NOTIFICATION_WM_GO_BACK_REQUEST:
+  if is_instance_valid(touch_controls):touch_controls.back()
+ elif what==NOTIFICATION_APPLICATION_PAUSED or what==NOTIFICATION_APPLICATION_FOCUS_OUT:
+  if state not in ["title","won","dead"]:save_game();set_state("pause")
 func save_preferences():
- var cfg=ConfigFile.new();cfg.set_value("options","muted",muted);cfg.set_value("options","reduced",reduced);cfg.save("user://preferences.cfg")
+ var cfg=ConfigFile.new();cfg.set_value("options","muted",muted);cfg.set_value("options","reduced",reduced);
+ if is_instance_valid(touch_controls):cfg.set_value("options","look_speed",touch_controls.sensitivity_scale)
+ cfg.save("user://preferences.cfg")
 func load_preferences():
  var cfg=ConfigFile.new()
  if cfg.load("user://preferences.cfg")==OK:muted=cfg.get_value("options","muted",false);reduced=cfg.get_value("options","reduced",false)
- screen.stretch_shrink=1 if reduced else 2
+ if is_instance_valid(touch_controls):touch_controls.sensitivity_scale=clampi(int(cfg.get_value("options","look_speed",1)),0,2)
+ screen.stretch_shrink=(2 if reduced else 3) if mobile_enabled else (1 if reduced else 2)
 func setup_audio():
  music=AudioStreamPlayer.new();var stream=AudioStreamGenerator.new();stream.mix_rate=22050;stream.buffer_length=0.15;music.stream=stream;add_child(music);music.play();playback=music.get_stream_playback()
 func sound(freq,duration=0.1):sound_freq=freq;sound_left=duration
