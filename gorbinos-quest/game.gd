@@ -1,665 +1,930 @@
-extends Node2D
-# All art, music, mechanics and text are original for this unofficial fan interpretation.
-const W = 1280.0
-const H = 800.0
-const ARENA = Rect2(56, 130, 1168, 594)
-const INK = Color('#0b111d')
-const CREAM = Color('#eee8cd')
-const GREEN = Color('#ccfc6b')
-const PINK = Color('#ff638d')
-const BLUE = Color('#77dce5')
-const GOLD = Color('#ffc975')
+extends Node
+# Original fan interpretation. All textures, geometry, music and dialogue authored here.
+const ROOT_SAVE = "user://null_dividend_v2.json"
+const WORLD_SIZE = 140.0
 var rng = RandomNumberGenerator.new()
-var font = ThemeDB.fallback_font
+var world: Node3D
+var viewport: SubViewport
+var screen: SubViewportContainer
+var hud
+var player: CharacterBody3D
+var camera: Camera3D
+var gun_root: Node3D
+var gun_flash: MeshInstance3D
+var yaw = 0.0
+var pitch = 0.0
 var state = "title"
-var previous_state = "play"
-var p = Vector2(640, 470)
-var aim = Vector2.RIGHT
+var previous = "play"
 var hp = 100.0
-var maxhp = 100.0
-var money = 0
-var debt = 0
-var freed_floors: Array = []
-var popups: Array = []
-var combo = 0
-var combo_t = 0.0
-var floor_no = 0
-var room_no = 0
-var phase = 0
+var max_hp = 100.0
+var credits = 0
+var kills = 0
+var secrets = 0
+var seals: Array = []
+var freed: Array = []
+var relays: Array = []
+var memory_ids: Array = []
+var collected: Array = []
+var dead_ids: Array = []
+var quests = {"main":0,"union":0,"courier":0,"broadcast":0,"arena":0,"fish":0,"memories":0}
+var quest_names = {"main":"THE UNPAID DIVIDEND","union":"COLLECTIVE BARGAINING","courier":"A HEART IN TRANSIT","broadcast":"PIRATE RADIO THERAPY","arena":"PERFORMANCE REVIEW","fish":"THE LAST HONEST JOB","memories":"SOMEONE ELSE'S CHILDHOOD"}
+var npcs: Array = []
+var items: Array = []
+var enemies: Array = []
+var projectiles: Array = []
+var effects: Array = []
+var barrels: Array = []
+var notices: Array = []
+var mats: Array = []
+var flat_mats: Dictionary = {}
+var obstacles: Array = []
+var astar = AStarGrid2D.new()
 var time = 0.0
 var fire_cd = 0.0
-var dash_cd = 0.0
-var dash_t = 0.0
-var dash_dir = Vector2.RIGHT
+var reload_t = 0.0
+var recoil = 0.0
 var invuln = 0.0
-var shift_cd = 0.0
-var shake = 0.0
-var kills = 0
-var absorbed = 0
-var damage = 16.0
-var shot_rate = 0.24
-var speed = 235.0
-var ricochet = 0
-var leech = 0
-var spread = 0
-var orbit = 0
-var organs: Array = []
-var enemies: Array = []
-var bullets: Array = []
-var particles: Array = []
-var pickups: Array = []
-var walls: Array = []
-var flowers: Array = []
-var notices: Array = []
-var choices: Array = []
-var selection = 0
-var cleared = false
-var room_t = 0.0
-var secrets = 0
-var liberated = 0
-var best = 0
-var wins = 0
+var dash_cd = 0.0
+var pulse_cd = 0.0
+var pulse_t = 0.0
+var hit_t = 0.0
+var damage_flash = 0.0
+var step_t = 0.0
+var save_t = 0.0
+var checkpoint = Vector3(0,2,96)
+var equipped = 0
+var owned: Array = [true,false,false,false,false]
+var magazines: Array = [12,6,4,3,40]
+var reserves: Array = [999,30,16,12,120]
+var capacities: Array = [12,6,4,3,40]
+var weapon_names = ["INVOICE // 10MM","MARROW // FLECHETTE","DIVIDEND // RAIL DRIVER","CYST // ORGAN MORTAR","DEBT COLLECTOR // SIPHON"]
+var weapon_short = ["INVOICE","MARROW","DIVIDEND","CYST","DEBT COLLECTOR"]
+var weapon_rates = [0.23,0.72,0.95,0.9,0.09]
+var weapon_damage = [34.0,18.0,155.0,120.0,13.0]
+var interact_target = -1
+var arena_wave = 0
+var arena_enemies: Array = []
+var boss_started = false
+var boss_dead = false
+var ending = 0
+var tracked = "main"
+var fish_clock = 0.0
+var fish_target = 0.0
+var fish_caught = 0
 var muted = false
 var reduced = false
+var sensitivity = 0.0021
 var music: AudioStreamPlayer
-var synth: AudioStreamGeneratorPlayback
+var playback: AudioStreamGeneratorPlayback
 var sample_clock = 0
-var tone_left = 0.0
-var tone_freq = 440.0
-var title_buttons: Array = []
-var run_seed = 0
-var biome_names = ["THE COMFORT DEPARTMENT", "MUNICIPAL INTESTINE", "THE ORCHARD OF OWNERS", "MEMORY LIQUIDATION", "THE JOY REFINERY", "THE FINAL SHAREHOLDER"]
-var whispers = ["Your joy has been approved. Please retain your receipt.","The walls remember being people. They prefer this.","Nothing here is free. Some things can be given.","You are not a customer. You are the product's dream.","An exit is a door that has forgotten its employer.","The dividend is you. It has always been you."]
-var relics = [
- {"id":"bounce","name":"SECOND OPINION","desc":"Shots ricochet twice. Walls become accomplices.","cost":0},
- {"id":"spread","name":"FORKED INTENTION","desc":"Fire an additional pair of angled seeds.","cost":0},
- {"id":"leech","name":"KINDLY PARASITE","desc":"Every kill returns 3 flesh. A mutual arrangement.","cost":0},
- {"id":"speed","name":"UNEMPLOYED LEGS","desc":"Move 22% faster. Dash recovers sooner.","cost":0},
- {"id":"damage","name":"HOSTILE TAKEOVER","desc":"Seed damage +40%. Very persuasive.","cost":0},
- {"id":"orbit","name":"DEPENDENT MOON","desc":"A small moon circles you, hurting nearby creditors.","cost":0},
- {"id":"heart","name":"SPARE CHILDHOOD","desc":"Maximum flesh +30. Recover 35 flesh.","cost":0},
- {"id":"rate","name":"URGENT CORRESPONDENCE","desc":"Fire 25% faster. All complaints acknowledged.","cost":0}
+var sound_left = 0.0
+var sound_freq = 200.0
+var test_mode = false
+var metadata = {"deaths":0}
+var regions = [
+ {"name":"CIVIC WOUND / WELCOME HOME","pos":Vector2(0,75),"color":Color('#91f32d')},
+ {"name":"THE FLESHWORKS","pos":Vector2(-88,-12),"color":Color('#f46498')},
+ {"name":"GARDEN OF FUTURE RETURNS","pos":Vector2(83,0),"color":Color('#b6ef36')},
+ {"name":"RESIDENTIAL ORGANISM","pos":Vector2(85,88),"color":Color('#29e7c6')},
+ {"name":"THE FORGOTTEN CANAL","pos":Vector2(-86,91),"color":Color('#d498ff')},
+ {"name":"GOD'S ACCOUNTS RECEIVABLE","pos":Vector2(0,-95),"color":Color('#ffcc2f')},
+ {"name":"HUMAN PERFORMANCE ARCADE","pos":Vector2(90,-70),"color":Color('#ff569b')}
 ]
 func _ready():
- rng.randomize()
- load_meta()
- music = AudioStreamPlayer.new()
- var stream = AudioStreamGenerator.new()
- stream.mix_rate = 22050
- stream.buffer_length = 0.12
- music.stream = stream
- add_child(music)
- music.play()
- synth = music.get_stream_playback()
- for i in range(90):
-  flowers.append(Vector3(rng.randf_range(0,W),rng.randf_range(0,H),rng.randf_range(2,6)))
- if "--smoke" in OS.get_cmdline_user_args():
-  start_run(1234)
- queue_redraw()
-func _exit_tree():
- synth=null
- if is_instance_valid(music):
-  music.stop()
-  music.stream=null
-func load_meta():
- var f = ConfigFile.new()
- if f.load("user://dividends.cfg") == OK:
-  best = f.get_value("record","best",0)
-  wins = f.get_value("record","wins",0)
-  muted = f.get_value("options","muted",false)
-  reduced = f.get_value("options","reduced",false)
-func save_meta():
- var f = ConfigFile.new()
- f.set_value("record","best",best)
- f.set_value("record","wins",wins)
- f.set_value("options","muted",muted)
- f.set_value("options","reduced",reduced)
- f.save("user://dividends.cfg")
-func start_run(seed_value = 0):
- run_seed = seed_value if seed_value else randi()
- rng.seed = run_seed
- hp=100; maxhp=100; money=0; debt=0; floor_no=0; room_no=0; phase=0
- damage=16; shot_rate=0.24; speed=235; ricochet=0; leech=0; spread=0; orbit=0
- freed_floors.clear(); popups.clear(); combo=0; combo_t=0
- organs.clear(); kills=0; absorbed=0; secrets=0; liberated=0
- dash_cd=0; dash_t=0; invuln=1; shift_cd=0
- state="play"
- new_room()
- message("WELCOME, GORBINO. Clear both realities. Dash eats bullets. Q reveals the underprint.",GREEN)
-func message(s, c = CREAM):
- notices.append({"s":s,"t":5.0,"c":c})
- if notices.size()>3: notices.pop_front()
-func popup(pos,s,col=GOLD):
- popups.append({"p":pos,"s":s,"col":col,"life":0.85})
-func sound(f=440.0, duration=0.08):
- tone_freq=f; tone_left=duration
-func _input(e):
- if e is InputEventKey and e.pressed and not e.echo:
-  match e.keycode:
-   KEY_M:
-    muted=not muted; save_meta()
+ rng.seed=712833
+ test_mode="--test" in OS.get_cmdline_user_args()
+ make_materials()
+ make_viewport()
+ build_world()
+ build_navigation()
+ make_player()
+ hud=load("res://hud.gd").new()
+ hud.g=self
+ var layer=CanvasLayer.new();add_child(layer);layer.add_child(hud)
+ setup_audio()
+ load_preferences()
+ Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
+ if "--smoke" in OS.get_cmdline_user_args(): new_game()
+func make_materials():
+ for i in range(6):
+  var m=ShaderMaterial.new();m.shader=load("res://retro.gdshader")
+  m.set_shader_parameter("tile",load("res://assets/tile%d.png"%i))
+  mats.append(m)
+ for i in range(6):
+  var m=ShaderMaterial.new();m.shader=load("res://retro.gdshader")
+  m.set_shader_parameter("tile",load("res://assets/face%d.png"%i));mats.append(m)
+func material(index,tiling=Vector2.ONE):
+ var m=mats[index].duplicate()
+ m.set_shader_parameter("tiling",tiling)
+ return m
+func flat(c):
+ var key=str(c)
+ if flat_mats.has(key):return flat_mats[key]
+ var m=StandardMaterial3D.new();m.albedo_color=c;m.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+ m.texture_filter=BaseMaterial3D.TEXTURE_FILTER_NEAREST
+ flat_mats[key]=m
+ return m
+func make_viewport():
+ screen=SubViewportContainer.new();screen.position=Vector2(24,30);screen.size=Vector2(1232,704)
+ screen.stretch=true;screen.stretch_shrink=2
+ screen.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+ add_child(screen)
+ viewport=SubViewport.new();viewport.size=Vector2i(616,352)
+ viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+ viewport.own_world_3d=true;screen.add_child(viewport)
+ world=Node3D.new();viewport.add_child(world)
+ var env=WorldEnvironment.new();var e=Environment.new()
+ e.background_mode=Environment.BG_SKY
+ var sky=Sky.new();var sm=PanoramaSkyMaterial.new();sm.panorama=load("res://assets/sky.png");sm.filter=false
+ sky.sky_material=sm;e.sky=sky
+ e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color('#bda6d0');e.ambient_light_energy=0.9
+ e.tonemap_mode=Environment.TONE_MAPPER_LINEAR
+ env.environment=e;world.add_child(env)
+ var light=DirectionalLight3D.new();light.rotation_degrees=Vector3(-50,-30,0);light.light_energy=0.8;world.add_child(light)
+func cube(parent,pos,size,mat,solid=false,nav=true):
+ var n=MeshInstance3D.new();var mesh=BoxMesh.new();mesh.size=size;n.mesh=mesh;n.material_override=mat
+ if solid:
+  var body=StaticBody3D.new();body.position=pos;body.collision_layer=1
+  var shape=CollisionShape3D.new();var box=BoxShape3D.new();box.size=size;shape.shape=box
+  body.add_child(shape);body.add_child(n);parent.add_child(body)
+  if nav and pos.y-size.y/2<2.3 and pos.y+size.y/2>0.5:
+   obstacles.append(Rect2(Vector2(pos.x-size.x/2,pos.z-size.z/2),Vector2(size.x,size.z)))
+  return body
+ n.position=pos;parent.add_child(n);return n
+func sphere(parent,pos,r,mat,rings=5,segments=8):
+ var n=MeshInstance3D.new();var mesh=SphereMesh.new();mesh.radius=r;mesh.height=r*2;mesh.radial_segments=segments;mesh.rings=rings
+ n.mesh=mesh;n.position=pos;n.material_override=mat;parent.add_child(n);return n
+func cylinder(parent,pos,r,height,mat):
+ var n=MeshInstance3D.new();var m=CylinderMesh.new();m.top_radius=r*0.8;m.bottom_radius=r;m.height=height;m.radial_segments=7
+ n.mesh=m;n.position=pos;n.material_override=mat;parent.add_child(n);return n
+func sign_at(pos,text,color=Color('#eff93b'),font_size=48,pixel=0.015):
+ var label=Label3D.new();label.text=text;label.font_size=font_size;label.pixel_size=pixel
+ label.modulate=color;label.outline_size=10;label.outline_modulate=Color('#32133c');label.no_depth_test=false
+ label.position=pos;label.texture_filter=BaseMaterial3D.TEXTURE_FILTER_NEAREST;world.add_child(label)
+ return label
+func building(pos,size,idx,word=""):
+ cube(world,pos+Vector3(0,size.y/2,0),size,material(idx,Vector2(size.x/3,size.y/3)),true)
+ # Flat recessed windows contrast with the textured facades.
+ for x in range(int(size.x/3)):
+  for y in range(1,int(size.y/3)):
+   cube(world,pos+Vector3(-size.x/2+1.5+x*3,1+y*2.7,size.z/2+0.03),Vector3(1.4,1.5,0.09),flat(Color('#182b39') if (x+y)%3 else Color('#c5f556')))
+ if word!="":sign_at(pos+Vector3(0,size.y-0.5,size.z/2+0.15),word,Color('#f9e660'),40,0.027)
+func room(pos,size,idx,word):
+ var w=size.x;var h=size.y;var d=size.z
+ cube(world,pos+Vector3(0,-0.1,0),Vector3(w,0.2,d),material((idx+2)%6,Vector2(w/3,d/3)),true,false)
+ cube(world,pos+Vector3(-w/2,h/2,0),Vector3(0.5,h,d),material(idx,Vector2(d/3,h/3)),true)
+ cube(world,pos+Vector3(w/2,h/2,0),Vector3(0.5,h,d),material(idx,Vector2(d/3,h/3)),true)
+ cube(world,pos+Vector3(0,h/2,-d/2),Vector3(w,h,0.5),material(idx,Vector2(w/3,h/3)),true)
+ for side in [-1,1]:cube(world,pos+Vector3(side*(w/4+1.5),h/2,d/2),Vector3(w/2-3,h,0.5),material(idx,Vector2(w/6,h/3)),true)
+ cube(world,pos+Vector3(0,h,0),Vector3(w+0.5,0.4,d+0.5),material(4,Vector2(w/3,d/3)),true,false)
+ sign_at(pos+Vector3(0,h-1,d/2+0.4),word,Color('#f3ff61'),42,0.025)
+ for side in [-1,1]:
+  var at=pos+Vector3(side*(w/2-3),0,-d/4)
+  cube(world,at+Vector3(0,0.65,0),Vector3(3,1.3,2),material(4),true)
+  cube(world,at+Vector3(0,1.5,0),Vector3(1.1,0.8,0.2),material(3))
+  cube(world,pos+Vector3(side*(w/2-0.35),h*0.6,0),Vector3(0.12,2.7,2),material(6+(idx+1)%6))
+func ramp(pos,width,length,height,idx=4):
+ var body=cube(world,pos+Vector3(0,height/2-0.08,0),Vector3(width,0.4,sqrt(length*length+(height+0.6)*(height+0.6))),material(idx,Vector2(width/2,length/2)),true,false)
+ body.rotation.x=atan2(height+0.6,length)
+func build_world():
+ cube(world,Vector3(0,-0.6,0),Vector3(282,1,282),material(5,Vector2(94,94)),true,false)
+ # Cross-city arterials: clear lanes, legible district silhouettes, many flanking routes.
+ for x in [-48,0,48]:cube(world,Vector3(x,0.01,0),Vector3(12,0.1,274),material(4,Vector2(4,92)))
+ for z in [-48,40,106]:cube(world,Vector3(0,0.02,z),Vector3(274,0.1,12),material(0,Vector2(92,4)))
+ for z in range(-130,135,12):
+  cube(world,Vector3(0,0.09,z),Vector3(0.3,0.04,4),flat(Color('#efff4d')))
+ for side in [-1,1]:
+  cube(world,Vector3(side*141,9,0),Vector3(2,20,284),material(3,Vector2(70,5)),true)
+  cube(world,Vector3(0,9,side*141),Vector3(284,20,2),material(2,Vector2(70,5)),true)
+ # Civic Wound: safe hub with clinic, union and contract office.
+ room(Vector3(0,0,68),Vector3(24,7,16),1,"THE DEPARTMENT OF YOU")
+ add_item("mother",Vector3(0,0.5,66),"MOTHER OF INVOICES","npc",0)
+ room(Vector3(28,0,78),Vector3(16,6,16),2,"OPEN WOUND / CLINIC")
+ add_item("doctor",Vector3(28,0.5,77),"DR. NIL / HEART COURIER","npc",2)
+ add_item("clinic",Vector3(23,1,81),"REASSEMBLE / FREE HEAL + SAVE","clinic",2)
+ room(Vector3(-28,0,78),Vector3(16,6,16),0,"UNION OF SPARE PARTS")
+ add_item("union",Vector3(-28,0.5,78),"LOAN / UNION STEWARD","npc",1)
+ add_item("hub_shop",Vector3(15,0.5,98),"VENDING ORGAN / 20 SCRIP","shop",3)
+ sign_at(Vector3(0,9,78),"GORBINO'S QUEST\nNULL DIVIDEND",Color('#e1ff36'),48,0.022)
+ # Three quest buildings form an open circuit around the city.
+ room(Vector3(-91,0,-20),Vector3(28,9,25),1,"FLESHWORKS / CLAIMS PROCESSING")
+ add_item("seal_flesh",Vector3(-91,1,-28),"OWNERSHIP SEAL / FLESHWORKS","seal",0)
+ room(Vector3(90,0,0),Vector3(28,9,25),3,"THE GARDEN OF FUTURE RETURNS")
+ add_item("seal_garden",Vector3(90,1,-7),"OWNERSHIP SEAL / GARDEN","seal",1)
+ room(Vector3(89,0,88),Vector3(28,8,23),2,"RESIDENTIAL ORGANISM / LEASING")
+ add_item("seal_housing",Vector3(89,1,81),"OWNERSHIP SEAL / HOUSING","seal",2)
+ add_item("heart",Vector3(95,0.8,95),"TEMPERATURE-SENSITIVE HEART","heart",1)
+ # Corporate tower: open ground-floor nave, enormous clock-eye, boss courtyard.
+ room(Vector3(0,0,-101),Vector3(48,18,48),0,"GOD'S ACCOUNTS RECEIVABLE")
+ building(Vector3(-34,0,-111),Vector3(14,43,24),3,"GOD")
+ building(Vector3(34,0,-111),Vector3(14,55,24),2,"DEBT")
+ sphere(world,Vector3(0,30,-119),9,material(1),6,10)
+ sphere(world,Vector3(0,30,-110.8),4.4,flat(Color('#d5ed52')),4,8)
+ sphere(world,Vector3(0,30,-107),2.1,flat(Color('#41133a')),4,7)
+ add_item("tower",Vector3(0,1,-85),"THE FINAL AUDIT / THREE SEALS REQUIRED","tower",3)
+ add_item("exit",Vector3(0,1,-119),"THE DIVIDEND ENGINE","ending",3)
+ # Forgotten Canal: an organic marsh, fishing, pirate radio, elevated walkways.
+ cube(world,Vector3(-90,0.06,106),Vector3(48,0.1,35),material(3,Vector2(20,12)))
+ for x in [-116,-62]:cube(world,Vector3(x,0.5,98),Vector3(3,1,64),material(2,Vector2(2,22)),true)
+ add_item("pirate",Vector3(-96,0.5,69),"RADIO ANGEL / PIRATE THERAPIST","npc",4)
+ add_item("fish",Vector3(-78,0.5,111),"ANGLING / THE LAST HONEST JOB","fish",2)
+ sign_at(Vector3(-88,7,74),"THE FORGOTTEN CANAL",Color('#ce83ff'),46,0.03)
+ for k in range(3):
+  var loc=Vector3(-108+k*20,0,87+(k%2)*15)
+  cube(world,loc+Vector3(0,3,0),Vector3(9,6,9),material(4,Vector2(3,2)),true)
+  ramp(loc+Vector3(0,0,12.5),4,16,6,2)
+  cylinder(world,loc+Vector3(0,12,0),0.4,12,material(2))
+  add_item("relay%d"%k,loc+Vector3(0,6.8,0),"PIRATE TRANSMITTER %d"%(k+1),"relay",3)
+ # Human performance arcade: combat arena with a repeatable jump route above it.
+ room(Vector3(93,0,-81),Vector3(44,10,38),0,"HUMAN PERFORMANCE ARCADE")
+ add_item("arena",Vector3(89,1,-66),"ENTER PERFORMANCE REVIEW / 3 WAVES","arena",3)
+ for i in range(4):cube(world,Vector3(78+i*10,1.5,-82),Vector3(2.5,3,2.5),material(1),true)
+ # Workforce cells: visible interaction doors; freedom is a quest, not a pickup counter.
+ for i in range(3):
+  var loc=[Vector3(-111,0,25),Vector3(-68,0,-12),Vector3(-112,0,-52)][i]
+  cube(world,loc+Vector3(0,0.1,0),Vector3(6,0.3,6),material(0),true,false)
+  for n in range(6):cube(world,loc+Vector3(-2.5+n,1.8,-2.5),Vector3(0.15,3.5,0.15),flat(Color('#6bfa7c')))
+  add_item("worker%d"%i,loc+Vector3(0,0.4,0),"INDENTURED WORKER / OPEN CONTRACT","worker",i)
+ # Side lanes have cover, caches, interiors, grotesque street furniture.
+ var blocks=[Vector3(-82,0,48),Vector3(-25,0,25),Vector3(26,0,23),Vector3(-24,0,-25),Vector3(26,0,-26),Vector3(-84,0,-76),Vector3(72,0,27),Vector3(120,0,43),Vector3(118,0,-20),Vector3(-121,0,5),Vector3(24,0,115),Vector3(-26,0,115),Vector3(69,0,119),Vector3(-124,0,120)]
+ for i in range(blocks.size()):
+  var loc=blocks[i];var size=Vector3(11+rng.randf()*7,10+rng.randf()*14,12+rng.randf()*8)
+  building(loc,size,i%6,["EAT", "BECOME", "PAY", "LIVE", "EXCEL", "FORGET"][i%6])
+  if i%2==0:add_item("cache%d"%i,loc+Vector3(0,0.6,size.z/2+2),"UNCLAIMED LUNCH / SUPPLIES","cache",4)
+ # Public sculptures: off-balance, faceted lifeforms, faces inside flowers.
+ for i in range(38):
+  var loc=Vector3(rng.randf_range(-130,130),0,rng.randf_range(-120,125))
+  if abs(loc.x)<10 or abs(loc.z-40)<9:continue
+  var r=1.1+rng.randf()*1.6
+  cylinder(world,loc+Vector3(0,2,0),0.35,4,material(2))
+  sphere(world,loc+Vector3(0,4.5,0),r,material(1 if i%2 else 3),4,6)
+  cube(world,loc+Vector3(0,4.5,r*0.85),Vector3(r*1.3,r*1.4,0.2),material(6+i%6))
+ # Roof route and jump pads: real collision and vertical traversal.
+ ramp(Vector3(48,0,66),5,26,10,0)
+ cube(world,Vector3(48,10,47),Vector3(12,0.7,12),material(3,Vector2(4,4)),true,false)
+ cube(world,Vector3(67,10,47),Vector3(28,0.5,4),material(4,Vector2(9,2)),true,false)
+ add_item("jump1",Vector3(48,0.2,78),"PNEUMATIC ASCENSION / E TO LAUNCH","jump",2)
+ add_item("roofgun",Vector3(72,10.8,47),"DIVIDEND RAIL DRIVER / PROTOTYPE","weapon",2)
+ var memory_pos=[Vector3(-132,1,-5),Vector3(-91,1,-35),Vector3(110,1,0),Vector3(80,1,87),Vector3(-88,7,87),Vector3(48,11,47),Vector3(0,1,-56),Vector3(123,1,124)]
+ for i in range(memory_pos.size()):add_item("memory%d"%i,memory_pos[i],"LOST MEMORY / FRAGMENT %d"%(i+1),"memory",3)
+ # Authored encounters: guards, charging hounds, artillery growths, armoured clerks.
+ var groups=[Vector3(-90,0,-18),Vector3(88,0,2),Vector3(88,0,86),Vector3(-96,0,25),Vector3(-70,0,-11),Vector3(-108,0,-47),Vector3(25,0,0),Vector3(-28,0,-45),Vector3(55,0,-35),Vector3(-65,0,54),Vector3(67,0,48)]
+ for i in range(groups.size()):
+  for j in range(3 if i<3 else 2):
+   var loc=groups[i]+Vector3((j-1)*4,1,5+j*2)
+   spawn_enemy(loc,(i+j)%4,"district_%d_%d"%[i,j])
+ # Volatile organ tanks create optional chain reactions in authored encounters.
+ for i in range(8):
+  var pos=[Vector3(-84,0,-14),Vector3(98,0,6),Vector3(80,0,91),Vector3(-74,0,-6),Vector3(62,0,-32),Vector3(-92,0,39),Vector3(82,0,-85),Vector3(104,0,-78)][i]
+  var body=cube(world,pos+Vector3.UP*0.8,Vector3(1.4,1.6,1.4),material(1),true)
+  body.set_meta("barrel_index",barrels.size());barrels.append({"body":body,"alive":true,"home":pos+Vector3.UP*0.8})
+  var tag=Label3D.new();tag.text="VOLATILE";tag.font_size=24;tag.pixel_size=0.012;tag.position.y=1.6;tag.billboard=BaseMaterial3D.BILLBOARD_ENABLED;tag.modulate=Color('#ecff65');body.add_child(tag)
+ # More supplies reward exploring backstreets rather than staying on a single objective line.
+ for i in range(5):
+  add_item("street_cache%d"%i,[Vector3(-55,0.5,112),Vector3(54,0.5,-60),Vector3(-35,0.5,-88),Vector3(119,0.5,77),Vector3(-123,0.5,63)][i],"ABANDONED RATIONS / SUPPLIES","cache",4)
+ add_item("canal_clinic",Vector3(-100,0.6,66),"CANAL TRIAGE / FREE HEAL + SAVE","clinic",1)
+ # Central orientation pillars visible from all routes.
+ for z in [-58,-8,40]:
+  sign_at(Vector3(0,5,z),"NORTH / ACCOUNTS\nWEST / FLESH     EAST / GARDEN",Color('#fff86d'),30,0.028)
+func humanoid(parent,idx=0,enemy=false,kind=0):
+ var root=Node3D.new();parent.add_child(root)
+ var shirt=material((idx+2)%6)
+ cube(root,Vector3(0,1.15,0),Vector3(0.85,0.9,0.44),shirt)
+ var head=cube(root,Vector3(0,1.96,0),Vector3(0.64,0.7,0.56),material(6+idx%6))
+ head.rotation.z=0.12 if idx%2 else -0.1
+ var limbs=[]
+ for side in [-1,1]:
+  var leg=cube(root,Vector3(side*0.22,0.42,0),Vector3(0.28,0.85,0.32),material(4));limbs.append(leg)
+  var arm=cube(root,Vector3(side*0.58,1.15,0.08),Vector3(0.23,0.9,0.24),material(1));limbs.append(arm)
+ if enemy:
+  cube(root,Vector3(0.5,1.15,0.48),Vector3(0.2,0.25,0.85),flat(Color('#352047')))
+ if kind==1:
+  root.scale=Vector3(1.2,0.55,1.65)
+ elif kind==2:
+  sphere(root,Vector3(0,2.4,0),0.65,material(3),4,7)
+ elif kind==3:
+  root.scale=Vector3(1.5,1.2,1.2)
+ return {"root":root,"limbs":limbs}
+func add_item(id,pos,label,kind,idx=0):
+ var node=Node3D.new();node.position=pos;world.add_child(node)
+ if kind in ["npc","worker"]:
+  humanoid(node,idx)
+ else:
+  var mesh=cube(node,Vector3(0,0.5,0),Vector3(0.9,0.85,0.7),material(idx%6))
+  if kind=="memory":
+   mesh.visible=false;sphere(node,Vector3(0,0.7,0),0.4,material(3),4,6)
+  elif kind=="seal" or kind=="relay" or kind=="tower":
+   cube(node,Vector3(0,1.15,-0.1),Vector3(1.3,0.7,0.18),material(0))
+  elif kind=="clinic":sphere(node,Vector3(0,1,0),0.6,material(1),4,6)
+ var tag=Label3D.new();tag.text=label;tag.font_size=26;tag.pixel_size=0.014;tag.position=Vector3(0,3.15,0)
+ tag.billboard=BaseMaterial3D.BILLBOARD_ENABLED;tag.outline_size=8;tag.modulate=Color('#edfc73');tag.visibility_range_end=27
+ node.add_child(tag)
+ items.append({"id":id,"pos":pos,"label":label,"kind":kind,"index":idx,"node":node,"tag":tag,"done":false})
+ return items.size()-1
+func spawn_enemy(pos,kind,id,boss=false):
+ var body=CharacterBody3D.new();body.position=pos;body.collision_layer=2;body.collision_mask=1|4
+ var shape=CollisionShape3D.new();var cap=CapsuleShape3D.new();cap.radius=0.48 if not boss else 2.1;cap.height=2.3 if not boss else 6.5
+ shape.shape=cap;shape.position.y=1.1 if not boss else 3.0;body.add_child(shape)
+ body.set_meta("enemy_index",enemies.size());world.add_child(body)
+ var visual=humanoid(body,kind,true,kind)
+ if boss:visual.root.scale=Vector3(3.4,3.4,3.4)
+ var health=65.0 if kind!=3 else 155.0
+ if boss:health=1800.0
+ var e={"body":body,"visual":visual,"kind":kind,"id":id,"hp":health,"max":health,"alive":true,"cd":rng.randf_range(0.4,1.5),"alert":false,"home":pos,"t":rng.randf()*5,"path":[],"path_t":0.0,"stun":0.0,"boss":boss}
+ enemies.append(e)
+ return enemies.size()-1
+func build_navigation():
+ astar.region=Rect2i(-141,-141,283,283);astar.cell_size=Vector2(1,1);astar.diagonal_mode=AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES;astar.update()
+ for rect in obstacles:
+  var low=Vector2i(floor((rect.position.x-0.7)),floor((rect.position.y-0.7)))
+  var high=Vector2i(ceil((rect.end.x+0.7)),ceil((rect.end.y+0.7)))
+  for x in range(low.x,high.x+1):
+   for y in range(low.y,high.y+1):
+    if astar.is_in_boundsv(Vector2i(x,y)) and rect.grow(0.5).has_point(Vector2(x,y)):astar.set_point_solid(Vector2i(x,y))
+func make_player():
+ player=CharacterBody3D.new();player.position=checkpoint;player.collision_layer=4;player.collision_mask=1|2;player.floor_max_angle=deg_to_rad(55)
+ var shape=CollisionShape3D.new();var capsule=CapsuleShape3D.new();capsule.height=1.8;capsule.radius=0.35;shape.shape=capsule;shape.position.y=0.9
+ player.add_child(shape);world.add_child(player)
+ camera=Camera3D.new();camera.position.y=1.62;camera.fov=84;camera.near=0.06;camera.far=220
+ player.add_child(camera);camera.current=true
+ gun_root=Node3D.new();camera.add_child(gun_root)
+ build_gun()
+func build_gun():
+ for n in gun_root.get_children():n.queue_free()
+ var colors=[Color('#c3df50'),Color('#ff729d'),Color('#73d6e4'),Color('#e79d63'),Color('#be86f1')]
+ var mat=flat(colors[equipped]);var dark=flat(Color('#33233f'))
+ # Fully 3D viewmodel, flat shaded, with deliberately chunky anatomy and mechanisms.
+ cube(gun_root,Vector3(0.3,-0.28,-0.55),Vector3(0.18,0.21,0.44),material(4 if equipped<3 else 1))
+ cube(gun_root,Vector3(0.3,-0.41,-0.38),Vector3(0.12,0.27,0.16),material(1))
+ cube(gun_root,Vector3(0.31,-0.34,-0.29),Vector3(0.21,0.17,0.24),material(1))
+ cube(gun_root,Vector3(0.3,-0.16,-0.57),Vector3(0.14,0.04,0.48),dark)
+ cube(gun_root,Vector3(0.3,-0.12,-0.74),Vector3(0.025,0.07,0.025),mat)
+ for i in range(3):cube(gun_root,Vector3(0.398,-0.25,-0.42-i*0.11),Vector3(0.012,0.1,0.04),mat)
+ var barrel=cylinder(gun_root,Vector3(0.3,-0.23,-0.91),0.052,0.4,dark);barrel.rotation.x=PI/2
+ if equipped==1:
+  var second=cylinder(gun_root,Vector3(0.4,-0.23,-0.91),0.052,0.6,dark);second.rotation.x=PI/2
+  cube(gun_root,Vector3(0.35,-0.25,-0.62),Vector3(0.24,0.16,0.4),mat)
+ elif equipped==2:
+  cube(gun_root,Vector3(0.3,-0.22,-0.9),Vector3(0.15,0.13,0.9),mat)
+  for i in range(4):cube(gun_root,Vector3(0.3,-0.15,-0.6-i*0.15),Vector3(0.22,0.05,0.05),flat(Color('#f4ea6d')))
+ elif equipped==3:
+  sphere(gun_root,Vector3(0.3,-0.24,-0.7),0.23,material(1),4,7)
+  var n=cylinder(gun_root,Vector3(0.3,-0.21,-0.97),0.13,0.3,dark);n.rotation.x=PI/2
+ elif equipped==4:
+  for i in range(4):
+   var n=cylinder(gun_root,Vector3(0.3+sin(i*TAU/4)*0.1,-0.23+cos(i*TAU/4)*0.1,-0.9),0.025,0.5,mat);n.rotation.x=PI/2
+ gun_flash=sphere(gun_root,Vector3(0.3,-0.23,-1.16),0.12,flat(Color('#fffa8a')),3,5);gun_flash.visible=false
+func new_game():
+ hp=100;max_hp=100;credits=0;kills=0;secrets=0;seals=[];freed=[];relays=[];memory_ids=[];collected=[];dead_ids=[]
+ quests={"main":0,"union":0,"courier":0,"broadcast":0,"arena":0,"fish":0,"memories":0}
+ owned=[true,false,false,false,false];magazines=[12,6,4,3,40];reserves=[999,30,16,12,120]
+ equipped=0;arena_wave=0;arena_enemies=[];boss_started=false;boss_dead=false;checkpoint=Vector3(0,2,96)
+ player.position=checkpoint;yaw=0;pitch=0;player.rotation.y=0;camera.rotation.x=0
+ for e in enemies:
+  if e.boss or str(e.id).begins_with("arena"):
+   e.alive=false;e.body.visible=false;e.body.collision_layer=0
+  else:e.alive=true;e.hp=e.max;e.alert=false;e.body.position=e.home;e.body.visible=true;e.body.collision_layer=2
+ for item in items:item.done=false;item.node.visible=true
+ for b in barrels:b.alive=true;b.body.visible=true;b.body.collision_layer=1
+ invuln=2;fire_cd=0;reload_t=0;pulse_cd=0;dash_cd=0
+ build_gun();set_state("play");message("Find Mother of Invoices in the department ahead. [E] to speak.",Color('#d4ff54'))
+ save_game()
+func set_state(s):
+ state=s
+ Input.mouse_mode=Input.MOUSE_MODE_CAPTURED if s=="play" else Input.MOUSE_MODE_VISIBLE
+func _input(event):
+ if event is InputEventMouseMotion and state=="play":
+  yaw-=event.relative.x*sensitivity;pitch=clamp(pitch-event.relative.y*sensitivity,-1.45,1.45)
+  player.rotation.y=yaw;camera.rotation.x=pitch
+ if event is InputEventKey and event.pressed and not event.echo:
+  match event.keycode:
+   KEY_ENTER:
+    if state=="title":
+     if FileAccess.file_exists(ROOT_SAVE):load_game()
+     else:new_game()
+    elif state=="dead":respawn()
+    elif state=="pause":set_state("play")
+    elif state=="won":set_state("title")
+   KEY_N:
+    if state=="title":new_game()
+   KEY_ESCAPE:
+    if state=="play":set_state("pause");save_game()
+    elif state in ["pause","journal","map","help","fish"]:set_state("play")
+    elif state=="dialogue":set_state("play")
+   KEY_E:
+    if state=="play" and interact_target>=0:interact(interact_target)
+    elif state=="fish":fish_press()
+    elif state=="dialogue":set_state("play")
+   KEY_J:
+    if state=="play":set_state("journal")
+    elif state=="journal":set_state("play")
+   KEY_TAB:
+    if state=="play":set_state("map")
+    elif state=="map":set_state("play")
+   KEY_T:
+    if state in ["play","journal","map"]:cycle_quest()
+   KEY_R:
+    if state=="play":reload_weapon()
+   KEY_Q:
+    if state=="play":pulse()
+   KEY_F:
+    if state=="play":dash()
+   KEY_F1:
+    if state=="play":set_state("help")
    KEY_F3:
-    reduced=not reduced; save_meta()
+    reduced=not reduced
+    for m in mats:m.set_shader_parameter("snap",not reduced)
+    # Materials are duplicated per mesh; the viewport resolution is the main effect toggle.
+    screen.stretch_shrink=1 if reduced else 2
+    save_preferences()
+   KEY_F5:
+    if state=="play":save_game();message("MEMORY COMMITTED / game saved")
+   KEY_F9:
+    if state=="play" or state=="pause":load_game()
+   KEY_M:
+    muted=not muted;save_preferences()
    KEY_F11:
     DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode()==DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
-   KEY_ESCAPE:
-    if state=="play": previous_state=state; state="pause"
-    elif state=="pause": state=previous_state
-    elif state=="codex": state="title"
-   KEY_R:
-    if state=="pause": start_run()
-   KEY_ENTER:
-    if state=="title" or state=="dead" or state=="won": start_run()
-    elif state=="pause": state="play"
-   KEY_C:
-    if state=="title": state="codex"
-   KEY_Q:
-    if state=="play": shift_world()
-   KEY_SPACE:
-    if state=="play": dash()
-   KEY_E:
-    if state=="play": interact()
-   KEY_1, KEY_2, KEY_3:
-    if state=="choice" or state=="shop" or state=="ending": choose(e.keycode-KEY_1)
- if e is InputEventMouseButton and e.pressed and e.button_index==MOUSE_BUTTON_LEFT:
-  var m=get_global_mouse_position()
-  if state=="title":
-   if Rect2(85,520,340,60).has_point(m): start_run()
-   elif Rect2(85,594,340,45).has_point(m): state="codex"
-  elif state in ["choice","shop","ending"]:
-   for i in range(3):
-    if Rect2(94+i*372,300,348,255).has_point(m): choose(i)
-  elif state=="dead" or state=="won": start_run()
-func shift_world():
- if shift_cd>0: return
- phase=1-phase; shift_cd=0.7
- # Same geometry across realities: changing layers can never embed the player.
- burst(p,BLUE if phase else GREEN,28)
- sound(180 if phase else 360,0.2)
- message("UNDERPRINT // Dash through bullets to turn them into money." if phase else "SURFACE // Find the heart hidden in each room's underprint.",BLUE if phase else GREEN)
-func dash():
- if dash_cd>0: return
- dash_dir = move_input()
- if dash_dir.length()<0.1: dash_dir=aim
- dash_cd=1.2 if speed<280 else 0.8
- dash_t=0.19; invuln=max(invuln,0.25)
- sound(110,0.13)
-func move_input():
- return Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)),float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP))).normalized()
-func new_room():
- enemies.clear(); bullets.clear(); pickups.clear(); walls.clear(); particles.clear(); popups.clear()
- p=Vector2(640,660); cleared=false; room_t=0
- if room_no==3:
-  spawn_enemy(Vector2(640,295),3,phase)
-  message("AUDIT IN PROGRESS // "+["THE REGIONAL MANAGER","THE DRAIN COMMISSIONER","THE ROOT OF ALL PROFIT","THE MEMORY TRUST","THE HAPPINESS ENGINE","THE LAST BENEFICIARY"][floor_no],PINK)
- else:
-  var layouts = [
-   [Rect2(330,310,95,54),Rect2(850,310,95,54),Rect2(330,505,95,54),Rect2(850,505,95,54)],
-   [Rect2(280,290,220,40),Rect2(780,290,220,40),Rect2(500,490,280,40)],
-   [Rect2(280,260,50,280),Rect2(950,260,50,280),Rect2(540,350,200,50)],
-   [Rect2(200,365,160,80),Rect2(560,245,160,80),Rect2(920,365,160,80),Rect2(560,550,160,40)]
-  ]
-  walls.assign(layouts[(floor_no+room_no)%4])
-  for i in range(4+floor_no*2+room_no):
-   var pos=Vector2(rng.randf_range(120,1160),rng.randf_range(190,520))
-   while blocked(pos,22): pos=Vector2(rng.randf_range(120,1160),rng.randf_range(190,520))
-   spawn_enemy(pos,i%3,i%2)
-  pickups.append({"p":Vector2(640,210),"type":"secret","phase":1,"alive":true})
- message(whispers[floor_no],CREAM)
-func spawn_enemy(pos,kind,layer):
- enemies.append({"p":pos,"kind":kind,"phase":layer,"hp":(50+floor_no*14 if kind!=3 else 480+floor_no*100),"max":(50+floor_no*14 if kind!=3 else 480+floor_no*100),"cd":rng.randf_range(0.6,1.5),"t":rng.randf()*6,"hit":0.0,"alive":true})
-func blocked(pos,r):
- if not ARENA.grow(-r).has_point(pos): return true
- for w in walls:
-  if w.grow(r).has_point(pos): return true
- return false
-func move_actor(pos,delta_pos,r):
- var out=pos
- if not blocked(out+Vector2(delta_pos.x,0),r): out.x+=delta_pos.x
- if not blocked(out+Vector2(0,delta_pos.y),r): out.y+=delta_pos.y
- return out
-func shoot(pos,dir,enemy=false,layer=0,vel=620.0,dmg=16.0,bounces=0):
- bullets.append({"p":pos,"v":dir*vel,"enemy":enemy,"phase":layer,"life":3.0,"dmg":dmg,"bounce":bounces,"alive":true})
-func burst(pos,col,n=10):
- for i in range(n):
-  particles.append({"p":pos,"v":Vector2.from_angle(rng.randf()*TAU)*rng.randf_range(30,180),"life":rng.randf_range(0.2,0.65),"col":col})
-func hurt(amount):
- if invuln>0: return
- hp-=amount; invuln=0.8; shake=8
- popup(p-Vector2(0,35),"-"+str(int(amount)),PINK)
- burst(p,PINK,16); sound(75,0.17)
- if hp<=0:
-  hp=0; state="dead"; best=max(best,kills*10+money+floor_no*100); save_meta()
+   KEY_1,KEY_2,KEY_3,KEY_4,KEY_5:
+    if state=="play":equip(event.keycode-KEY_1)
+    elif state=="ending" and event.keycode<=KEY_3:finish_game(event.keycode-KEY_1)
+ if event is InputEventMouseButton and event.pressed:
+  if event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN] and state=="play":
+   for i in range(1,6):
+    var next=(equipped+i*(1 if event.button_index==MOUSE_BUTTON_WHEEL_DOWN else -1)+10)%5
+    if owned[next]:equip(next);break
 func _process(dt):
- dt=min(dt,0.035); time+=dt
- fill_audio()
- for n in notices: n.t-=dt
- for n in popups: n.p.y-=dt*42; n.life-=dt
- popups=popups.filter(func(n): return n.life>0)
- notices=notices.filter(func(n): return n.t>0)
- for b in particles:
-  b.p+=b.v*dt; b.v*=0.94; b.life-=dt
- particles=particles.filter(func(b): return b.life>0)
- shake=max(0,shake-dt*35)
- if state=="play": update_game(dt)
- queue_redraw()
-func update_game(dt):
- room_t+=dt
- combo_t=max(0,combo_t-dt)
- if combo_t==0: combo=0
- invuln=max(0,invuln-dt); fire_cd-=dt; dash_cd=max(0,dash_cd-dt); shift_cd=max(0,shift_cd-dt)
- aim=(get_global_mouse_position()-p).normalized()
- if aim==Vector2.ZERO: aim=Vector2.RIGHT
- if dash_t>0:
-  dash_t-=dt; p=move_actor(p,dash_dir*790*dt,14)
-  burst(p,BLUE,1)
- else: p=move_actor(p,move_input()*speed*dt,14)
- if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and fire_cd<=0:
-  fire_cd=shot_rate
-  shoot(p+aim*21,aim,false,phase,620,damage,ricochet)
-  if spread>0:
-   shoot(p+aim*21,aim.rotated(0.20),false,phase,620,damage*0.65,ricochet)
-   shoot(p+aim*21,aim.rotated(-0.20),false,phase,620,damage*0.65,ricochet)
-  sound(520+rng.randf()*120,0.025)
+ dt=min(dt,0.05);time+=dt;fill_audio()
+ recoil=move_toward(recoil,0,dt*5);hit_t=max(0,hit_t-dt);damage_flash=max(0,damage_flash-dt)
+ for n in notices:n.t-=dt
+ notices=notices.filter(func(n):return n.t>0)
+ if state=="title":
+  player.rotation.y=sin(time*0.12)*0.4;camera.rotation.x=-0.08
+ if state=="fish":fish_clock+=dt
+ for effect in effects:
+  effect.t-=dt
+  if effect.has("v"):effect.node.position+=effect.v*dt;effect.v.y-=dt*9
+  if effect.t<=0:effect.node.queue_free()
+ effects=effects.filter(func(e):return e.t>0)
+ for item in items:
+  if item.kind=="memory" and not item.done:item.node.rotation.y+=dt;item.node.position.y=item.pos.y+sin(time*2+item.index)*0.15
+ hud.queue_redraw()
+func _physics_process(dt):
+ if state!="play":return
+ invuln=max(0,invuln-dt);fire_cd=max(0,fire_cd-dt);dash_cd=max(0,dash_cd-dt);pulse_cd=max(0,pulse_cd-dt);pulse_t=max(0,pulse_t-dt)
+ if reload_t>0:
+  reload_t-=dt
+  if reload_t<=0:
+   var amount=min(capacities[equipped]-magazines[equipped],reserves[equipped])
+   magazines[equipped]+=amount
+   if equipped!=0:reserves[equipped]-=amount
+ var movement=Vector2(float(key(KEY_D) or key(KEY_RIGHT))-float(key(KEY_A) or key(KEY_LEFT)),float(key(KEY_S) or key(KEY_DOWN))-float(key(KEY_W) or key(KEY_UP))).normalized()
+ var dir=player.transform.basis*Vector3(movement.x,0,movement.y)
+ var moving=movement.length()>0
+ var move_speed=12.5 if key(KEY_SHIFT) else 8.5
+ if key(KEY_CTRL):move_speed=4.2
+ player.velocity.x=move_toward(player.velocity.x,dir.x*move_speed,dt*75)
+ player.velocity.z=move_toward(player.velocity.z,dir.z*move_speed,dt*75)
+ if not player.is_on_floor():player.velocity.y-=dt*24
+ elif key(KEY_SPACE):player.velocity.y=10
+ else:player.velocity.y=-0.8
+ player.move_and_slide()
+ if player.position.y< -10:respawn()
+ var bob=sin(time*(13 if key(KEY_SHIFT) else 10))*0.045 if moving and player.is_on_floor() else 0
+ camera.position.y=lerp(camera.position.y,1.05 if key(KEY_CTRL) else 1.62+bob,dt*12)
+ var aim=Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+ camera.fov=lerp(camera.fov,62.0 if aim else 84.0,dt*10)
+ gun_root.position=Vector3((-0.15 if aim else 0)+sin(time*6)*0.005,(-0.02 if moving else 0)+bob*0.4,recoil*0.15)
+ gun_root.rotation.x=recoil*0.16
+ gun_flash.visible=fire_cd>weapon_rates[equipped]-0.045
+ if moving and player.is_on_floor():
+  step_t-=dt
+  if step_t<=0:step_t=0.29 if key(KEY_SHIFT) else 0.43;sound(65,0.025)
+ if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):fire()
+ update_enemies(dt)
+ update_projectiles(dt)
+ find_interaction()
+ if quests.arena==1 and not arena_enemies.is_empty():
+  if arena_enemies.all(func(i):return not enemies[i].alive):
+   if arena_wave<3:spawn_arena_wave()
+   else:
+    quests.arena=2;credits+=70;unlock_weapon(4);message("PERFORMANCE REVIEW COMPLETE / +70 scrip. DEBT COLLECTOR unlocked.");save_game()
+ save_t+=dt
+ if save_t>25:save_t=0;save_game()
+func key(code):return Input.is_physical_key_pressed(code)
+func ray(from,to,mask=3,exclude=[]):
+ var q=PhysicsRayQueryParameters3D.create(from,to,mask,exclude)
+ return player.get_world_3d().direct_space_state.intersect_ray(q)
+func equip(i):
+ if not owned[i]:message("Not owned. Explore the city and finish side jobs.");return
+ equipped=i;reload_t=0;build_gun();sound(210+i*80,0.09)
+func reload_weapon():
+ if reload_t>0 or magazines[equipped]>=capacities[equipped]:return
+ if reserves[equipped]<=0 and equipped!=0:message("No reserve biomass. Loot caches or visit the vending organ.");return
+ reload_t=1.15 if equipped!=1 else 1.6;sound(140,0.12)
+func fire():
+ if fire_cd>0 or reload_t>0:return
+ if magazines[equipped]<=0:reload_weapon();return
+ magazines[equipped]-=1;fire_cd=weapon_rates[equipped];recoil=1;sound([310,90,880,75,160][equipped],0.1)
+ var origin=camera.global_position
+ var direction=-camera.global_basis.z
  for e in enemies:
-  if not e.alive: continue
-  e.t+=dt; e.hit=max(0,e.hit-dt); e.cd-=dt
-  if e.phase!=phase and e.kind!=3: continue
-  var toward=(p-e.p).normalized()
-  if e.kind==0:
-   e.p=move_actor(e.p,toward*(80+floor_no*7)*dt,18)
-  elif e.kind==1:
-   var dist=e.p.distance_to(p)
-   e.p=move_actor(e.p,toward*(65 if dist>290 else -35)*dt,18)
-  elif e.kind==2:
-   e.p=move_actor(e.p,(toward.rotated(sin(e.t*2)*1.1))*110*dt,18)
-  else:
-   e.p=Vector2(640+sin(e.t*0.6)*310,310+sin(e.t)*80)
-   if int(e.t*0.22)%2!=e.phase:
-    e.phase=int(e.t*0.22)%2
-  if e.p.distance_to(p)<(52 if e.kind==3 else 30): hurt(18)
-  if orbit>0 and e.p.distance_to(p+Vector2.from_angle(time*3.5)*68)<40:
-   e.hp-=45*dt; e.hit=0.08
-   if e.hp<=0: kill_enemy(e)
-  if e.cd<=0:
-   e.cd=(1.7 if e.kind==1 else 2.5) - min(0.65,floor_no*0.1)
-   if e.kind==3:
-    e.cd=0.95
-    var rays=10+floor_no*2
-    for i in range(rays):
-     var direction=Vector2.from_angle(i*TAU/rays+e.t*(0.3 if floor_no%2==0 else -0.4))
-     shoot(e.p,direction,true,e.phase,135+floor_no*12,12)
-    if floor_no%3==0:
-     for j in range(3):shoot(e.p,toward.rotated((j-1)*0.22),true,phase,260,16)
-    elif floor_no%3==1:
-     for j in range(5):shoot(e.p+Vector2((j-2)*65,0),toward,true,phase,220,13)
-    else:
-     for j in range(8):shoot(e.p,Vector2.from_angle(j*TAU/8-e.t),true,1-e.phase,185,12)
-   elif e.kind==1: shoot(e.p,toward,true,e.phase,230,13)
-   elif e.kind==2:
-    for i in range(5): shoot(e.p,Vector2.from_angle(i*TAU/5+e.t),true,e.phase,145,10)
- for b in bullets:
-  if not b.alive: continue
-  b.life-=dt
-  var next=b.p+b.v*dt
-  if blocked(next,4):
-   if b.bounce>0:
-    if blocked(b.p+Vector2(b.v.x*dt,0),4): b.v.x=-b.v.x
-    if blocked(b.p+Vector2(0,b.v.y*dt),4): b.v.y=-b.v.y
-    b.bounce-=1
-   else: b.alive=false
-  else: b.p=next
-  if b.phase!=phase: continue
-  if b.enemy:
-   if b.p.distance_to(p)<(42 if dash_t>0 else 16):
-    b.alive=false
-    if dash_t>0:
-     money+=2; absorbed+=1; combo+=1; combo_t=2.0; popup(b.p,"+2 / ABSORBED",GOLD); burst(b.p,GOLD,4); sound(820,0.04)
-     if combo%5==0:
-      hp=min(maxhp,hp+5); popup(p-Vector2(0,30),"FLOW / +5 FLESH",BLUE)
-    else: hurt(b.dmg)
-  else:
-   for e in enemies:
-    if not e.alive or (e.phase!=phase): continue
-    if b.p.distance_to(e.p)<(49 if e.kind==3 else 23):
-     b.alive=false; e.hp-=b.dmg; e.hit=0.12; burst(b.p,GREEN,3); popup(e.p-Vector2(0,20),str(int(b.dmg)),CREAM)
-     if e.hp<=0: kill_enemy(e)
-     break
- bullets=bullets.filter(func(b): return b.alive and b.life>0)
- for item in pickups:
-  if not item.alive or item.phase!=phase: continue
-  if p.distance_to(item.p)<30:
-   if item.type=="secret":
-    item.alive=false; secrets+=1; hp=min(maxhp,hp+8); money+=5
-    message("A MEMORY THAT WAS NOT FOR SALE. +8 flesh / +5 scrip",BLUE); burst(item.p,BLUE,18)
+  if e.alive and e.body.position.distance_to(player.position)<35:e.alert=true
+ if equipped==3:
+  var node=sphere(world,origin+direction*0.9,0.23,material(1),4,6)
+  projectiles.append({"node":node,"v":direction*25+Vector3.UP*4,"t":3.0,"enemy":false,"dmg":120.0})
+  return
+ var pellets=8 if equipped==1 else 1
+ for i in range(pellets):
+  var spread=0.06 if equipped==1 else (0.003 if equipped==0 else 0.0)
+  var d=(direction+camera.global_basis.x*rng.randf_range(-spread,spread)+camera.global_basis.y*rng.randf_range(-spread,spread)).normalized()
+  var reach=18 if equipped==4 else 155
+  var start=origin;var exclude=[player.get_rid()]
+  for pierce in range(4 if equipped==2 else 1):
+   var result=ray(start,origin+d*reach,3,exclude)
+   var end=origin+d*reach
+   if not result.is_empty():end=result.position
+   trail(origin+direction*0.6+camera.global_basis.x*0.2-camera.global_basis.y*0.2,end,Color('#c9f7ff') if equipped==2 else (Color('#c69cff') if equipped==4 else Color('#ffea52')),0.14 if equipped==2 else 0.055)
+   if result.is_empty():break
+   var collider=result.collider
+   if collider.has_meta("enemy_index"):
+    var ei=collider.get_meta("enemy_index");var e=enemies[ei]
+    var dmg=weapon_damage[equipped]
+    if result.position.y>e.body.position.y+(5.0 if e.boss else 1.65):dmg*=1.65
+    damage_enemy(ei,dmg);hit_t=0.16
+    if equipped==4:hp=min(max_hp,hp+2)
+    exclude.append(collider.get_rid());start=end+d*0.1
    else:
-    item.alive=false; money+=item.value; sound(720,0.035)
- if not cleared and enemies.filter(func(e): return e.alive).is_empty():
-  cleared=true; money+=10+floor_no*2
-  hp=min(maxhp,hp+5)
-  message("RECEIPT ISSUED. +10 scrip / +5 flesh. [E] at the northern elevator.",GREEN)
-  burst(Vector2(640,160),GOLD,30)
-func kill_enemy(e):
- if not e.alive: return
- e.alive=false; kills+=1
- hp=min(maxhp,hp+leech*3)
- burst(e.p,PINK if e.phase==0 else BLUE,24 if e.kind==3 else 12)
- pickups.append({"p":e.p,"phase":e.phase,"type":"coin","value":25 if e.kind==3 else 3,"alive":true})
- sound(120,0.06)
-func interact():
- if cleared and p.distance_to(Vector2(640,160))<90:
-  bullets.clear()
-  if room_no==3:
-   if floor_no==5: state="ending"
-   else:
-    state="choice"; choices=relics.duplicate(); choices.shuffle(); choices=choices.slice(0,3)
-  elif room_no==1:
-   state="shop"; choices=relics.duplicate(); choices.shuffle(); choices=choices.slice(0,2)
-  else:
-   room_no+=1; new_room()
- elif phase==1 and p.distance_to(Vector2(1120,650))<70:
-  if money>=12 and not floor_no in freed_floors:
-   money-=12; liberated+=1; freed_floors.append(floor_no)
-   message("You purchased a stranger's freedom. The ledger cannot explain this.",BLUE)
-  elif floor_no in freed_floors: message("The stranger is gone. The empty chair feels warm.",BLUE)
-  else: message("FREE A STRANGER: 12 scrip. Kindness is the only hidden currency.",BLUE)
-func apply_relic(r):
- organs.append(r.name)
- match r.id:
-  "bounce": ricochet+=2
-  "spread": spread=1
-  "leech": leech+=1
-  "speed": speed*=1.22
-  "damage": damage*=1.4
-  "orbit": orbit+=1
-  "heart": maxhp+=30; hp=min(maxhp,hp+35)
-  "rate": shot_rate*=0.75
- message("GRAFT ACCEPTED // "+r.name,GREEN); sound(660,0.2)
-func choose(i):
- if state=="ending":
-  if i==2 and (secrets<9 or liberated<3):
-   message("The third door needs 9 memories and 3 liberated strangers.",PINK); return
-  wins+=1; best=max(best,kills*10+money+floor_no*100); selection=i; state="won"; save_meta(); return
- if state=="choice":
-  apply_relic(choices[i]); floor_no+=1; room_no=0; state="play"; new_room()
- elif state=="shop":
-  if i<2:
-   if money<20:
-    message("INSUFFICIENT SCRIP. You can leave with [3].",PINK); return
-   money-=20; apply_relic(choices[i])
-  else:
-   hp=min(maxhp,hp+15)
-  room_no+=1; state="play"; new_room()
-func fill_audio():
- if not synth: return
- var count=synth.get_frames_available()
+    if collider.has_meta("barrel_index"):detonate_barrel(collider.get_meta("barrel_index"))
+    else:spark(end,Color('#cfff5e'),3)
+    break
+func trail(a,b,color,life=0.08):
+ var len=a.distance_to(b)
+ if len<0.05:return
+ var n=MeshInstance3D.new();var mesh=BoxMesh.new();mesh.size=Vector3(0.045,0.045,len);n.mesh=mesh;n.material_override=flat(color)
+ world.add_child(n);n.position=(a+b)/2;n.look_at(b);effects.append({"node":n,"t":life})
+func spark(pos,color,count=8):
  for i in range(count):
-  var t=float(sample_clock)/22050.0
-  var beat=int(t*3.4)
-  var notes=[110.0,130.81,164.81,146.83,110.0,196.0,164.81,98.0]
-  var f=notes[(beat/2)%8]*(0.5 if phase else 1.0)
-  var env=exp(-fmod(t,1.0/3.4)*10)
-  var bass=sin(t*f*TAU)*0.055
-  var arp=sin(t*f*4*TAU)*env*0.027
-  var kick=sin(t*(46+exp(-fmod(t,0.588)*35)*90)*TAU)*exp(-fmod(t,0.588)*15)*0.07
-  var s=bass+arp+kick
-  if tone_left>0:
-   s+=sin(t*tone_freq*TAU)*0.09*min(tone_left*20,1.0)
-   tone_left-=1.0/22050
-  if muted: s=0
-  synth.push_frame(Vector2(s,s)); sample_clock+=1
-func txt(s,pos,size=18,col=CREAM):
- draw_string(font,pos,str(s),HORIZONTAL_ALIGNMENT_LEFT,-1,size,col)
-func center(s,y,size=24,col=CREAM):
- var width=font.get_string_size(str(s),HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
- txt(s,Vector2((W-width)/2,y),size,col)
-func box(rect,col,border=Color.TRANSPARENT):
- draw_style_box(panel(col,border),rect)
-func panel(col,border):
- var style=StyleBoxFlat.new()
- style.bg_color=col; style.border_color=border
- style.set_border_width_all(1); style.set_corner_radius_all(5)
- return style
-func _draw():
- draw_rect(Rect2(0,0,W,H),INK)
- if state=="title" or state=="codex":
-  draw_title()
- else:
-  draw_world()
-  draw_hud()
-  if state=="pause": draw_pause()
-  elif state=="choice" or state=="shop" or state=="ending": draw_choices()
-  elif state=="dead" or state=="won": draw_result()
- # A restrained CRT treatment. F3 disables scanlines and motion shake.
- if not reduced:
-  for y in range(0,800,4): draw_line(Vector2(0,y),Vector2(W,y),Color(0,0,0,0.08))
- for i in range(notices.size()):
-  var n=notices[i]
-  box(Rect2(65,769-i*25,1150,24),Color('#111c27'))
-  txt(n.s,Vector2(78,786-i*25),15,n.c)
-func draw_title():
- for f in flowers:
-  var pos=Vector2(f.x,f.y)+Vector2(sin(time*0.2+f.y)*12,0)
-  draw_circle(pos,f.z,Color('#17282a'))
- for i in range(7):
-  draw_arc(Vector2(970,390),100+i*33,0,TAU,100,Color('#304936'),1)
- draw_creature(Vector2(970,375),0,5.0)
- txt("A  M I N D - P U M P I N G  F A N  I N T E R P R E T A T I O N",Vector2(85,100),15,GREEN)
- txt("GORBINO'S",Vector2(80,230),88,CREAM)
- txt("QUEST",Vector2(80,325),110,GREEN)
- txt("THE DIVIDEND OF FLESH",Vector2(87,375),26,PINK)
- txt("A small creature. A very large economy.",Vector2(87,432),21,CREAM)
- txt("Descend through six departments of manufactured joy.",Vector2(87,467),18,Color('#a4b5b6'))
- box(Rect2(85,520,340,60),GREEN)
- txt("ENTER  /  BEGIN YOUR SHIFT",Vector2(107,558),21,INK)
- box(Rect2(85,594,340,45),Color('#172530'),Color('#39534d'))
- txt("C  /  EMPLOYEE HANDBOOK",Vector2(107,624),18,CREAM)
- txt("RECORD  "+str(best)+"     EXITS FOUND  "+str(wins),Vector2(87,699),15,BLUE)
- txt("M  sound   /   F11  fullscreen   /   F3  reduced effects",Vector2(87,737),15,Color('#93a3a5'))
- txt("Unofficial fan game. Original art, audio, story and mechanics.",Vector2(87,770),13,Color('#687e80'))
- if state=="codex":
-  box(Rect2(60,75,1160,650),INK,GREEN)
-  txt("EMPLOYEE HANDBOOK / YOU ARE ALLOWED TO HAVE FUN",Vector2(95,125),26,GREEN)
-  var lines=["WASD / arrows     Move your small, valuable body.","MOUSE / hold LMB   Aim and fire seeds. Walls block shots.","SPACE             Dash. During a dash, enemy bullets become money.","Q                 Switch SURFACE / UNDERPRINT. Enemies live in both.","E                 Use the northern elevator after clearing both layers.","1 / 2 / 3         Choose grafts, purchases and your eventual ending.","ESC               Pause. M: mute. F11: fullscreen. F3: reduced effects.","", "Each department has three encounters and an audit boss.","After encounter two: buy a graft for 20 scrip, or leave and heal 15.","Every boss grants a free graft. Grafts combine and stack.","In the underprint: find blue memories; visit the chair at bottom right.","Nine memories and three freed strangers reveal the hidden ending.","No permanent power grind. Only your record and preferences are saved.","", "[ESC] Return.  Original interpretation; no promise of 500 actual hours."]
-  for i in range(lines.size()): txt(lines[i],Vector2(95,170+i*31),18,CREAM if i<7 else BLUE)
-func draw_creature(pos,kind,scale_value=1.0,hit=false):
- var col=GREEN if kind==0 else (PINK if kind==1 else BLUE)
- if hit: col=CREAM
- draw_circle(pos+Vector2(0,10)*scale_value,19*scale_value,Color(0,0,0,0.3))
- var pts=PackedVector2Array()
- for i in range(24):
-  var a=i*TAU/24
-  var r=(19+sin(a*3+time*3)*2)*scale_value
-  pts.append(pos+Vector2(cos(a)*r,sin(a)*r))
- draw_colored_polygon(pts,col)
- draw_circle(pos+Vector2(-7,-3)*scale_value,6*scale_value,INK)
- draw_circle(pos+Vector2(7,-3)*scale_value,6*scale_value,INK)
- draw_circle(pos+Vector2(-6,-5)*scale_value,2*scale_value,CREAM)
- draw_circle(pos+Vector2(8,-5)*scale_value,2*scale_value,CREAM)
- draw_arc(pos+Vector2(0,4)*scale_value,8*scale_value,0.1,PI-0.1,12,INK,2*scale_value)
- draw_line(pos+Vector2(-10,15)*scale_value,pos+Vector2(-15,23+sin(time*10)*2)*scale_value,col,4*scale_value)
- draw_line(pos+Vector2(10,15)*scale_value,pos+Vector2(15,23-sin(time*10)*2)*scale_value,col,4*scale_value)
-func draw_world():
- var offset=Vector2.ZERO if reduced else Vector2(sin(time*93),cos(time*81))*shake
- draw_set_transform(offset)
- var palette=[Color('#152426'),Color('#29202a'),Color('#1d2b25'),Color('#1b2334'),Color('#2f2420'),Color('#251e2d')]
- var bg=palette[floor_no] if phase==0 else palette[(floor_no+3)%6].darkened(0.12)
- var linecol=bg.lightened(0.075)
- box(ARENA,bg,Color('#4e6a55') if phase==0 else Color('#756293'))
- for x in range(64,1224,40): draw_line(Vector2(x,132),Vector2(x,722),linecol)
- for y in range(140,724,40): draw_line(Vector2(58,y),Vector2(1222,y),linecol)
- # Department insignia, grown into the tile work.
- var emblem=Vector2(640,423)
- var accent=Color(0.6,0.7,0.6,0.08)
- if floor_no==0:
-  draw_arc(emblem,155,0,TAU,80,accent,10)
-  draw_arc(emblem+Vector2(0,30),75,0,PI,30,accent,12)
-  draw_circle(emblem+Vector2(-55,-40),14,accent); draw_circle(emblem+Vector2(55,-40),14,accent)
- elif floor_no==1:
-  for j in range(5):
-   var points=PackedVector2Array()
-   for k in range(50): points.append(Vector2(180+k*19,270+j*65+sin(k*0.4+j)*25))
-   draw_polyline(points,accent,8)
- elif floor_no==2:
-  for j in range(7):
-   var at=Vector2(200+j*145,410+sin(j*2)*80)
-   draw_line(at+Vector2(0,100),at,accent,9)
-   for k in range(5):draw_circle(at+Vector2.from_angle(k*TAU/5)*35,26,accent)
- elif floor_no==3:
-  for j in range(4):
-   var at=Vector2(280+j*230,370)
-   draw_rect(Rect2(at,Vector2(125,150)),accent,false,4)
-   for k in range(5): draw_line(at+Vector2(20,30+k*22),at+Vector2(100,30+k*22),accent,3)
- elif floor_no==4:
-  for j in range(8):
-   var a=j*TAU/8+time*0.04
-   draw_line(emblem+Vector2.from_angle(a)*70,emblem+Vector2.from_angle(a)*200,accent,18)
-  draw_arc(emblem,88,0,TAU,50,accent,10)
- else:
-  for j in range(5):draw_arc(emblem,70+j*30,0,TAU,80,accent,3)
-  draw_line(Vector2(440,520),Vector2(640,270),accent,8)
-  draw_line(Vector2(640,270),Vector2(840,520),accent,8)
-  draw_line(Vector2(840,520),Vector2(440,520),accent,8)
- for i in range(18):
-  var v=Vector2(95+i*65,700)
-  draw_line(v,v+Vector2(12,-9),linecol,2)
- for w in walls:
-  box(w,Color('#365447') if phase==0 else Color('#514465'),Color('#66846b') if phase==0 else Color('#9376a7'))
-  draw_circle(w.get_center(),11,INK)
-  draw_circle(w.get_center()+Vector2(sin(time)*4,0),4,GOLD if phase==0 else BLUE)
- box(Rect2(592,132,96,44),GREEN if cleared else Color('#3c4847'))
- txt("ELEVATOR" if cleared else "LOCKED",Vector2(602,159),15,INK if cleared else CREAM)
- if phase==1:
-  var chair=Vector2(1120,650)
-  draw_rect(Rect2(chair-Vector2(16,20),Vector2(32,35)),Color('#756485'),false,3)
-  txt("[E] FREE",chair+Vector2(-32,40),13,BLUE)
-  if not floor_no in freed_floors:
-   draw_creature(chair,2,0.65)
- for item in pickups:
-  if not item.alive: continue
-  var col=BLUE if item.type=="secret" else GOLD
-  if item.phase!=phase: col.a=0.13
-  var pos=item.p+Vector2(0,sin(time*4+item.p.x)*4)
-  if item.type=="secret":
-   draw_arc(pos,14+sin(time*3)*2,0,TAU,24,col,2)
-   draw_line(pos-Vector2(6,0),pos+Vector2(6,0),col,3)
-   draw_line(pos-Vector2(0,6),pos+Vector2(0,6),col,3)
-  else: draw_circle(pos,7,col); draw_circle(pos,3,bg)
+  var node=cube(world,pos,Vector3.ONE*rng.randf_range(0.06,0.17),flat(color))
+  effects.append({"node":node,"t":rng.randf_range(0.18,0.5),"v":Vector3(rng.randf_range(-4,4),rng.randf_range(1,5),rng.randf_range(-4,4))})
+func damage_enemy(index,amount):
+ var e=enemies[index]
+ if not e.alive:return
+ e.hp-=amount;e.alert=true;e.stun=0.12
+ spark(e.body.position+Vector3.UP*1.2,Color('#fb4ca3'),5)
+ if e.hp<=0:
+  e.alive=false;e.body.collision_layer=0;e.body.visible=false;kills+=1;credits+=4 if not e.boss else 100
+  dead_ids.append(e.id)
+  if rng.randf()<0.3:hp=min(max_hp,hp+4)
+  if equipped!=0:reserves[equipped]+=1 if equipped!=4 else 4
+  if e.boss:
+   boss_dead=true;quests.main=3;message("THE FINAL BENEFICIARY HAS BEEN LIQUIDATED. The engine awaits your decision.",Color('#ddff6b'));save_game()
+func has_los(from,to):
+ return ray(from,to,1).is_empty()
+func safe_cell(pos):
+ var c=Vector2i(round(pos.x),round(pos.z))
+ if astar.is_in_boundsv(c) and not astar.is_point_solid(c):return c
+ for r in range(1,5):
+  for x in range(-r,r+1):
+   for y in range(-r,r+1):
+    var n=c+Vector2i(x,y)
+    if astar.is_in_boundsv(n) and not astar.is_point_solid(n):return n
+ return Vector2i.ZERO
+func update_enemies(dt):
+ for i in range(enemies.size()):
+  var e=enemies[i]
+  if not e.alive:continue
+  e.t+=dt;e.cd-=dt;e.path_t-=dt;e.stun=max(0,e.stun-dt)
+  var body=e.body;var offset=player.position-body.position;var dist=offset.length()
+  if dist>80:continue
+  var eye=body.position+Vector3.UP*(3.8 if e.boss else 1.6)
+  var visible=dist<55 and has_los(eye,camera.global_position)
+  if visible and dist<(38 if not key(KEY_CTRL) else 17):e.alert=true
+  if not e.alert:
+   body.velocity.y-=24*dt;body.move_and_slide();continue
+  var dir=Vector3(offset.x,0,offset.z).normalized()
+  if e.stun<=0:
+   var move_speed=[4.0,8.5,2.1,3.3][e.kind]
+   if e.boss:move_speed=2.0
+   if (dist>11 or not visible or e.kind==1) and not e.boss:
+    if not visible:
+     if e.path_t<=0:
+      e.path_t=0.8;e.path=Array(astar.get_point_path(safe_cell(body.position),safe_cell(player.position)))
+     while e.path.size()>0 and Vector2(body.position.x,body.position.z).distance_to(e.path[0])<1.6:e.path.pop_front()
+     if e.path.size()>0:dir=(Vector3(e.path[0].x,body.position.y,e.path[0].y)-body.position).normalized()
+    body.velocity.x=dir.x*move_speed;body.velocity.z=dir.z*move_speed
+   else:body.velocity.x=0;body.velocity.z=0
+   if dir.length()>0.01:e.visual.root.rotation.y=atan2(dir.x,dir.z)
+   for n in range(e.visual.limbs.size()):e.visual.limbs[n].rotation.x=sin(e.t*9+n*PI)*0.35 if body.velocity.length()>1 else 0
+  else:body.velocity.x=0;body.velocity.z=0
+  if not body.is_on_floor():body.velocity.y-=24*dt
+  else:body.velocity.y=-0.8
+  body.move_and_slide()
+  if dist<(4.0 if e.boss else 1.8) and e.cd<=0:
+   hurt(25 if e.boss else 14);e.cd=1.0
+  elif visible and e.cd<=0 and e.kind!=1:
+   e.cd=[1.7,1.0,2.6,2.1][e.kind]
+   if e.boss:
+    e.cd=1.0
+    for n in range(5):
+     var dir_shot=(camera.global_position-eye).normalized().rotated(Vector3.UP,(n-2)*0.13)
+     enemy_shot(eye,dir_shot,14,17)
+    if int(e.t)%7==0:
+     for n in range(12):enemy_shot(eye,Vector3(cos(n*TAU/12),0,sin(n*TAU/12)),11,14)
+   elif e.kind==2:
+    for n in range(3):enemy_shot(eye,(camera.global_position-eye).normalized().rotated(Vector3.UP,(n-1)*0.18),13,13)
+   else:enemy_shot(eye,(camera.global_position-eye).normalized(),21,12 if e.kind==0 else 18)
+func enemy_shot(origin,dir,speed,dmg):
+ var node=sphere(world,origin+dir*0.8,0.15,flat(Color('#ff3da3')),3,6)
+ projectiles.append({"node":node,"v":dir*speed,"t":5.0,"enemy":true,"dmg":dmg})
+func update_projectiles(dt):
+ for b in projectiles:
+  b.t-=dt
+  if b.t<=0:
+   if not b.enemy:explode(b.node.position,b.dmg)
+   b.node.queue_free();continue
+  var pos=b.node.position
+  var detonated=false
+  if not b.enemy:b.v.y-=dt*14
+  var next=pos+b.v*dt
+  if b.enemy and next.distance_to(camera.global_position)<0.7:
+   hurt(b.dmg);b.t=0
+  var result=ray(pos,next,1)
+  if not result.is_empty():
+   if not b.enemy:explode(result.position,b.dmg);detonated=true
+   b.t=0
+  elif not b.enemy:
+   for i in range(enemies.size()):
+    var e=enemies[i]
+    if e.alive and next.distance_to(e.body.position+Vector3.UP*1.1)<(3.0 if e.boss else 1.1):explode(next,b.dmg);detonated=true;b.t=0;break
+  b.node.position=next
+  if b.t<=0:
+   if not b.enemy and not detonated:explode(next,b.dmg)
+   b.node.queue_free()
+ projectiles=projectiles.filter(func(b):return b.t>0)
+func detonate_barrel(index):
+ var b=barrels[index]
+ if not b.alive:return
+ b.alive=false;b.body.visible=false;b.body.collision_layer=0
+ explode(b.body.position,150)
+func explode(pos,dmg):
+ sound(55,0.25);spark(pos,Color('#e6f961'),18)
+ for i in range(barrels.size()):
+  var b=barrels[i]
+  if b.alive and b.body.position.distance_to(pos)<5:detonate_barrel(i)
+ var n=sphere(world,pos,2.5,flat(Color('#f78c92')),4,8);effects.append({"node":n,"t":0.1})
+ for i in range(enemies.size()):
+  var e=enemies[i];var distance=e.body.position.distance_to(pos)
+  if e.alive and distance<9 and has_los(pos+Vector3.UP*0.3,e.body.position+Vector3.UP):damage_enemy(i,dmg*(1-distance/12))
+func hurt(amount):
+ if invuln>0 or state!="play":return
+ hp-=amount;damage_flash=0.35;invuln=0.38;sound(70,0.12)
+ if hp<=0:hp=0;metadata.deaths+=1;set_state("dead")
+func dash():
+ if dash_cd>0:return
+ var dir=-player.global_basis.z
+ player.velocity+=dir*24;player.velocity.y=max(player.velocity.y,4);invuln=0.5;dash_cd=2.8
+ spark(player.position+Vector3.UP,Color('#b3f44b'),6);sound(120,0.1)
+ # A collision-safe burst. move_and_collide prevents teleporting through walls.
+ player.move_and_collide(dir*2.8)
+func pulse():
+ if pulse_cd>0:return
+ pulse_cd=12;pulse_t=5;sound(580,0.2)
+ var count=0
  for e in enemies:
-  if not e.alive: continue
-  if e.phase!=phase:
-   draw_arc(e.p,24 if e.kind!=3 else 55,0,TAU,30,Color(0.5,0.6,0.7,0.16),1)
-   continue
-  if e.cd<0.35 and (e.kind==1 or e.kind==3):
-   draw_line(e.p,p,Color(1,0.4,0.55,0.22),2)
-   draw_arc(e.p,35,0,TAU,25,GOLD,2)
-  if e.kind==3:
-   for i in range(8):
-    var a=i*TAU/8+time*0.5
-    draw_line(e.p+Vector2.from_angle(a)*30,e.p+Vector2.from_angle(a+0.3)*70,PINK,7)
-   draw_creature(e.p,1,2.2,e.hit>0)
-   box(Rect2(380,187,520,12),INK)
-   draw_rect(Rect2(380,187,520*max(0,e.hp)/e.max,12),PINK)
-  else:
-   draw_creature(e.p,1 if e.kind!=2 else 2,1.0,e.hit>0)
-   if e.kind==1: draw_arc(e.p,29,-0.6,0.6,10,GOLD,3)
-   if e.kind==2: draw_arc(e.p,28,time,time+PI,12,BLUE,2)
-   if e.hp<e.max: draw_line(e.p+Vector2(-18,-30),e.p+Vector2(-18+36*e.hp/e.max,-30),PINK,3)
- for b in bullets:
-  var col=PINK if b.enemy else GREEN
-  if b.phase!=phase: col.a=0.12
-  draw_line(b.p-b.v.normalized()*10,b.p,col,3 if b.enemy else 4)
-  draw_circle(b.p,5 if b.enemy else 4,col)
- if invuln<=0 or int(time*15)%2==0: draw_creature(p,0,1.0)
- draw_line(p+aim*18,p+aim*31,CREAM,4)
- if dash_t>0: draw_arc(p,37,0,TAU,28,BLUE,3)
- if orbit>0:
-  var moon=p+Vector2.from_angle(time*3.5)*68
-  draw_arc(p,68,0,TAU,48,Color(0.7,0.8,1,0.12),1)
-  draw_circle(moon,12,BLUE); draw_circle(moon+Vector2(4,-2),8,bg)
- for b in particles: draw_circle(b.p,2+b.life*4,b.col)
- for n in popups:
-  var col=n.col; col.a=min(1,n.life*3)
-  txt(n.s,n.p,14,col)
- var m=get_global_mouse_position()
- draw_arc(m,10,0,TAU,20,CREAM,1)
- draw_line(m-Vector2(15,0),m-Vector2(6,0),CREAM)
- draw_line(m+Vector2(6,0),m+Vector2(15,0),CREAM)
- draw_set_transform(Vector2.ZERO)
- if cleared:
-  txt("ALL ACCOUNTS SETTLED.  [E] AT THE NORTHERN ELEVATOR",Vector2(350,700),17,GREEN)
-func draw_hud():
- txt("GQ /",Vector2(57,43),24,GREEN)
- txt(biome_names[floor_no],Vector2(132,42),23,CREAM)
- txt("DEPT %02d / 06     RECEIPT %d / 4"%[floor_no+1,room_no+1],Vector2(58,73),14,Color('#91aaa4'))
- box(Rect2(58,91,250,14),Color('#2c2934'))
- draw_rect(Rect2(58,91,250*hp/maxhp,14),PINK)
- txt("FLESH %d / %d"%[hp,maxhp],Vector2(322,104),15,PINK)
- txt("SCRIP  %03d"%money,Vector2(510,103),18,GOLD)
- txt("MEMORIES %02d   FREED %d"%[secrets,liberated],Vector2(685,103),15,BLUE)
- box(Rect2(996,25,226,43),GREEN if phase==0 else BLUE)
- txt("SURFACE" if phase==0 else "UNDERPRINT",Vector2(1011,53),22,INK)
- txt("Q / CHANGE REALITY",Vector2(1009,92),14,CREAM)
- txt("DASH READY" if dash_cd<=0 else "DASH %.1fs"%dash_cd,Vector2(1061,113),13,GREEN if dash_cd<=0 else Color('#829b96'))
- var alive_here=enemies.filter(func(e): return e.alive and e.phase==phase).size()
- var alive_other=enemies.filter(func(e): return e.alive and e.phase!=phase).size()
- if combo>1: txt("FLOW x"+str(combo)+" / 5 ABSORBS = HEAL",Vector2(870,687),14,GOLD)
- txt("HOSTILES  %d HERE / %d OTHER SIDE"%[alive_here,alive_other],Vector2(63,716),12,Color('#8da39b'))
- if organs.size()>0: txt("GRAFTS "+str(organs.size())+"  /  "+organs[-1],Vector2(750,716),12,GOLD)
-func draw_pause():
- draw_rect(Rect2(0,0,W,H),Color(0.02,0.04,0.07,0.9))
- center("YOUR BREAK IS UNPAID",300,42,GREEN)
- center("WASD move   /   MOUSE fire   /   SPACE absorb-dash",365,21)
- center("Q change reality   /   E interact   /   M sound",404,21)
- center("F3 reduced effects: "+("ON" if reduced else "OFF"),447,18,BLUE)
- center("ENTER or ESC / RETURN TO WORK    R / NEW RUN",520,23,GOLD)
- center("SEED DAMAGE %d   /   SHOTS %.1f/s   /   SPEED %d"%[damage,1.0/shot_rate,speed],566,17,BLUE)
- var names=""
- for i in range(organs.size()):
-  names+=organs[i]+("  /  " if i<organs.size()-1 else "")
- wrapped(names,Vector2(160,616),960,15,CREAM)
-func wrapped(s,pos,width,size,col):
- var words=s.split(" ")
- var line=""
- var y=pos.y
- for word in words:
-  if font.get_string_size(line+word,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x>width:
-   txt(line,Vector2(pos.x,y),size,col); y+=size*1.55; line=""
-  line+=word+" "
- txt(line,Vector2(pos.x,y),size,col)
-func draw_choices():
- draw_rect(Rect2(0,0,W,H),Color(0.025,0.045,0.07,0.95))
- var heading="A COMPLIMENTARY REPLACEMENT ORGAN"
- var sub="One graft. No refunds. All combinations are legally binding."
- if state=="shop": heading="THE COMPANY STORE"; sub="20 scrip per graft. Or leave with 15 flesh. Your scrip: "+str(money)
- if state=="ending": heading="THE FINAL DIVIDEND"; sub="The machine asks what you want. For the first time, it waits for an answer."
- center(heading,199,35,GREEN); center(sub,246,18,CREAM)
- for i in range(3):
-  var rect=Rect2(94+i*372,300,348,255)
-  var hover=rect.has_point(get_global_mouse_position())
-  box(rect,Color('#26362e') if hover else Color('#142129'),GREEN if hover else Color('#3a5550'))
-  var title=""; var desc=""
-  if state=="ending":
-   title=["BECOME THE OWNER","BREAK THE MACHINE","GIVE IT ALL AWAY"][i]
-   desc=["Keep the economy. Replace its face with your own. Nothing will ever hurt you again.","Destroy the engine of joy. The world will be difficult, and finally belong to no one.","Return every stolen memory. Free the people inside the walls. Requires 9 memories + 3 strangers."][i]
-  elif state=="shop" and i==2:
-   title="A MODEST LUNCH"; desc="Leave without buying. Heal 15 flesh and keep your savings. Sometimes enough is enough."
-  else:
-   title=choices[i].name; desc=choices[i].desc
-  txt("0"+str(i+1)+" /",rect.position+Vector2(24,39),25,GOLD)
-  wrapped(title,rect.position+Vector2(24,87),300,23,GREEN)
-  wrapped(desc,rect.position+Vector2(24,155),296,17,CREAM)
- center("PRESS 1 / 2 / 3  OR CLICK A CARD",625,17,BLUE)
-func draw_result():
- draw_rect(Rect2(0,0,W,H),Color(0.02,0.04,0.065,0.96))
- var title="YOUR POSITION HAS BEEN FILLED"
- var body="The company regrets the loss of its property. Somewhere, a new Gorbino opens its eyes."
- if state=="won":
-  title=["THE NEW FACE OF JOY","THE FIRST QUIET MORNING","A WORLD WITHOUT OWNERS"][selection]
-  body=["Your portrait replaces the old one. The doors still lock from the outside. You have won everything the machine knows how to give.","The engine stops. No one knows what to do. Then someone laughs, without being asked. It is a small and terrible beginning.","The walls unfold into people. Memories fall like rain. You give away your name last. Someone calls you friend. It fits better."][selection]
- center(title,260,38,GREEN if state=="won" else PINK)
- wrapped(body,Vector2(270,326),740,22,CREAM)
- center("DEPARTMENT %d   /   %d HOSTILES   /   %d BULLETS ABSORBED"%[floor_no+1,kills,absorbed],485,19,GOLD)
- center("%d MEMORIES   /   %d STRANGERS FREED   /   %d GRAFTS"%[secrets,liberated,organs.size()],525,19,BLUE)
- center("ENTER / CLICK TO BEGIN ANOTHER LIFE",627,23,GREEN)
- center("RUN SEED  "+str(run_seed),676,13,Color('#7c9791'))
+  if e.alive and e.body.position.distance_to(player.position)<17:e.stun=3.5;e.alert=true;count+=1
+ for b in projectiles:
+  if b.enemy and b.node.position.distance_to(player.position)<17:
+   b.t=0;credits+=1
+ message("AUDIT SIGHT / %d minds interrupted. Nearby bullets liquidated."%count,Color('#86f3cf'))
+func message(text,color=Color('#e5f585')):
+ notices.append({"text":text,"color":color,"t":6.0})
+ if notices.size()>3:notices.pop_front()
+func find_interaction():
+ interact_target=-1
+ var best_score=0.0
+ for i in range(items.size()):
+  var item=items[i]
+  if item.done:continue
+  var at=item.node.global_position+Vector3.UP
+  var distance=camera.global_position.distance_to(at)
+  if distance>4.8:continue
+  var angle=(-camera.global_basis.z).dot((at-camera.global_position).normalized())
+  var score=angle-distance*0.025
+  if angle>0.75 and score>best_score and has_los(camera.global_position,at):best_score=score;interact_target=i
+func nearby_threats(pos,radius=15):
+ return enemies.filter(func(e):return e.alive and not e.boss and e.body.position.distance_to(pos)<radius).size()
+func interact(index):
+ var item=items[index]
+ if item.done:return
+ match item.kind:
+  "npc":talk(item.id)
+  "clinic":
+   hp=max_hp;checkpoint=player.position+Vector3.UP*0.2;reserves[0]=999;magazines[0]=12
+   save_game();message("RECONSTRUCTED. Flesh restored. Checkpoint established.");sound(630,0.2)
+  "shop":
+   if credits<20:message("20 scrip buys a full ammunition refill. You have %d."%credits)
+   else:
+    credits-=20
+    for i in range(5):reserves[i]+=[999,24,12,9,80][i];magazines[i]=capacities[i]
+    hp=min(max_hp,hp+25);message("REFILLED / +25 flesh. You remain a valued revenue source.");save_game()
+  "seal":
+   if quests.main==0:message("No contract. Speak to Mother of Invoices at the Civic Wound first.");return
+   if nearby_threats(item.pos,20)>0:message("TERMINAL CONTESTED / clear nearby security first.",Color('#ff82b6'));return
+   item.done=true;item.node.visible=false;seals.append(item.id);credits+=30;quests.main=2 if seals.size()==3 else 1
+   message("OWNERSHIP SEAL %d / 3. +30 scrip. The tower is listening."%seals.size());save_game()
+  "worker":
+   if quests.union==0:message("This contract needs a union counter-signature. Find Loan at Civic Wound.");return
+   item.done=true;item.node.visible=false;freed.append(item.id);message("CONTRACT VOIDED. %d / 3 workers freed."%freed.size())
+   if freed.size()==3:quests.union=2;max_hp=125;hp=max_hp;credits+=40;unlock_weapon(1);message("COLLECTIVE BARGAINING COMPLETE / MARROW unlocked. Maximum flesh +25.")
+   save_game()
+  "heart":
+   if quests.courier==0:message("A heart packed for someone else. Dr. Nil may know why.");return
+   item.done=true;item.node.visible=false;quests.courier=2;message("HEART ACQUIRED / Return it to Dr. Nil at the clinic.");save_game()
+  "relay":
+   if quests.broadcast==0:message("No transmission. Find Radio Angel by the canal.");return
+   item.done=true;relays.append(item.id);item.tag.text="TRANSMITTING / YOU ARE NOT A PRODUCT"
+   message("PIRATE SIGNAL %d / 3. The city hears a new voice."%relays.size())
+   if relays.size()==3:quests.broadcast=2;credits+=60;unlock_weapon(2);message("PIRATE RADIO THERAPY COMPLETE / DIVIDEND rail driver unlocked.")
+   save_game()
+  "arena":
+   if quests.arena==2:message("The review is over. You exceeded their expectations.");return
+   if quests.arena==1:message("REVIEW IN PROGRESS / WAVE %d OF 3"%arena_wave);return
+   quests.arena=1;arena_wave=0;spawn_arena_wave();message("PERFORMANCE REVIEW STARTED / three waves. Survive, then claim the siphon.")
+  "fish":
+   if quests.fish==2:message("The fish have unionized. Your work here is done.");return
+   quests.fish=1;fish_clock=0;fish_target=rng.randf_range(0.3,0.7);set_state("fish")
+  "memory":
+   item.done=true;item.node.visible=false;memory_ids.append(item.id);secrets=memory_ids.size();credits+=8;hp=min(max_hp,hp+10);quests.memories=1
+   message("MEMORY %d / 8. Someone remembers how rain used to smell."%secrets,Color('#caa5ff'))
+   if secrets>=6:quests.memories=2;unlock_weapon(4);message("SIX MEMORIES REASSEMBLED / hidden ending available. DEBT COLLECTOR unlocked.")
+   save_game()
+  "cache":
+   item.done=true;item.node.visible=false;collected.append(item.id);credits+=10;hp=min(max_hp,hp+20)
+   for i in range(1,5):reserves[i]+=[0,12,6,4,30][i]
+   message("LUNCH RETRIEVED / +20 flesh, ammunition and 10 scrip.");save_game()
+  "weapon":
+   item.done=true;item.node.visible=false;collected.append(item.id);unlock_weapon(item.index);save_game()
+  "jump":
+   player.velocity.y=23;player.velocity.z=-10;player.position.y+=0.4;message("PNEUMATIC ASCENSION / aim your landing. The bridge holds a prototype.");sound(180,0.2)
+  "tower":
+   if seals.size()<3:message("ACCESS DENIED / acquire three ownership seals. Press TAB for the map.");return
+   if boss_dead:message("The final beneficiary is dead. Use the engine at the far end of the nave.");return
+   if not boss_started:
+    boss_started=true;spawn_enemy(Vector3(0,1,-105),3,"final_beneficiary",true);message("FINAL AUDIT / THE BENEFICIARY HAS ARRIVED.",Color('#ff72a8'));save_game()
+  "ending":
+   if not boss_dead:message("The dividend engine refuses to answer while its owner lives.");return
+   set_state("ending")
+func talk(id):
+ var text=""
+ match id:
+  "mother":
+   if quests.main==0:
+    quests.main=1;tracked="main";text="You are the dividend. The city has been spending you. Bring me the three ownership seals: Fleshworks, Garden, and Residential Organism. Then enter God's Accounts Receivable. Do not mistake employment for a reason to live."
+   elif seals.size()<3:text="Three departments hold the city's ownership seals. Clear their security and use their terminals. Your map knows the addresses. Optional work pays in weapons."
+   elif not boss_dead:text="You own three pieces of paper. They believe that makes you a person. Go north. Let us see what the beneficiary thinks."
+   else:text="The engine will offer you its chair. You can take it, break it, or remember who was ground into it. Choose with care."
+  "union":
+   if quests.union==0:quests.union=1;tracked="union";text="They leased our bodies for a hundred years. Three workers are held around the Fleshworks. Open their contracts and I will give you something that negotiates in flechettes. We can win something small."
+   elif quests.union==2:text="Three workers walk without permission. That is a real thing you did. The shotgun is yours."
+   else:text="Three contract cells. West of the centre. Follow the U markers on your map. Get them home."
+  "doctor":
+   if quests.courier==0:quests.courier=1;tracked="courier";text="A patient ordered a replacement heart. It was delivered to Residential Organism, where the landlord mistook it for rent. Find the insulated package inside the leasing office. I can pay you in a rail driver."
+   elif quests.courier==2:quests.courier=3;credits+=50;unlock_weapon(2);hp=max_hp;text="Still beating. Better than most deliveries. Here is the Dividend driver. It penetrates bodies, though architecture remains stubborn. Thank you for bringing something back alive."
+   elif quests.courier==3:text="Your patient is well. I did not tell them what the heart cost."
+   else:text="Residential Organism. The leasing office. The little warm box in the back. Bring it to me."
+  "pirate":
+   if quests.broadcast==0:quests.broadcast=1;tracked="broadcast";text="This city has forgotten silence because every thought is an advert. Climb the three canal transmitters and retune them. The ramps go to the rooftops. Let us put an unprofitable idea in the air."
+   elif quests.broadcast==2:text="People are hearing their own thoughts again. Some of them are very strange. Good."
+   else:text="Three transmitters on the canal towers. Climb the ramps. The signal belongs to whoever cares enough to change it."
+ hud.dialogue_title={"mother":"MOTHER OF INVOICES","union":"LOAN / UNION STEWARD","doctor":"DR. NIL","pirate":"RADIO ANGEL"}.get(id,id)
+ hud.dialogue_text=text
+ set_state("dialogue");save_game()
+func unlock_weapon(index):
+ if owned[index]:reserves[index]+=capacities[index]*2;return
+ owned[index]=true;reserves[index]+=capacities[index]*3
+ message("WEAPON ACQUIRED / "+weapon_names[index]+" / press "+str(index+1),Color('#7dfbc7'));sound(760,0.25)
+func spawn_arena_wave():
+ arena_wave+=1;arena_enemies=[]
+ for i in range(3+arena_wave):
+  var pos=Vector3(79+(i%3)*10,1,-89+(i/3)*9)
+  var index=spawn_enemy(pos,(i+arena_wave)%4,"arena_%d_%d"%[arena_wave,i]);enemies[index].alert=true;arena_enemies.append(index)
+ message("PERFORMANCE REVIEW / WAVE %d OF 3"%arena_wave,Color('#ff87b5'))
+func fish_press():
+ var cursor=(sin(fish_clock*2.5)+1)/2
+ if abs(cursor-fish_target)<0.15:
+  fish_caught+=1;fish_target=rng.randf_range(0.2,0.8);sound(650,0.15)
+  if fish_caught>=3:
+   quests.fish=2;credits+=45;unlock_weapon(3);set_state("play");message("THREE IMPOSSIBLE FISH / CYST organ mortar acquired. Fishing remains honest.");save_game()
+ else:sound(90,0.12);message("The fish rejects your timing. Try again.")
+func respawn():
+ hp=max_hp;credits=max(0,credits-10);player.position=checkpoint;player.velocity=Vector3.ZERO;invuln=3
+ for b in projectiles:b.node.queue_free()
+ projectiles.clear();set_state("play");message("REASSEMBLED / progress retained. 10 scrip reconstruction fee.");save_game()
+func finish_game(choice):
+ if choice==2 and (secrets<6 or freed.size()<3):message("This choice needs six memories and three freed workers.",Color('#ff82b0'));return
+ ending=choice;quests.main=4;set_state("won");save_game()
+func cycle_quest():
+ var active=[]
+ for id in quests:
+  if quests[id]>0 and not quest_done(id):active.append(id)
+ if active.is_empty():tracked="main";return
+ var i=active.find(tracked);tracked=active[(i+1)%active.size()]
+func quest_done(id):
+ if id=="main":return quests.main>=4
+ if id=="courier":return quests.courier>=3
+ return quests[id]>=2
+func quest_description(id):
+ match id:
+  "main":
+   if quests.main==0:return "Speak with Mother of Invoices in Civic Wound."
+   if seals.size()<3:return "Acquire the three ownership seals: %d / 3. Clear terminal security."%seals.size()
+   if not boss_started:return "Enter God's Accounts Receivable. Activate the final audit."
+   if not boss_dead:return "Defeat the Final Beneficiary in the northern tower."
+   if quests.main<4:return "Use the Dividend Engine. Decide what winning means."
+   return "The city has received your answer."
+  "union":return "Free the three Fleshworks contract workers: %d / 3. Reward: MARROW +25 max flesh."%freed.size()
+  "courier":return "Return the insulated heart to Dr. Nil." if quests.courier==2 else "Retrieve the heart inside Residential Organism. Reward: DIVIDEND rail driver."
+  "broadcast":return "Climb and retune the three canal transmitters: %d / 3. Reward: DIVIDEND +60 scrip."%relays.size()
+  "arena":return "Survive three arcade waves: %d / 3. Reward: DEBT COLLECTOR +70 scrip."%arena_wave
+  "fish":return "Catch three fish at the canal: %d / 3. Reward: CYST organ mortar."%fish_caught
+  "memories":return "Recover at least six memories: %d / 8. Reward: SIPHON and the hidden ending."%secrets
+ return "Explore. Someone here needs something."
+func objective_items():
+ var ids=[]
+ match tracked:
+  "main":
+   if quests.main==0:ids=["mother"]
+   elif seals.size()<3:ids=["seal_flesh","seal_garden","seal_housing"]
+   elif not boss_dead:ids=["tower"]
+   else:ids=["exit"]
+  "union":ids=["worker0","worker1","worker2"]
+  "courier":ids=["doctor"] if quests.courier==2 else ["heart"]
+  "broadcast":ids=["relay0","relay1","relay2"]
+  "arena":ids=["arena"]
+  "fish":ids=["fish"]
+  "memories":
+   for i in range(8):ids.append("memory%d"%i)
+ return items.filter(func(item):return item.id in ids and not item.done)
+func district():
+ var p=Vector2(player.position.x,player.position.z);var best=regions[0];var distance=10000.0
+ for r in regions:
+  var d=p.distance_to(r.pos)
+  if d<distance:best=r;distance=d
+ return best
+func save_game():
+ if test_mode:return
+ var data={"version":2,"position":[player.position.x,player.position.y,player.position.z],"checkpoint":[checkpoint.x,checkpoint.y,checkpoint.z],"yaw":yaw,"pitch":pitch,"hp":hp,"max_hp":max_hp,"credits":credits,"kills":kills,"seals":seals,"freed":freed,"relays":relays,"memory_ids":memory_ids,"collected":collected,"dead_ids":dead_ids,"quests":quests,"owned":owned,"magazines":magazines,"reserves":reserves,"boss_started":boss_started,"boss_dead":boss_dead,"fish_caught":fish_caught,"equipped":equipped,"metadata":metadata,"ending":ending}
+ var f=FileAccess.open(ROOT_SAVE,FileAccess.WRITE)
+ if f:f.store_string(JSON.stringify(data))
+func load_game():
+ if not FileAccess.file_exists(ROOT_SAVE):new_game();return
+ var data=JSON.parse_string(FileAccess.get_file_as_string(ROOT_SAVE))
+ if not data is Dictionary or data.get("version",0)!=2:message("Save unavailable. Starting a new dividend.");new_game();return
+ new_game_from_data(data)
+func new_game_from_data(d):
+ hp=max(1,d.hp);max_hp=d.max_hp;credits=d.credits;kills=d.kills
+ seals=d.seals;freed=d.freed;relays=d.relays;memory_ids=d.memory_ids;collected=d.collected;dead_ids=d.dead_ids
+ secrets=memory_ids.size();quests=d.quests;owned=d.owned;magazines=d.magazines;reserves=d.reserves
+ boss_started=d.boss_started;boss_dead=d.boss_dead;fish_caught=d.fish_caught;equipped=int(d.equipped);metadata=d.metadata;ending=int(d.ending)
+ for b in projectiles:b.node.queue_free()
+ projectiles.clear()
+ checkpoint=Vector3(d.checkpoint[0],d.checkpoint[1],d.checkpoint[2]);player.position=Vector3(d.position[0],d.position[1]+0.2,d.position[2]);player.velocity=Vector3.ZERO
+ yaw=d.yaw;pitch=d.pitch;player.rotation.y=yaw;camera.rotation.x=pitch
+ for item in items:
+  item.done=item.id in seals or item.id in freed or item.id in memory_ids or item.id in collected or item.id in relays or (item.id=="heart" and quests.courier>=2)
+  item.node.visible=not item.done
+ for e in enemies:
+  e.alive=not e.id in dead_ids and not str(e.id).begins_with("arena_") and (not e.boss or (boss_started and not boss_dead))
+  e.hp=e.max;e.body.visible=e.alive;e.body.collision_layer=2 if e.alive else 0;e.alert=false
+ if boss_started and not boss_dead and not enemies.any(func(e):return e.boss and e.alive):spawn_enemy(Vector3(0,1,-105),3,"final_beneficiary",true)
+ if quests.arena==1:arena_wave=0;spawn_arena_wave()
+ build_gun();invuln=2;reload_t=0;fire_cd=0;set_state("play");message("DIVIDEND RESTORED / your city remembers you.")
+func save_preferences():
+ var cfg=ConfigFile.new();cfg.set_value("options","muted",muted);cfg.set_value("options","reduced",reduced);cfg.save("user://preferences.cfg")
+func load_preferences():
+ var cfg=ConfigFile.new()
+ if cfg.load("user://preferences.cfg")==OK:muted=cfg.get_value("options","muted",false);reduced=cfg.get_value("options","reduced",false)
+ screen.stretch_shrink=1 if reduced else 2
+func setup_audio():
+ music=AudioStreamPlayer.new();var stream=AudioStreamGenerator.new();stream.mix_rate=22050;stream.buffer_length=0.15;music.stream=stream;add_child(music);music.play();playback=music.get_stream_playback()
+func sound(freq,duration=0.1):sound_freq=freq;sound_left=duration
+func fill_audio():
+ if not playback:return
+ var available=playback.get_frames_available()
+ for i in range(available):
+  var t=float(sample_clock)/22050.0
+  var sequence=[55.0,65.4,58.27,82.4,55.0,73.4,58.27,49.0]
+  var beat=int(t*3.8);var f=sequence[(beat/2)%8]
+  var saw=(fmod(t*f,1.0)*2-1)*0.021
+  var pulse_wave=sin(t*f*TAU)*0.025
+  var arp=sin(t*f*8*TAU)*exp(-fmod(t,1.0/3.8)*19)*0.025
+  var drum=sin(t*(42+exp(-fmod(t,0.5263)*50)*90)*TAU)*exp(-fmod(t,0.5263)*17)*0.07
+  var noise=sin(t*7121)*sin(t*4793)*exp(-fmod(t,0.26315)*80)*0.016
+  var s=saw+pulse_wave+arp+drum+noise
+  if sound_left>0:s+=sin(t*sound_freq*TAU)*min(1,sound_left*25)*0.11;sound_left-=1.0/22050
+  if muted:s=0
+  playback.push_frame(Vector2(s,s));sample_clock+=1
+func _exit_tree():
+ playback=null
+ if is_instance_valid(music):music.stop()

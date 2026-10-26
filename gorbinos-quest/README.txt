@@ -1,77 +1,53 @@
-GORBINO'S QUEST: THE DIVIDEND OF FLESH / v1.0
-Unofficial native desktop fan interpretation.
+GORBINO'S QUEST 3D: NULL DIVIDEND / VERSION 2
 
-PLAY
-Windows 10/11 x86-64: double-click GorbinosQuest.exe.
-Standalone executable; no installation, browser, engine, account or network.
-Linux x86-64: chmod +x GorbinosQuest.x86_64, then launch it.
-Needs a desktop display and OpenGL 3.3 graphics. Executables are unsigned.
+WINDOWS: Extract the ZIP and double-click GorbinosQuest.exe.
+LINUX: Extract the archive, mark GorbinosQuest.x86_64 executable, and run it.
+No engine or Internet connection required. OpenGL 3.3 desktop graphics needed.
+Windows execution has not been tested. The Linux build was run and inspected.
+
+START: Enter continues your save, or begins if none exists. N starts a new game.
+Go into the Department of You ahead. Speak to Mother of Invoices with E.
+Acquire three ownership seals, enter the northern tower, defeat its owner,
+and use the Dividend Engine. Six side missions unlock additional weapons.
 
 CONTROLS
-WASD / arrows: move. Mouse: aim. Hold left click: fire.
-Space: dash THROUGH bullets to absorb them as money.
-Q: switch between SURFACE and UNDERPRINT.
-E: interact. 1 / 2 / 3 or click: choose a card.
-Esc: pause. Enter: begin/retry/resume. R while paused: new run.
-M: mute. F11: fullscreen. F3: reduced effects. C at title: handbook.
-Close the window to quit.
+WASD/arrows move. Mouse looks. Hold LMB fires. RMB focuses aim.
+Space jumps. Shift sprints. Ctrl crouches. F dashes. Q activates Audit Sight.
+E interacts. R reloads. 1–5 or mouse wheel changes weapons.
+Tab opens the city map. J opens quests. T cycles tracked objectives.
+F5 saves. F9 restores. Esc pauses/closes panels. F1 opens the handbook.
+F3 toggles higher resolution. F11 toggles fullscreen. M toggles sound.
 
-YOUR FIRST MINUTE
-Clear enemies in BOTH realities. Inactive enemies appear as faint outlines.
-When the elevator turns green, approach the north door and press E.
-Dash into pink bullets: they become scrip. Five chained absorptions heal 5.
-A shop appears after encounter two. A graft costs 20 scrip; leaving heals 15.
-Bosses award free grafts. Grafts combine; damage, rate, health, speed, leech
-and ricochet upgrades stack. Spread and orbit effects unlock once.
-Visit the occupied underprint chair to free a stranger for 12 scrip, once per
-floor. Blue memories heal 8 and award 5 scrip. The hidden ending needs nine
-memories and three freed strangers. Upgrading yourself competes with kindness.
+A large 3D city with seven districts, enterable quest buildings, rooftop ramps,
+a skybridge, NPC dialogue, three-seal main quest, six side missions, five weapons,
+four ordinary enemy classes, a final boss, hidden memories and three endings.
 
-CONTENT
-Six departments / 24 encounters / six escalating audit bosses / four cover
-layouts / six department palettes and insignias / two realities / eight graft
-types / shops / secrets / three endings / original procedural music and sounds.
-A run is intended to take roughly 20–40 minutes; human balance testing has
-not established the actual average. Best score, ending count and preferences
-persist. There is no mid-run save or permanent upgrade grind.
+Clinics heal for free and set your respawn checkpoint. Vending organs cost
+20 scrip and refill ammunition. The pistol has infinite reserve ammunition.
+Audit Sight stuns nearby enemies and converts nearby hostile bullets to money.
+Headshots hit harder. Volatile tanks explode. Rail shots penetrate bodies.
+The mortar has gravity and splash damage. The siphon steals health.
 
-RESEARCH AND INTERPRETATION
-Gorbino's Quest is the fictional in-world game referenced in Cruelty Squad.
-Prior familiarity with the absurd playtime and “mind pumping” premise informed
-this project; these details were not verified against a primary source here.
-The two fan wiki addresses below were attempted but blocked by the session's
-network policy. GitHub searches did not yield reliable canonical material.
-This is an original interpretation, not a recreation of established gameplay,
-visual design or plot, and does not claim 500 actual hours of content.
-Reference targets, not successfully retrieved:
-https://crueltysquad.wiki.gg/wiki/Gorbino%27s_Quest
-https://crueltysquad.fandom.com/wiki/Gorbino%27s_Quest
+SIDE JOBS
+Loan at the hub: free three workers for a shotgun and +25 maximum health.
+Dr. Nil: find and return a heart for the rail driver.
+Radio Angel by the canal: climb and retune three towers for a rail driver.
+Arcade in the northeast: survive three waves for a siphon.
+Canal fishing point: catch three timed fish for the mortar.
+Six hidden memories: unlock the siphon and a hidden ending.
+The hidden ending also needs all three workers freed.
 
-DESIGN
-A cute creature explores the machinery behind compulsory happiness. The
-surface is the company's promise; the underprint is its concealed cost.
-Movement and aiming anchor combat. Absorption rewards entering danger.
-Grafts ask how you want to play. The economy asks who should get the money.
-Three endings ask what winning means inside that economy.
-All art, code, music, mechanics and dialogue were made for this fan project.
-Cruelty Squad and its fictional Gorbino's Quest belong to their creators.
-No affiliation or endorsement is claimed. Godot uses the included MIT license.
+Progress autosaves every 25 seconds, at quest actions, and when pausing.
+Death retains objectives and costs up to 10 scrip. New Game replaces your save.
+An unfinished arena restarts its waves on load. V2 has a separate data folder
+from the old 2D game.
 
-VALIDATION
-Godot 4.6.3. The packaged Linux executable ran in a virtual X11 display with
-OpenGL compatibility graphics. Title and gameplay screenshots were inspected.
-291 automated checks cover all 24 rooms and three endings, actual projectile
-hits, phase isolation, ricochets, movement collision, dash absorption, damage
-immunity, graft effects, shop economy and single-use secrets. Progression tests
-clear rooms programmatically, so they do not prove human completion or balance.
-Windows PE x86-64 export checked, but execution on Windows is untested.
-A Godot ObjectDB cleanup warning occurs on automated exit; no gameplay script
-errors were observed. No network access or telemetry is used by the game.
+Original art, code, dialogue, music and geometry inspired by Cruelty Squad's
+visual language. Unofficial fan interpretation; no copied game assets.
+Full research notes, screenshots, source and instructions are on GitHub.
+Original software uses the MIT license. Godot's license is included.
 
-SOURCE
-The source ZIP contains an editable Godot project, verification and capture
-scripts. Open project.godot in Godot 4.6.3.
-Checks: godot --headless --path path/to/project --script verify.gd
-Export presets reference custom build-template paths. Replace these with your
-matching templates when rebuilding. MIT license applies to original code;
-third-party names and referenced game properties remain with their owners.
+VALIDATION: 125 automated checks, physical traversal to 10 ground objectives,
+5 ramp/skybridge routes, and 7 live weapon/projectile scenarios. These are not
+a substitute for human balance testing. An engine audio cleanup warning can
+appear on automated exit. No gameplay script errors remained in release checks.

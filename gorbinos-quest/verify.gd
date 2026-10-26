@@ -1,86 +1,104 @@
 extends SceneTree
 var checks=0
-func check(ok,label):
+var failures=[]
+func verify(ok,label):
  checks+=1
- if not ok:
-  push_error("FAIL: "+label)
-  quit(1)
-  assert(ok,label)
-func _initialize():
- call_deferred("run")
+ if not ok:failures.append(label);push_error("FAIL: "+label)
+func item_index(g,id):
+ for i in range(g.items.size()):
+  if g.items[i].id==id:return i
+ return -1
+func use(g,id):g.interact(item_index(g,id))
+func _initialize():call_deferred("run")
 func run():
- var g=load("res://game.gd").new()
- root.add_child(g)
- g.set_process(false)
- g.start_run(12345)
- check(g.enemies.size()==4,"initial enemies")
- check(not g.blocked(g.p,14),"spawn clear")
- g.phase=0;g.shift_cd=0;g.shift_world();check(g.phase==1,"reality shift")
- g.invuln=0;g.hurt(20);check(g.hp==80,"damage")
- g.hurt(20);check(g.hp==80,"invulnerability")
- g.dash_cd=0;g.dash();check(g.dash_t>0,"dash active")
- var m=g.money
- g.shoot(g.p,Vector2.ZERO,true,g.phase,0,10)
- g.update_game(0.01)
- check(g.absorbed==1 and g.money==m+2,"dash absorbs bullets into scrip")
- for r in g.relics: g.apply_relic(r)
- check(g.ricochet==2 and g.spread==1 and g.leech==1 and g.orbit==1,"graft effects")
- check(g.damage>16 and g.speed>235 and g.maxhp==130 and g.shot_rate<0.24,"graft scaling")
- # Real projectile impact, phase isolation, walls, economy, and one-time secrets.
- g.enemies.clear();g.bullets.clear();g.phase=0;g.p=Vector2(640,600)
- g.spawn_enemy(Vector2(640,400),0,0)
- var target=g.enemies[0]
- target.hp=1;g.shoot(target.p,Vector2.ZERO,false,0,0,20)
- g.update_game(0.01);check(not target.alive,"projectile kills enemy")
- g.enemies.clear();g.bullets.clear();g.cleared=false
- g.spawn_enemy(Vector2(640,400),0,1)
- target=g.enemies[0]
- var initial_hp=target.hp
- g.shoot(target.p,Vector2.ZERO,false,0,0,20)
- g.update_game(0.01);check(target.hp==initial_hp,"opposite reality is protected")
- g.bullets.clear();g.walls=[Rect2(300,300,100,100)]
- g.shoot(Vector2(285,350),Vector2.RIGHT,false,0,620,10,2)
- g.update_game(0.02);check(g.bullets[0].v.x<0 and g.bullets[0].bounce==1,"wall ricochet")
- check(g.move_actor(Vector2(280,350),Vector2(30,0),14).x==280,"movement blocks walls")
- g.phase=1;g.p=Vector2(1120,650);g.money=100;g.cleared=false
- g.interact();check(g.liberated==1 and g.money==88,"free stranger")
- g.interact();check(g.liberated==1 and g.money==88,"stranger cannot be bought twice")
- g.state="shop";g.choices=g.relics.slice(0,2);g.money=0
- g.choose(0);check(g.state=="shop" and g.money==0,"cannot overspend")
- g.pickups=[{"p":g.p,"phase":1,"type":"secret","alive":true}]
- var memory_count=g.secrets
- g.update_game(0.01);g.update_game(0.01)
- check(g.secrets==memory_count+1,"memory collected once")
- for f in range(6):
-  for r in range(4):
-   g.floor_no=f;g.room_no=r;g.new_room()
-   check(not g.blocked(g.p,14),"spawn is valid")
-   for e in g.enemies:
-    check(not g.blocked(e.p,18),"enemy spawn valid")
-   # Exercise AI, patterns, bullets, collision and rendering state for each room.
-   g.invuln=1000
-   for step in range(90): g.update_game(0.016)
-   for e in g.enemies: g.kill_enemy(e)
-   g.update_game(0.016)
-   check(g.cleared,"room clears")
-   g.p=Vector2(640,160);g.interact()
-   if r==3:
-    if f==5:check(g.state=="ending","final ending gate")
-    else:
-     check(g.state=="choice","boss grants graft")
-     g.choose(0);check(g.floor_no==f+1 and g.room_no==0,"floor advance")
-   elif r==1:
-    check(g.state=="shop","shop appears")
-    g.choose(2);check(g.room_no==2 and g.state=="play","free shop exit")
-   else:check(g.room_no==r+1,"room advance")
- g.state="ending";g.secrets=0;g.liberated=0;g.choose(2)
- check(g.state=="ending","secret ending locked")
- g.secrets=9;g.liberated=3;g.choose(2)
- check(g.state=="won" and g.selection==2,"secret ending unlock")
- for i in range(2):
-  g.state="ending";g.choose(i);check(g.state=="won","standard ending")
- g.start_run(12345);g.invuln=0;g.hurt(999)
- check(g.state=="dead","death")
- print("PASS: ",checks," gameplay checks, all 24 rooms, 3 endings")
- g.free()
- quit()
+ var g=load("res://game.gd").new();root.add_child(g);g.test_mode=true
+ g.set_process(false);g.set_physics_process(false)
+ await physics_frame
+ g.new_game()
+ await physics_frame
+ verify(g.player is CharacterBody3D and g.camera is Camera3D,"real 3D player and camera")
+ verify(g.enemies.size()>=25,"authored encounters")
+ verify(g.items.size()>=40,"populated world")
+ verify(g.regions.size()==7,"seven connected districts")
+ # Ground objectives must be reachable through the authored street and door network.
+ var origin=g.safe_cell(g.checkpoint)
+ for it in g.items:
+  if it.pos.y>3 or it.kind in ["jump"]:continue
+  var target=g.safe_cell(it.pos)
+  var path=g.astar.get_id_path(origin,target)
+  verify(not path.is_empty(),"navigation to "+it.id)
+ # No quest item may be buried inside an obstacle; use the actual physics world.
+ for it in g.items:
+  var q=PhysicsPointQueryParameters3D.new();q.position=it.pos+Vector3.UP*0.6;q.collision_mask=1
+  var hits=g.player.get_world_3d().direct_space_state.intersect_point(q)
+  verify(hits.is_empty(),"quest item clear of static geometry: "+it.id)
+ g.talk("mother");verify(g.quests.main==1,"main quest begins")
+ g.talk("union");verify(g.quests.union==1,"union quest begins")
+ for i in range(3):use(g,"worker%d"%i)
+ verify(g.freed.size()==3 and g.quests.union==2 and g.owned[1] and g.max_hp==125,"union rewards shotgun and health")
+ use(g,"worker0");verify(g.freed.size()==3,"workers cannot be freed twice")
+ g.talk("doctor");use(g,"heart");verify(g.quests.courier==2,"heart acquired")
+ g.talk("doctor");verify(g.quests.courier==3 and g.owned[2],"courier returns heart and rewards railgun")
+ g.talk("pirate")
+ for i in range(3):use(g,"relay%d"%i)
+ verify(g.quests.broadcast==2 and g.relays.size()==3,"pirate transmission complete")
+ g.set_state("play")
+ for i in range(6):use(g,"memory%d"%i)
+ verify(g.secrets==6 and g.quests.memories==2 and g.owned[4],"memory quest unlocks siphon and ending")
+ var memory_count=g.secrets;use(g,"memory0");verify(g.secrets==memory_count,"memories single use")
+ use(g,"fish")
+ for i in range(3):g.fish_target=0.5;g.fish_clock=0;g.fish_press()
+ verify(g.quests.fish==2 and g.fish_caught==3 and g.owned[3],"fishing rewards mortar")
+ use(g,"arena")
+ for wave in range(3):
+  verify(g.arena_wave==wave+1,"arena wave progression")
+  for ei in g.arena_enemies:g.damage_enemy(ei,9999)
+  if wave<2:g.spawn_arena_wave()
+  else:
+   g.set_state("play");g._physics_process(0.016)
+ verify(g.quests.arena==2,"arena completion")
+ # Main terminals are contested until nearby guards are removed.
+ var seal=item_index(g,"seal_flesh")
+ g.seals=[];g.items[seal].done=false
+ use(g,"seal_flesh");verify(g.seals.is_empty(),"terminal blocks while contested")
+ for i in range(g.enemies.size()):g.damage_enemy(i,9999)
+ for id in ["seal_flesh","seal_garden","seal_housing"]:use(g,id)
+ verify(g.seals.size()==3 and g.quests.main==2,"all three seals unlock tower")
+ use(g,"tower");verify(g.boss_started and g.enemies[-1].boss,"final audit starts")
+ g.damage_enemy(g.enemies.size()-1,99999)
+ verify(g.boss_dead and g.quests.main==3,"boss defeat unlocks engine")
+ use(g,"exit");verify(g.state=="ending","engine opens ending selection")
+ g.secrets=0;g.finish_game(2);verify(g.state=="ending","hidden ending requires memories")
+ g.secrets=6;g.finish_game(2);verify(g.state=="won" and g.ending==2,"hidden ending completes")
+ for i in range(2):g.set_state("ending");g.finish_game(i);verify(g.state=="won" and g.ending==i,"standard ending")
+ # Real hitscan against a fresh physics collider.
+ g.set_state("play");g.player.position=Vector3(0,1,30);g.yaw=0;g.pitch=0;g.player.rotation.y=0;g.camera.rotation.x=0
+ var ei=g.spawn_enemy(Vector3(0,1,20),0,"test_hitscan")
+ await physics_frame
+ var initial=g.enemies[ei].hp
+ g.equip(0);g.fire_cd=0;g.reload_t=0;g.magazines[0]=12;g.fire()
+ verify(g.enemies[ei].hp<initial,"actual hitscan damages physics target")
+ var spent=g.magazines[0]
+ g.fire();verify(g.magazines[0]==spent,"fire rate limits shots")
+ g.magazines[0]=0;g.reload_weapon();verify(g.reload_t>0,"reload starts")
+ g._physics_process(2.0);verify(g.magazines[0]==12,"pistol reloads from infinite reserve")
+ g.hp=100;g.invuln=0;g.hurt(10);verify(g.hp==90,"player damage")
+ g.hurt(10);verify(g.hp==90,"damage invulnerability")
+ g.pulse_cd=0;g.enemies[ei].alive=true;g.enemies[ei].hp=100;g.pulse()
+ verify(g.enemies[ei].stun>=3,"audit sight stuns nearby guards")
+ g.credits=0;use(g,"hub_shop");verify(g.credits==0,"shop cannot overspend")
+ g.credits=30;g.hp=50;use(g,"hub_shop");verify(g.credits==10 and g.hp==75,"vending heals and refills")
+ g.hp=1;use(g,"clinic");verify(g.hp==g.max_hp,"clinic restores flesh")
+ g.invuln=0;g.hurt(999);verify(g.state=="dead","player death")
+ g.respawn();verify(g.state=="play" and g.hp==g.max_hp,"checkpoint respawn")
+ # Save / load round-trip through a real isolated user-data file.
+ g.test_mode=false;g.credits=123;g.hp=77;g.save_game()
+ g.credits=0;g.hp=1;g.owned[2]=false;g.load_game()
+ verify(g.credits==123 and g.hp==77 and g.owned[2],"save and load restore progress")
+ g.test_mode=true
+ g.detonate_barrel(0);verify(not g.barrels[0].alive,"volatile tanks detonate")
+ g.owned=[true,true,true,true,true]
+ for i in range(5):g.equip(i);verify(g.equipped==i,"weapon selectable")
+ print("CHECKS: ",checks," / FAILURES: ",failures.size())
+ for fail in failures:print("FAILED: ",fail)
+ g.free();quit(1 if not failures.is_empty() else 0)

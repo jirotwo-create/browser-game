@@ -1,4 +1,4 @@
 .godot/
 *.import
-downloads/*.exe
-downloads/*.x86_64
+builds/
+*.log
