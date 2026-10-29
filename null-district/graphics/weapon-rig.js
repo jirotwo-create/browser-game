@@ -133,3 +133,21 @@ export function poseSword(root,{time=0,attack=0,attacking=false,combo=0}={}){
   }else{a.trail.visible=false;a.previousTip=null;a.previousBase=null;}
  }
 }
+
+// A relaxed index/middle-finger pinch, with the wrist driving a fixed-length arm.
+export function createSmokingRig(materials){
+ const root=new THREE.Group(),grip=new THREE.Group(),tool=new THREE.Group(),hand=new THREE.Group();root.add(grip);grip.add(hand,tool);
+ add(hand,organic([[-.08,.035,.035,.06,.03],[-.025,.045,.055,.06,.025],[.03,.04,.048,.06,.02]],10),materials.glove);
+ const paths=[[[.09,.02,.015],[.075,.085,-.01],[.02,.105,-.035],[-.006,.088,-.038]],[[.085,.0,.015],[.07,.065,-.015],[.02,.069,-.039],[-.009,.066,-.03]],[[.08,-.025,.01],[.056,-.005,-.035],[.02,-.024,-.04],[.025,-.044,-.01]],[[.076,-.05,.012],[.05,-.036,-.03],[.025,-.055,-.027],[.035,-.07,-.008]],[[.08,.02,.065],[.025,.03,.07],[-.005,.01,.04]]];
+ for(const path of paths)for(let j=0;j<path.length-1;j++)phalanx(hand,path[j],path[j+1],.011,materials.skin);
+ const wrist=anchor(hand,'smoking-hand-wrist',[.06,-.10,.04]);
+ root.userData.smokingRig={grip,tool,hand,wrist,arm:makeArm(root,1,materials)};return root;
+}
+export function poseSmoking(root,{time=0,phase=null}={}){
+ const r=root.userData.smokingRig;
+ const lift=phase===null?0:phase<.55?Math.sin(phase/.55*Math.PI/2):phase<1.35?1:Math.max(0,1-(phase-1.35)/.55);
+ r.grip.position.set(.24*(1-lift)+.025*lift,-.27+lift*.14+Math.sin(time*1.9)*.003,-.48+lift*.32);
+ r.grip.rotation.set(-.08+lift*.08,-.16+lift*.16,-.15+lift*.15);
+ root.updateMatrixWorld(true);solveArm(r.arm,root.worldToLocal(r.wrist.getWorldPosition(new THREE.Vector3())));root.updateMatrixWorld(true);
+ if(root.userData.ember)root.userData.ember.material.uniforms.tint.value.setRGB(.85+lift*.15,.09+lift*.35,.015+lift*.04);
+}

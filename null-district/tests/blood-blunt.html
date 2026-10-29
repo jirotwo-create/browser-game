@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Blood and smoking equipment verification</title><link rel="icon" href="../favicon.svg"></head><body><canvas id="raster"></canvas><script type="module">
+import * as T from '../vendor/three.module.js';import {PSXPipeline} from '../graphics/psx-renderer.js';import {createBlood} from '../graphics/blood.js';import {makeBlunt,createSmoke} from '../graphics/blunt.js';import {makeGearPalette} from '../graphics/gear-materials.js';import {poseSmoking} from '../graphics/weapon-rig.js';
+const pipe=new PSXPipeline(document.getElementById('raster'));pipe.resize(960,720);const scene=new T.Scene(),world=new T.Group();scene.add(world);scene.background=new T.Color(.1,.12,.15);const camera=new T.PerspectiveCamera(65,4/3,.1,40);camera.position.set(2,3,4);camera.lookAt(0,1,-1);
+const material=color=>pipe.material(color,undefined,1,1),materials={crimson:material(0xc0242c),bloodPool:material(0x66101c)};
+const wall=new T.Mesh(new T.BoxGeometry(4,4,.2),material(0x888888));wall.position.set(0,2,-2);world.add(wall);const floor=new T.Mesh(new T.PlaneGeometry(12,12),material(0x6c7472));floor.rotation.x=-Math.PI/2;world.add(floor);const blood=createBlood(world,[{mesh:wall}],materials,()=>.43);
+function read(){const gl=pipe.renderer.getContext(),pixels=new Uint8Array(960*720*4);gl.readPixels(0,0,960,720,gl.RGBA,gl.UNSIGNED_BYTE,pixels);return pixels;}
+window.verifyBloodAndBlunt=()=>{
+ pipe.render(scene,camera);const before=read();blood.spray(new T.Vector3(0,1.3,0),new T.Vector3(0,0,-1),{killed:true,sword:true});for(let i=0;i<15;i++)blood.tick(.1);pipe.render(scene,camera);const after=read();let redPixels=0;for(let i=0;i<after.length;i+=4)if(after[i]>after[i+1]*1.8&&after[i]>after[i+2]*1.6&&after[i]!==before[i])redPixels++;
+ const wallStain=world.children.some(o=>o.name==='persistent-blood-splatter'&&o.position.y>1&&o.position.z< -1.8);
+ const gear=new T.Scene(),blunt=makeBlunt(makeGearPalette());gear.add(blunt);let maxWristGap=0,maxLengthError=0;
+ for(const phase of [null,0,.1,.3,.55,.9,1.3,1.45,1.7,2.2,2.8]){
+  poseSmoking(blunt,{time:1,phase});const r=blunt.userData.smokingRig,a=r.arm,s=a.shoulderNode.getWorldPosition(new T.Vector3()),e=a.elbowNode.getWorldPosition(new T.Vector3()),w=a.wristNode.getWorldPosition(new T.Vector3()),hand=r.wrist.getWorldPosition(new T.Vector3());maxWristGap=Math.max(maxWristGap,w.distanceTo(hand));maxLengthError=Math.max(maxLengthError,Math.abs(s.distanceTo(e)-.37),Math.abs(e.distanceTo(w)-.37));
+ }
+ const smoke=createSmoke(gear);for(let i=0;i<300;i++)smoke.tick(1/60,blunt,1.8,true);const smokeBounded=smoke.diagnostics;smoke.clear();
+ for(let i=0;i<100;i++)blood.spray(new T.Vector3(0,1.3,0),new T.Vector3(0,0,-1),{sword:true,killed:true});const bounded={...blood.diagnostics};blood.dispose();
+ return {redPixels,wallStain,maxWristGap,maxLengthError,bounded,smokeBounded,smokeAfterClear:smoke.diagnostics.particles,bloodAfterClear:blood.diagnostics};
+};
+</script></body></html>

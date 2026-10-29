@@ -74,7 +74,7 @@ try{
  const first=await state(),total=Number(process.env.END_CHAPTER)||await p.evaluate(()=>nullDistrict.graphics().chapters.length);let finalEnemies=0;
  for(let chapterIndex=first.level;chapterIndex<=total;chapterIndex++){
   finalEnemies=(await state()).enemies;await chapter();
-  if(chapterIndex<total){assert.equal((await state()).mode,'intermission');const kills=(await state()).kills;await p.click('#next-level');const next=await state();assert.equal(next.level,chapterIndex+1);assert.equal(next.kills,kills);assert.equal(next.health,100);assert.equal(next.ammo,24);assert.deepEqual(next.inventory,['carbine','sword']);assert.equal(next.relays,0);}
+  if(chapterIndex<total){assert.equal((await state()).mode,'intermission');const kills=(await state()).kills;await p.click('#next-level');const next=await state();assert.equal(next.level,chapterIndex+1);assert.equal(next.kills,kills);assert.equal(next.health,100);assert.equal(next.ammo,24);assert.deepEqual(next.inventory,['carbine','sword','blunt']);assert.equal(next.relays,0);}
  }
  assert.equal((await state()).mode,total===5?'won':'intermission');await p.screenshot({path:'/tmp/null17-campaign-victory.png'});assert.deepEqual(errors,[]);console.log(`PASS: real-input combat, navigation, distinct mission chains, sequential chapter transitions, carried inventory/kills and final broadcast victory.`);
  // Restart and chapter select must dispose the old chapter and reset the current one.

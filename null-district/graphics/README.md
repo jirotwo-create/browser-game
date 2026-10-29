@@ -79,3 +79,9 @@ Seventeen authored bilingual ad designs use short Japanese headlines, large Engl
 ### Near-ground relief (1.7)
 
 The road material alone opts into `groundRelief`. A perspective-interpolated view-space position gives the actual per-fragment camera distance, including when looking down. Affine UV strength is 0.12 up to two meters, smoothly returns to 1.0 at seven meters, and always multiplies the global affine toggle. Large pavement triangles therefore retain mild swim at the player’s feet without extreme shearing. Wall and enemy materials default to zero relief. Pixelation, vertex snapping and the native gear pass do not change. The GPU UV test samples near, intermediate and distant triangles, verifies the 12% close blend and full distant affine mapping, and checks unchanged RGB555 output.
+
+### Blood and smoking equipment (1.8)
+
+Blood droplets and irregular triangle-fan ground/wall stains use the world’s existing material pipeline, so they retain affine interpolation, raster snapping and RGB555. Raycasts place wall marks behind impact points; falling droplets leave ground spots. Counts are capped at 96 droplets and 128 stains, with 120-second stain lifetimes and explicit chapter cleanup.
+
+NIGHT LEAF uses a separate smoking hand with an index/middle-finger pinch and the same fixed-length arm solver as the weapons. Its leaf wrapper, spiral seam, ash and animated ember render in the native gear pass. Procedural, translucent smoke planes also render in that pass; time-based emission and a 72-particle cap bound their cost. The gameplay controller handles a 2.8-second puff, one heal at 1.45 seconds, and a 12-second cooldown that cannot be erased by holstering.

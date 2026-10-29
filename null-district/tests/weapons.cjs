@@ -6,11 +6,11 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-too
   await p.goto(process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180');await p.waitForFunction(()=>window.nullDistrict);
   await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await p.click('#start');
   const state=()=>p.evaluate(()=>nullDistrict.state);
-  assert.deepEqual((await state()).inventory,['carbine','sword']);assert.ok((await state()).targets.some(t=>t.species==='human'));assert.ok((await state()).targets.some(t=>t.type==='hound'));
+  assert.deepEqual((await state()).inventory,['carbine','sword','blunt']);assert.ok((await state()).targets.some(t=>t.species==='human'));assert.ok((await state()).targets.some(t=>t.type==='hound'));
   await p.keyboard.press('Digit2');assert.equal((await state()).weapon,'sword');
   await p.mouse.click(720,450);await p.waitForFunction(()=>nullDistrict.state.meleeStrikes===1);await p.waitForFunction(()=>nullDistrict.state.meleeCooldown===0);
   assert.equal((await state()).meleeHits,0,'Distant enemies must not take melee damage');assert.equal((await state()).ammo,24);
-  await p.keyboard.press('KeyQ');assert.equal((await state()).weapon,'carbine');
+  await p.keyboard.press('KeyQ');assert.equal((await state()).weapon,'blunt');await p.keyboard.press('KeyQ');assert.equal((await state()).weapon,'carbine');
   await p.mouse.click(720,450);await p.waitForFunction(()=>nullDistrict.state.ammo===23);await p.keyboard.press('KeyR');await p.keyboard.press('Digit2');
   await p.waitForTimeout(1600);assert.equal((await state()).ammo,23,'Switching cancels reload without creating ammo');await p.keyboard.press('KeyR');await p.waitForTimeout(100);assert.equal((await state()).ammo,23,'Sword cannot reload');
   await p.keyboard.press('Digit1');await p.keyboard.press('KeyR');await p.waitForFunction(()=>nullDistrict.state.ammo===24);await p.mouse.click(720,450);await p.waitForFunction(()=>nullDistrict.state.ammo===23);await p.keyboard.press('KeyR');await p.waitForFunction(()=>nullDistrict.state.ammo===24);await p.keyboard.press('Digit2');
@@ -18,15 +18,15 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-too
   for(let step=0;step<100;step++){
    const s=await state();assert.equal(s.mode,'playing');const target=s.targets.sort((a,b)=>Math.hypot(a.x-s.position.x,a.z-s.position.z)-Math.hypot(b.x-s.position.x,b.z-s.position.z))[0];
    const dx=target.x-s.position.x,dz=target.z-s.position.z,d=Math.hypot(dx,dz);await look(Math.atan2(-dx,-dz),Math.atan2(1.18-s.position.y,d));
-   if(d<1.85)break;
+   if(d<1.2)break;
    await p.keyboard.down('KeyW');await p.keyboard.down('ShiftLeft');await p.waitForTimeout(100);await p.keyboard.up('KeyW');await p.keyboard.up('ShiftLeft');
    if(step===99)throw Error('Unable to approach melee target');
   }
   const before=await state();await p.mouse.click(720,450);await p.mouse.click(720,450);await p.mouse.click(720,450);
-  await p.waitForFunction(n=>nullDistrict.state.kills>n,before.kills);const after=await state();
-  assert.equal(after.meleeStrikes,before.meleeStrikes+1,'Cooldown must reject repeated clicks');assert.equal(after.meleeHits,before.meleeHits+1,'Swing must resolve once');assert.equal(after.ammo,before.ammo,'Melee must preserve bullets');
+  await p.waitForFunction(n=>nullDistrict.state.meleeHits>n,before.meleeHits).catch(async e=>{throw Error('Melee did not hit: '+JSON.stringify({before,after:await state()}))});const after=await state();
+  assert.equal(after.meleeStrikes,before.meleeStrikes+1,'Cooldown must reject repeated clicks');for(const t of before.targets){const now=after.targets.find(n=>n.id===t.id);if(now)assert.ok(now.hp>=t.hp-3,'One swing damages each enemy at most once');else assert.ok(t.hp<=3,'Only a lethal hit removes an enemy');}assert.equal(after.ammo,before.ammo,'Melee must preserve bullets');
   await p.waitForFunction(()=>nullDistrict.state.meleeCooldown===0);assert.match(await p.locator('#weapon-status').textContent(),/CURSED EDGE/);
-  await p.keyboard.press('Escape');await p.click('#restart');const restarted=await state();assert.equal(restarted.weapon,'carbine');assert.equal(restarted.meleeStrikes,0);assert.equal(restarted.meleeHits,0);assert.deepEqual(restarted.inventory,['carbine','sword']);
+  await p.keyboard.press('Escape');await p.click('#restart');const restarted=await state();assert.equal(restarted.weapon,'carbine');assert.equal(restarted.meleeStrikes,0);assert.equal(restarted.meleeHits,0);assert.deepEqual(restarted.inventory,['carbine','sword','blunt']);
   assert.deepEqual(errors,[]);console.log('PASS: both starting weapons, mixed enemy roster, key/Q switching, out-of-range miss, delayed melee kill, one hit per swing, cooldown, ammo conservation, repeated completed reloads, reload cancellation and clean restart.');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

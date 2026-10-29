@@ -2,13 +2,22 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.7.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.8.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.8 adds **blood effects and NIGHT LEAF**, a permanently available marijuana blunt.
+
+- Bullet hits spray blood from the actual impact point. Mournfang produces larger sprays; kills leave pools. Droplets fall onto the ground and nearby walls receive irregular stains. Stains linger for up to two minutes, with bounded particle/decal counts and clean chapter disposal.
+- **3** equips NIGHT LEAF in every chapter. **Left click** raises it to the mouth, draws on the glowing ember, then exhales a drifting smoke cloud. The rolled brown leaf, spiral seam, ash, pinching fingers and articulated arm render with the sharp player-gear pass.
+- A completed puff restores **25 HP**, capped at 100, on a **12-second cooldown** starting when the puff begins. The heal happens on exhale, not on clicking. Holstering or pausing cancels an unfinished inhale without granting health; the cooldown remains. Pausing freezes its timer, and campaign transitions carry its remaining cooldown. It is still available for a cosmetic puff at full health.
+- **Q** cycles carbine → sword → blunt; the mouse wheel cycles in either direction. The HUD shows the third slot, readiness and remaining seconds even while another weapon is held. No ammunition or finite item charges are consumed.
+
+![NIGHT LEAF: glowing ember, animated smoking hand and native-resolution exhale](screenshots/night-leaf-puff.png)
 
 Version 1.7 reworks all five chapters into **38 objectives**, with routes extended by 65%, staged reinforcements and different mission mechanics:
 
@@ -83,14 +92,14 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.7.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.7.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.8.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.8.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
 Requires **64-bit Windows 10 or Windows 11**, a graphics driver with WebGL support, and keyboard/mouse. The executable is an unsigned prototype build. `null-district.zip` is the source code, not the Windows game.
 
 - **WASD** move, **mouse** aim, **left click / hold** fire the carbine or swing MOURNFANG.
-- Both weapons are available immediately: **1** equips the carbine, **2** equips the sword. **Q** or the **mouse wheel** cycles weapons.
+- Both weapons are available immediately: **1** equips the carbine, **2** equips the sword. **3** equips the marijuana blunt; left click smokes it for up to 25 HP on a 12-second cooldown. **Q** or the **mouse wheel** cycles all three items.
 - MOURNFANG has a 2.8m melee reach, a visible wind-up, a sweeping attack and a recovery cooldown. It can cleave nearby enemies for 3 damage, respects cover and never consumes bullets. Switching weapons cancels an unfinished swing or reload; it does not refill the magazine.
 - **Shift** sprint, **Space** jump, **R** reload, **Escape** pause.
 - **F6** compares affine and perspective-correct texture mapping. **F7** toggles vertex snapping; **F8** toggles dithering. These retro effects start enabled.
@@ -117,7 +126,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.7.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.8.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 
@@ -143,6 +152,8 @@ With `npm run preview` running, `node tests/render.cjs` verifies real GPU affine
 `node tests/weapons.cjs` verifies starting inventory, the mixed enemy roster, weapon switching, melee range, one hit per swing, cooldown, lethal melee damage, ammunition preservation, reload cancellation and restart.
 
 `node tests/missions.mjs` checks every mission dependency, damageable core, sword requirement, zone timer, escort pause condition, reinforcement wave and restart.
+
+`node tests/smoking.mjs` verifies heal timing, cooldown, cancellation, health caps and resets. `node tests/blood-blunt.cjs` uses real inputs to shoot an enemy, receive a wound, smoke to recover health, and verify the permanent slot, cooldown and restart. `node tests/blood-visuals.cjs` checks rendered blood pixels, wall splatter, bounded particle/decal counts, cleanup and the smoking arm’s wrist contact and bone lengths through its animation.
 
 `node tests/combat.mjs` checks telegraphs, attack cooldowns, melee facing/range/cover, locked firearm aim, projectile launch and swept collisions. `node tests/roster.cjs` checks all ten actual enemy meshes and animated joints; `tests/roster.html` is the model review scene.
 
