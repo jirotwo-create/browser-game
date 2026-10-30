@@ -2,65 +2,57 @@ import * as T from '../vendor/three.module.js';
 import {mesh,plate,cylinder,loft} from './models.js';
 import {organic,polygonPrism} from './anatomy.js';
 import {createHeldRig,solveHeldRig} from './weapon-rig.js';
+import {pistolSurfaces} from './pistol-surfaces.js';
 export const PISTOL={capacity:12,damage:2,interval:.32,reload:1.7};
 export function makePistol(m){
- const root=createHeldRig(m),r=root.userData.rig,t=r.tool;root.name='K13-IRON-WITNESS-pistol';
- const slide=new T.Group();t.add(slide);r.slide=slide;
- mesh(slide,loft([[-.405,.066,.056,.32],[-.36,.12,.086,.3],[-.23,.106,.078,.3],[-.19,.126,.09,.28],[.045,.116,.084,.32],[.125,.076,.058,.32]],'z'),m.pistolSteel,0,.17,0);
- mesh(t,loft([[-.32,.07,.056,.35],[-.23,.095,.065,.3],[-.12,.073,.052,.3],[.06,.095,.062,.3],[.115,.055,.045,.35]],'z'),m.pistolFrame,0,.105,0);
- const grip=mesh(t,organic([[-.17,.031,.039,0,.05],[-.12,.037,.043,0,.035],[-.03,.037,.043],[.065,.033,.041]],8),m.glove);grip.name='raked-pistol-grip';
- const mag=mesh(t,loft([[-.19,.076,.085],[-.168,.072,.078]]),m.pistolFrame,0,0,.05);r.magazine=mag;
- cylinder(t,m.black,.028,.075,9,0,.17,-.389).rotation.x=Math.PI/2;
- cylinder(t,m.edge,.034,.014,9,0,.17,-.423).rotation.x=Math.PI/2;
- const bore=cylinder(t,m.black,.021,.017,9,0,.17,-.433);bore.rotation.x=Math.PI/2;
- // Recessed ejection port, chamber block and exposed side mechanism.
- plate(slide,m.black,.008,.036,.089,.052,.184,-.05);plate(slide,m.edge,.009,.024,.052,.056,.18,-.06);
+ const root=createHeldRig(m),r=root.userData.rig,t=r.tool,s=pistolSurfaces();root.name='K13-cold-chrome-long-barrel-pistol';
+ const slide=new T.Group();slide.name='long-chrome-receiver';t.add(slide);r.slide=slide;
+ // A long exposed six-sided barrel emerging from a broad, faceted silver body.
+ // The rear is deliberately heavy and close in the first-person projection.
+ mesh(slide,loft([[-.285,.069,.058,.3],[-.235,.100,.078,.25],[-.06,.112,.088,.23],[.075,.126,.095,.25],[.125,.096,.078,.24]],'z'),s.chrome,0,.153,0).name='silver-sloped-receiver';
+ mesh(t,loft([[-.255,.066,.04,.25],[-.19,.084,.054,.3],[.09,.086,.058,.25],[.13,.056,.04,.28]],'z'),s.dark,0,.092,0);
+ mesh(t,loft([[-.635,.032,.034,.35],[-.57,.038,.04,.35],[-.315,.046,.048,.35],[-.235,.054,.052,.3]],'z'),s.barrel,0,.158,0).name='exposed-faceted-barrel';
+ const collar=cylinder(t,s.chrome,.033,.049,6,0,.158,-.573);collar.rotation.x=Math.PI/2;collar.name='silver-front-barrel-collar';
+ const rim=cylinder(t,s.edge,.022,.012,6,0,.158,-.64);rim.rotation.x=Math.PI/2;
+ const bore=cylinder(t,s.bore,.014,.013,8,0,.158,-.648);bore.rotation.x=Math.PI/2;
+ // Barrel ribs are part of the original mechanical silhouette, with no saw teeth.
+ for(const z of [-.535,-.495]){const ring=cylinder(t,s.dark,.024,.012,6,0,.158,z);ring.rotation.x=Math.PI/2;}
+ plate(t,s.chrome,.027,.047,.025,0,.202,-.566).name='tall-pale-front-post';
+ plate(t,s.dark,.012,.018,.014,0,.234,-.566);
+ // Broad receiver cheeks, ink-dark recesses and bright hard polygon edges.
  for(const side of [-1,1]){
-  for(let i=0;i<6;i++){const s=plate(slide,m.black,.008,.047,.008,side*.052,.17,.025-i*.012);s.rotation.x=.13;}
-  plate(slide,m.edge,.006,.011,.29,side*.050,.204,-.15);
-  const cheek=mesh(t,polygonPrism([[-.027,-.14],[.027,-.14],[.035,.025],[-.025,.028]],.008,.004),m.pistolFrame,side*.037,0,.015);cheek.rotation.y=side*Math.PI/2;
-  for(const y of [-.13,-.045]){const pin=cylinder(t,m.edge,.006,.008,6,side*.045,y,.035);pin.rotation.z=Math.PI/2;}
+  const cheek=mesh(slide,polygonPrism([[-.235,.117],[-.218,.181],[-.105,.195],[.073,.194],[.118,.169],[.10,.116],[-.04,.107]],.006,.002),s.chrome,side*.057,0,0);cheek.rotation.y=-Math.PI/2;cheek.name='cold-silver-receiver-cheek';
+  for(let i=0;i<5;i++){const rib=plate(slide,s.dark,.009,.051,.009,side*.061,.156,.065-i*.02);rib.rotation.x=-.22;plate(slide,s.edge,.01,.04,.003,side*.063,.158,.069-i*.02);}
+  plate(slide,s.edge,.005,.009,.245,side*.057,.198,-.065);
+  for(const z of [-.16,.075]){const pin=cylinder(slide,s.edge,.006,.008,6,side*.063,.141,z);pin.rotation.z=Math.PI/2;}
  }
- // Salvaged industrial slide: cut steel shoulders, raised ribs and broken-tooth rails.
- // These are separate flat polygon faces; silhouette detail survives without a noise filter.
- for(const side of [-1,1]){
-  const cheek=mesh(slide,polygonPrism([[-.39,.149],[-.35,.21],[-.25,.211],[-.22,.19],[-.13,.221],[.035,.212],[.116,.181],[.088,.133],[-.21,.126]],.009,.003),m.pistolSteel,side*.059,0,0);
-  cheek.rotation.y=-Math.PI/2;cheek.name='jagged-slide-cheek';
-  for(let i=0;i<5;i++){
-   const tooth=mesh(slide,polygonPrism([[-.012,0],[.014,0],[.006,.023],[-.007,.034]],.018,.002),m.pistolFrame,side*.049,.205,-.17+i*.049);tooth.rotation.y=side*.24;tooth.name='cut-steel-slide-tooth';
-  }
-  for(let i=0;i<3;i++){const strap=plate(slide,m.pistolFrame,.013,.066,.021,side*.061,.17,-.31+i*.03);strap.rotation.x=-.3;}
-  const brace=plate(t,m.pistolSteel,.012,.058,.105,side*.045,.084,-.055);brace.rotation.x=.22;
-  for(const z of [-.27,-.13,.028]){const bolt=cylinder(slide,m.edge,.007,.009,5,side*.067,.163,z);bolt.rotation.z=Math.PI/2;}
- }
- const nose=mesh(slide,loft([[-.425,.083,.058,.38],[-.38,.13,.085,.33]],'z'),m.pistolFrame,0,.17,0);nose.name='chamfered-impact-shroud';
- // Exposed recoil spring housing and a hooked, faceted hammer at the rear.
- cylinder(t,m.pistolSteel,.016,.25,6,0,.109,-.23).rotation.x=Math.PI/2;
- mesh(t,polygonPrism([[-.024,0],[.026,0],[.032,.036],[.012,.055],[-.021,.041]],.035,.004),m.pistolFrame,0,.174,.13).name='hooked-hammer';
- // Rear slide plate, fasteners and a painted maker's serial label.
- plate(slide,m.pistolFrame,.056,.046,.012,0,.17,.115);
- for(const x of [-.02,.02]){const screw=cylinder(slide,m.edge,.005,.008,6,x,.181,.127);screw.rotation.x=Math.PI/2;}
- mesh(slide,new T.PlaneGeometry(.045,.022),m.pistolSerial,0,.154,.129);
- plate(slide,m.black,.022,.014,.021,0,.207,.10);
- // A deliberate purple rear sight and thin pale front blade echo the reference's contrast.
- for(const x of [-.034,.034])plate(slide,m.pistolSight,.012,.014,.018,x,.215,.05);
- plate(slide,m.pistolSight,.027,.007,.014,0,.212,.055);plate(slide,m.bone,.010,.032,.016,0,.226,-.325);
- for(const [a,b]of [[[.0,.08,-.085],[.0,.08,-.17]],[[.0,.08,-.17],[.0,-.005,-.155]],[[.0,-.005,-.155],[.0,-.02,-.035]]]){const d=new T.Vector3(...b).sub(new T.Vector3(...a)),tube=cylinder(t,m.pistolFrame,.008,d.length(),6,...new T.Vector3(...a).addScaledVector(d,.5).toArray());tube.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());}
- const trigger=cylinder(t,m.edge,.007,.035,6,.012,.065,-.14);trigger.rotation.x=-.25;
+ plate(slide,s.dark,.007,.027,.082,.060,.177,-.13);plate(slide,s.chrome,.009,.013,.041,.064,.179,-.14);
+ // Rear cap is weathered silver too; no large label facing the camera.
+ plate(slide,s.chrome,.089,.069,.012,0,.153,.13);
+ plate(slide,s.dark,.046,.013,.014,0,.169,.139);
+ for(const x of [-.033,.033]){const screw=cylinder(slide,s.dark,.005,.007,6,x,.133,.139);screw.rotation.x=Math.PI/2;}
+ // One conspicuous, solid violet rear sight is the reference's color anchor.
+ const sight=mesh(slide,loft([[-.018,.060,.028,.18],[.016,.047,.025,.18]]),s.violet,0,.215,-.11);sight.name='prominent-violet-rear-sight';
+ plate(slide,s.dark,.014,.017,.03,0,.225,-.11);
+ mesh(t,organic([[-.17,.030,.038,0,.05],[-.12,.036,.042,0,.035],[-.03,.035,.042],[.065,.032,.04]],8),s.grip).name='dark-raked-grip';
+ for(const side of [-1,1]){for(let i=0;i<6;i++)plate(t,s.barrel,.006,.008,.052,side*.036,-.12+i*.022,.034-i*.004);}
+ const mag=mesh(t,loft([[-.19,.075,.081],[-.169,.068,.076]]),s.dark,0,0,.05);r.magazine=mag;
+ // The closed trigger guard and exact trigger contact preserve the two-hand grip.
+ for(const [a,b]of [[[0,.08,-.085],[0,.08,-.17]],[[0,.08,-.17],[0,-.005,-.155]],[[0,-.005,-.155],[0,-.02,-.035]]]){const d=new T.Vector3(...b).sub(new T.Vector3(...a)),tube=cylinder(t,s.chrome,.007,d.length(),5,...new T.Vector3(...a).addScaledVector(d,.5).toArray());tube.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());}
+ const trigger=cylinder(t,s.dark,.007,.035,6,.012,.065,-.14);trigger.rotation.x=-.25;
  r.trigger=new T.Object3D();r.trigger.position.set(.018,.065,-.14);t.add(r.trigger);
- r.muzzle=new T.Object3D();r.muzzle.position.set(0,.17,-.45);t.add(r.muzzle);
- // Project each face coherently: no repeated triangle atlas on the slide's end cap.
- slide.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal,u=g.attributes.uv;if(!u||o.material===m.pistolSerial)return;g.computeBoundingBox();const b=g.boundingBox,size=b.getSize(new T.Vector3());
-  for(let i=0;i<p.count;i++){const x=(p.getX(i)-b.min.x)/Math.max(.001,size.x),y=(p.getY(i)-b.min.y)/Math.max(.001,size.y),z=(p.getZ(i)-b.min.z)/Math.max(.001,size.z);
-   if(Math.abs(n.getZ(i))>.7)u.setXY(i,.78+x*.2,.02+y*.12);else if(Math.abs(n.getY(i))>.7)u.setXY(i,z,x);else u.setXY(i,z,y);
-  }u.needsUpdate=true;
+ r.muzzle=new T.Object3D();r.muzzle.position.set(0,.158,-.66);t.add(r.muzzle);
+ // Project the painted receiver once in assembled coordinates, not once per tiny rib.
+ slide.updateMatrixWorld(true);const inv=slide.matrixWorld.clone().invert();
+ slide.traverse(o=>{if(!o.isMesh||o.material!==s.chrome)return;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal,u=g.attributes.uv;if(!u)return;const transform=inv.clone().multiply(o.matrixWorld),normal=new T.Matrix3().getNormalMatrix(transform);
+  for(let i=0;i<p.count;i++){const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(transform),a=new T.Vector3().fromBufferAttribute(n,i).applyMatrix3(normal);if(Math.abs(a.z)>.7)u.setXY(i,v.x/.13+.5,(v.y-.10)/.11);else if(Math.abs(a.y)>.7)u.setXY(i,(v.z+.285)/.41,v.x/.13+.5);else u.setXY(i,(v.z+.285)/.41,(v.y-.10)/.11);}u.needsUpdate=true;
  });
- root.userData.asset={name:'K-13 / IRON WITNESS',style:'salvaged PSX steel / jagged faceted slide / magenta sight',capacity:12,damage:2,features:['jagged steel cheeks','cut steel teeth','impact shroud','exposed recoil housing','hooked hammer','point-filtered painted metal','beveled slide','open muzzle','ejection port','slide lock','serrated rear grip','two-handed support','animated magazine']};posePistol(root);return root;
+ root.userData.asset={name:'K-13 / IRON WITNESS',style:'cold silver PSX long-barrel sidearm / painted blue-white steel / violet sight',capacity:12,damage:2,features:['long exposed six-sided barrel','heavy sloped silver receiver','dedicated blue-white distressed chrome paint','prominent violet sight','dark grip','open muzzle','ejection port','slide lock','two-handed support','animated magazine']};posePistol(root);return root;
 }
 export function posePistol(root,{time=0,walk=0,recoil=0,reload=0,empty=false}={}){
  const r=root.userData.rig,progress=reload>0?1-reload/PISTOL.reload:0,reach=reload>0?Math.sin(progress*Math.PI):0;
- r.grip.position.set(.16+Math.sin(walk*.5)*.004,-.345-Math.abs(Math.cos(walk))*.004-reach*.025,-.57+recoil*.5);
- r.grip.rotation.set(-.04-recoil*1.6,.045,-.02-reach*.2);
+ r.grip.position.set(.27+Math.sin(walk*.5)*.004,-.38-Math.abs(Math.cos(walk))*.004-reach*.025,-.56+recoil*.5);
+ r.grip.rotation.set(-.02-recoil*1.6,.08,-.035-reach*.2);
  r.support.position.set(-reach*.01,-.018-reach*.3,.035+reach*.02);r.support.rotation.set(0,reach*.5,-reach*.25);
  r.slide.position.z=empty&&(!reload||progress<.85)?.045:Math.max(0,recoil*.31);
  r.magazine.position.y=-reach*.15;r.mode=reload>0?'reload':empty?'slide-locked':'ready';solveHeldRig(root);

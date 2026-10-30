@@ -113,3 +113,9 @@ The K-13 retains its native foreground pass and low, distant ready pose. Its aut
 See [Art direction, source notes and verification](ART-DIRECTION.md). The image atlas is loaded once as a local ES-module dependency before any material palette can be created; the custom desktop protocol explicitly allows local PNG assets. 512px world / 256px character and gear maps carry the new material detail. The actual game renders at 480 lines; `PSXPipeline`'s default and its affine/color shader are unchanged. Palette-owned chapter floor maps survive level disposal and are selected on each load/restart.
 
 The portable build retains only Electron's English application locale to offset the bundled photographic atlas size. The game's Japanese font and all signs remain packaged locally; this does not change in-game Japanese text.
+
+## 1.13 — reference-led K-13 rebuild
+
+`pistol.js` replaces the previous short, dark, toothed slide with a long exposed six-sided barrel, tapered silver receiver, dark mechanical recesses and a large violet rear sight. Hidden construction is inferred from the partial reference. `pistol-surfaces.js` authors a dedicated 256px blue-white distressed steel map; the receiver's UVs are projected in assembled slide coordinates so adjacent pieces share paint scale. No camera-facing serial sticker remains. Barrel and grip stay fixed while the receiver slides, and the existing trigger/wrist targets are retained. The native foreground pass remains unchanged.
+
+The framebuffer test now also requires visible cold-silver pixels and a visible violet sight, alongside the existing 36-pose IK/clearance and native-isolation checks. The three-angle study and in-game captures show the actual runtime geometry/material, not concept art.
