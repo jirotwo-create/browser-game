@@ -1,7 +1,7 @@
 import * as T from '../vendor/three.module.js';
 // Raised triangular planes describe form; all original boundaries and UVs stay
 // joined. Applied only to character/gear meshes, never to the environment.
-export function chisel(geometry,depth=.055){
+export function chisel(geometry,depth=.055,contrast=1){
  const g=geometry.index?geometry.toNonIndexed():geometry.clone(),p=g.attributes.position,uv=g.attributes.uv,col=g.attributes.color;
  const positions=[],uvs=[],colors=[],a=new T.Vector3(),b=new T.Vector3(),c=new T.Vector3();
  for(let i=0;i<p.count;i+=3){
@@ -11,13 +11,13 @@ export function chisel(geometry,depth=.055){
   const tex=[0,0],shade=[0,0,0];for(let j=0;j<3;j++){tex[0]+=(uv?.getX(i+j)||0)/3;tex[1]+=(uv?.getY(i+j)||0)/3;for(let k=0;k<3;k++)shade[k]+=(col?col.array[(i+j)*3+k]:1)/3;}
   for(let edge=0;edge<3;edge++)for(const index of [edge,(edge+1)%3,-1]){
    const v=index<0?center:[a,b,c][index];positions.push(v.x,v.y,v.z);uvs.push(index<0?tex[0]:uv?.getX(i+index)||0,index<0?tex[1]:uv?.getY(i+index)||0);
-   for(let k=0;k<3;k++)colors.push((index<0?shade[k]:col?col.array[(i+index)*3+k]:1)*[.82,1,.91][edge]);
+   for(let k=0;k<3;k++)colors.push((index<0?shade[k]:col?col.array[(i+index)*3+k]:1)*(1-(1-[.82,1,.91][edge])*contrast));
   }
  }
  g.dispose();const result=new T.BufferGeometry();result.setAttribute('position',new T.Float32BufferAttribute(positions,3));result.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));result.setAttribute('color',new T.Float32BufferAttribute(colors,3));result.computeVertexNormals();return result;
 }
-export function chiselCharacter(root){
- root.traverse(o=>{if(!o.isMesh)return;const original=o.geometry;o.geometry=chisel(original);original.dispose();});
+export function chiselCharacter(root,{depth=.055,contrast=1}={}){
+ root.traverse(o=>{if(!o.isMesh)return;const original=o.geometry;o.geometry=chisel(original,depth,contrast);original.dispose();});
  // Merge only siblings sharing a material. Joint and prop transforms survive.
  root.traverse(group=>{
   const batches=new Map();for(const child of [...group.children])if(child.isMesh&&!child.userData.independentPose){let batch=batches.get(child.material);if(!batch)batches.set(child.material,batch=[]);batch.push(child);}

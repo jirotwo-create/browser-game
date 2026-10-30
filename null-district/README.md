@@ -2,13 +2,26 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.9.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.10.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.10 cleans up the environment, rebuilds the seven human NPC types and lowers the pistol.
+
+- The floor uses restrained asphalt paint with designed cracks, repair patches and abrasion marks. Dense random grain layers have been removed from road maps and greatly reduced on walls and hardware. The film-grain overlay is disabled, scanlines are faint, and ordered dithering starts off; **F8** enables a subtle version if desired.
+- The world now renders at **360 lines**, up from 240, with nearest-neighbor presentation. Material details, distant signs and human faces read more clearly while retaining pixel edges, RGB555 colors, vertex snapping and the existing affine warping/close-ground relief. Player equipment still renders at native resolution.
+- All **seven human archetypes** use newly authored slimmer anatomy, revised head proportions, jaw/cheek geometry, modeled eyes/ears, segmented fingers, tailored clothing, belt fittings and boots. New 128px facial/clothing/armor paint adds readable features without random speckles. Softer triangular sculpting retains deliberate polygonal planes. Their distinct gear, health, combat roles and animations remain; the three monster types retain their geometry.
+- **K-13 pistol** ready position is roughly 10 cm lower and 17 cm farther from the eye. It occupies less of the screen, with both wrists still attached to fixed-length arms throughout recoil/reload. Its 12-round magazine, semi-auto firing and two-damage hits are unchanged.
+
+![Cleaner neon street and lower pistol ready position](screenshots/clearer-neon-street.png)
+
+![Clean tarmac retains repair patches and cracks without dense grain](screenshots/clean-tarmac.png)
+
+![Rebuilt slimmer human archetypes, alongside the unchanged monsters](screenshots/slim-human-roster.png)
 
 Version 1.9 adds the **K-13 IRON WITNESS pistol** and a refinement pass on the player and all five environments.
 
@@ -100,13 +113,13 @@ All chapters are selectable from the main menu. Starting Chapter 02 directly is 
 | Breachborn | Ossuary revenant | Skeletal, jointed undead claw fighter; 4 HP |
 | Breachborn | Cathedral winged sentinel | Large horned stone demon with animated wings and orbs; 9 HP |
 
-These are actual polygonal meshes, not sprite substitutions. Seven human types retain exposed sculpted faces; three monster types use independent skeletons/silhouettes. Body counts range from 1,578 to 6,468 triangles. Melee and ranged attacks have visible wind-ups and expanding ground warnings. Moving out of reach, strafing the locked aim or taking cover can evade attacks. Bolts and orbs travel through the world and stop at solid cover; swept collision prevents fast projectiles tunneling through the player. Targeting an enemy displays its faction, name and remaining health.
+These are actual polygonal meshes, not sprite substitutions. Seven human types retain exposed sculpted faces; three monster types use independent skeletons/silhouettes. Body counts range from 1,578 to 11,268 triangles, with the redesigned humans around 10,500–11,300 triangles. Melee and ranged attacks have visible wind-ups and expanding ground warnings. Moving out of reach, strafing the locked aim or taking cover can evade attacks. Bolts and orbs travel through the world and stop at solid cover; swept collision prevents fast projectiles tunneling through the player. Targeting an enemy displays its faction, name and remaining health.
 
 The two starting weapons retain their articulated first-person grips and fixed-length arm IK. MOURNFANG animates its talons, runes, ruby, linked chains and steel sheen at rest, and alternates slashes with a blade-following trail. Armored enemies need two sword hits. Dreadwake remains untouched.
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.9.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.9.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.10.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.10.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -140,7 +153,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.9.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.10.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 
@@ -166,6 +179,8 @@ With `npm run preview` running, `node tests/render.cjs` verifies real GPU affine
 `node tests/weapons.cjs` verifies starting inventory, the mixed enemy roster, weapon switching, melee range, one hit per swing, cooldown, lethal melee damage, ammunition preservation, reload cancellation and restart.
 
 `node tests/missions.mjs` checks every mission dependency, damageable core, sword requirement, zone timer, escort pause condition, reinforcement wave and restart.
+
+`node tests/clarity.cjs` checks the floor’s high-frequency noise and structural contrast, clean default presentation, optional light dithering, 360-line raster and measured human torso slimming. The pistol art test also checks that the weapon stays below the center of view and farther from the eye.
 
 `node tests/pistol.cjs` exercises actual two-damage hits, blood, semi-auto held-trigger behavior, magazine independence, reload cancellation, empty slide lock and restart. `node tests/pistol-art.cjs` verifies 36 recoil/reload/empty poses, fixed arm lengths, trigger and wrist contact, visible walking body pixels, point-filtered painted maps and native-resolution isolation.
 

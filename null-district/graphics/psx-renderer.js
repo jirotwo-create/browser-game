@@ -73,12 +73,12 @@ void main() {
 }`;
 
 export class PSXPipeline {
-  constructor(canvas, { height = 240 } = {}) {
+  constructor(canvas, { height = 240, ditherStrength = 1 } = {}) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(1);
     // Palette values are authored in display space, like the original 5-bit GPU.
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    this.height = height;
+    this.height = height;this.ditherStrength=ditherStrength;
     this.options = { affine: true, vertexSnap: true, dither: true };
     this.size = new THREE.Vector2(320, height);
     this.materials = new Set();
@@ -94,7 +94,7 @@ export class PSXPipeline {
     this.post = new THREE.Scene();
     this.postCamera = new THREE.Camera();
     this.postMaterial = new THREE.ShaderMaterial({
-      uniforms:{ frame:{value:this.target.texture},dither:{value:1} },
+      uniforms:{ frame:{value:this.target.texture},dither:{value:ditherStrength} },
       vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
       fragmentShader:postFragment,depthTest:false,depthWrite:false,
     });
@@ -117,7 +117,7 @@ export class PSXPipeline {
   configure(changes) {
     Object.assign(this.options,changes);
     for(const m of this.materials){m.uniforms.affine.value=Number(this.options.affine);m.uniforms.vertexSnap.value=Number(this.options.vertexSnap)}
-    this.postMaterial.uniforms.dither.value=Number(this.options.dither);
+    this.postMaterial.uniforms.dither.value=Number(this.options.dither)*this.ditherStrength;
   }
   render(scene,camera,foreground,foregroundCamera) {
     const r=this.renderer;r.setRenderTarget(this.target);r.autoClear=true;r.render(scene,camera);

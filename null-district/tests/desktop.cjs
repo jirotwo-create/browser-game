@@ -23,7 +23,7 @@ const path = require('node:path');
     assert.equal(graphics.guard.species, 'human');
     assert.ok(graphics.sword.triangles > 300);
     assert.deepEqual(await page.evaluate(() => nullDistrict.state.inventory), ['carbine','sword','blunt','pistol']);
-    assert.equal(graphics.resolution[1], 240);assert.ok(graphics.gearResolution[1]>graphics.resolution[1]);assert.equal(graphics.gearPass,'native / perspective / unquantized');
+    assert.equal(graphics.resolution[1], 360);assert.ok(graphics.gearResolution[1]>graphics.resolution[1]);assert.equal(graphics.gearPass,'native / perspective / unquantized');
     assert.ok(graphics.guard.triangles > 100 && graphics.guard.triangles < 14000);
     await page.keyboard.press('F6');
     assert.equal(await page.evaluate(() => nullDistrict.graphics().affine), false);

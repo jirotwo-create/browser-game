@@ -93,3 +93,11 @@ NIGHT LEAF uses a separate smoking hand with an index/middle-finger pinch and th
 `player-body.js` supplies a headless first-person courier torso, utility belt, trouser legs, knee plates and armored boots. Its inverse pitch keeps the body below the player when looking down; hip/knee animation follows the walking cycle. Reinforced hands and additional sleeve cross-sections share the same materials and wrist constraints across all held items.
 
 World surface maps expand to 128px for environment materials while retaining nearest filtering; broad stains receive a finer layer of aggregate/chips. `set-dressing.js` adds rigid cabinets, pipes, grilles, paper layers and ground detail, flattens them and batches by material. Solid cabinet footprints participate in collision and cover. Route tests flood every chapter and verify that all objectives, exits, spawns and the full courier corridor remain clear.
+
+### Clarity / human anatomy / pistol framing (1.10)
+
+The game selects a 360-line world target; reusable pipeline fixtures retain their 240-line default. RGB555, affine interpolation, vertex snapping and nearest upscaling are unchanged. The game starts with ordered dithering disabled and a zero-opacity film-grain layer. F8 enables a quarter-strength dither; scanlines remain faint. Floor paint replaces stacked random grain with sparse designed seams and patches. `clarity.cjs` measures road-texture high-frequency contrast and verifies that structure remains, rather than accepting a blank texture.
+
+`human-npcs.js` builds new anatomical humans with narrower torsos, shoulders, limbs and heads, modeled facial parts and segmented hands. `human-surfaces.js` supplies clear 128px face, skin, cloth, robe and armor maps. Human chisel depth/contrast are reduced to keep clean planes; monsters retain their previous sculpt settings. The seven human meshes contain roughly 10,500–11,300 triangles after joint-preserving batching. Roster tests verify actual proportions, independent props, articulation and geometry budgets.
+
+Pistol ready grip shifts from (.145, -.24, -.40) to (.16, -.345, -.57) before idle motion and IK. GPU/model tests verify that its top remains below the center of the view, that it sits farther from the camera, and that wrist/trigger contacts and arm lengths survive 36 recoil/reload/empty poses.

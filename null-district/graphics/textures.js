@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import {paintHumanSurface} from './human-surfaces.js';
 
 // 128px environment paint studies; 64px character cloth and skin. Point-filtered throughout.
 // Nearest-filtered paint; close pavement receives the pipeline's ground-only relief.
@@ -12,8 +13,8 @@ export function paintTexture(kind) {
  rect(base,0,0,64,64);
  // Large stains first, followed by grain and chipped edges: the low-resolution
  // result keeps tonal detail instead of the previous clean cartoon panels.
- for(let i=0;i<95;i++){const dark=random()>.3;rect(dark?'#09100c18':'#c8c6ae0d',random()*64,random()*64,3+random()*19,2+random()*12)}
- for(let i=0;i<1300;i++){const v=random()>.5?'#11171025':'#e0dcc823';rect(v,Math.floor(random()*64),Math.floor(random()*64),random()>.8?2:1,1)}
+ for(let i=0;i<(size===128?24:95);i++){const dark=random()>.3;rect(dark?'#09100c18':'#c8c6ae0d',random()*64,random()*64,3+random()*19,2+random()*12)}
+ for(let i=0;i<(size===128?100:1300);i++){const v=random()>.5?(size===128?'#1117100a':'#11171025'):(size===128?'#e0dcc809':'#e0dcc823');rect(v,Math.floor(random()*64),Math.floor(random()*64),random()>.8?2:1,1)}
  const drip=(amount,color)=>{for(let i=0;i<amount;i++)rect(color,Math.floor(random()*64),random()*35,1+random()*3,6+random()*26)};
  const scratch=(amount,color)=>{for(let i=0;i<amount;i++){const a=random()*64,b=random()*64;rect(color,a,b,2+random()*10,1)}};
  if(kind==='brick'||kind==='ceramic'){
@@ -46,15 +47,16 @@ export function paintTexture(kind) {
   for(const [a,b]of [[6,11],[51,23],[20,52]]){rect('#333c46',a,b,7,5);rect('#b3afa0',a,b,6,1);rect('#73787b',a+1,b+2,3,1);}
 
  }else if(kind==='road'){
-  // Patched tarmac, not regular cobblestone or a fantasy tile grid.
-  x.fillStyle='#1b2421';x.beginPath();x.moveTo(0,41);x.lineTo(17,36);x.lineTo(31,41);x.lineTo(64,32);x.lineTo(64,34);x.lineTo(31,43);x.lineTo(17,38);x.lineTo(0,43);x.fill();
-  for(let i=0;i<10;i++){rect('#101d1a35',random()*64,random()*64,7+random()*18,2+random()*4)}
-  rect('#171e19',42,5,15,9);for(let i=0;i<6;i++)rect('#727968',43+i*2,6,1,7);
-  scratch(20,'#8c8b6d33');rect('#7c765647',1,50,15,2);
-  rect('#1a2432',3,4,22,16);rect('#54606a',3,4,22,1);rect('#192532',3,19,22,1);
-  x.strokeStyle='#6a6c6b';x.lineWidth=1;x.beginPath();x.moveTo(28,2);x.lineTo(32,14);x.lineTo(26,23);x.lineTo(33,28);x.stroke();
-  for(let i=0;i<45;i++)rect(i%4?'#76808355':'#afb2a361',random()*64,random()*64,1,1);
+  // Restrained tarmac: designed repair seams and fine cracks, without sand/noise clouds.
+  rect('#3b3d42',0,0,64,64);
+  rect('#34373e',3,6,22,15);rect('#4a515b',3,6,22,.5);rect('#262d35',3,21,22,.5);
+  x.fillStyle='#34373e';x.beginPath();for(const [i,p]of [[38,32],[53,30],[58,35],[56,49],[48,53],[37,48]].entries())i?x.lineTo(...p):x.moveTo(...p);x.closePath();x.fill();
+  // Sparse, connected abrasion strokes replace the old high-contrast salt-and-pepper layer.
+  for(let i=0;i<22;i++){const a=random()*64,b=random()*64;rect(i%3?'#62666a28':'#20273130',a,b,1+random()*2,.35);}
 
+  x.strokeStyle='#19232e';x.lineWidth=.55;x.beginPath();x.moveTo(0,37);x.lineTo(18,33);x.lineTo(34,36);x.lineTo(46,31);x.lineTo(64,33);x.stroke();
+  x.strokeStyle='#202a35';x.lineWidth=.45;x.beginPath();x.moveTo(30,0);x.lineTo(32,13);x.lineTo(28,23);x.lineTo(34,27);x.lineTo(33,33);x.moveTo(28,23);x.lineTo(22,20);x.stroke();
+  rect('#5a5c5970',6,56,9,.5);rect('#444b54',40,12,14,.5);
  }else if(kind==='windows'){
   for(let j=0;j<2;j++)for(let i=0;i<3;i++){const a=i*21+3,b=j*32+3;rect('#202a23',a-1,b-1,17,26);rect('#111c18',a,b,14,22);rect((i+j)%3?'#283b30':'#a7a17a',a+1,b+1,12,18);rect('#89947850',a+2,b+1,2,14);rect('#383f32',a+6,b,2,22);rect('#3d4435',a,b+11,14,2);rect('#80816b',a-2,b+24,19,2)}
   drip(25,'#17261b75');
@@ -82,17 +84,15 @@ export function paintTexture(kind) {
   scratch(80,kind==='blade'?'#c5c3aa72':'#c1bea14f');drip(16,'#14231958');
   if(kind==='blade'){rect('#1b2520',24,0,5,64);rect('#9b9d8170',45,0,1,64);scratch(20,'#3d141687')}
  }
- // Fine aggregate sits over the broad painted structure at the actual texture resolution.
- // This improves close surfaces without turning every pixel into uniform noise.
- if(size===128){x.setTransform(1,0,0,1,0,0);for(let i=0;i<900;i++){x.fillStyle=i%4?'#d3d4cb2d':'#07102155';x.fillRect(Math.floor(random()*128),Math.floor(random()*128),1,1);}
-  if(kind==='road'){x.strokeStyle='#707b8645';x.lineWidth=1;for(let i=0;i<12;i++){const a=random()*128,b=random()*128;x.beginPath();x.moveTo(a,b);x.lineTo(a+4,b+1);x.lineTo(a+6,b+4);x.stroke();}}
- }
+ // Sparse chips on walls and hardware; road and puddles deliberately have no grain pass.
+ if(size===128&&!['road','puddle'].includes(kind)){x.setTransform(1,0,0,1,0,0);for(let i=0;i<55;i++){x.fillStyle=i%4?'#d3d4cb12':'#07102124';x.fillRect(Math.floor(random()*128),Math.floor(random()*128),1,1);}}
  const t=new THREE.CanvasTexture(c);t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=1;t.name=`grunge-${size}-${kind}`;return t;
 }
 export function makePalette(pipeline){
  // Only the pavement material opts into near-ground affine relief.
  pipeline.fogColor.set('#252b3b').convertLinearToSRGB();
  const textures=Object.fromEntries(['wall','windows','road','hazard','coat','shutter','circuit','metal','rust','skin','glove','blade','leather','brick','ceramic','poster','drain','puddle'].map(k=>[k,paintTexture(k)]));
+ for(const kind of ['face','skin','cloth','armor','robe'])textures['npc-'+kind]=paintHumanSurface(kind);
  const m=(color,texture,unlit=0)=>pipeline.material(color,textures[texture],1,unlit,{groundRelief:{value:['road','drain','puddle'].includes(texture)?1:0}});
- return {textures,materials:{brick:m(0xc4b4b8,'brick'),ceramic:m(0xbccbd2,'ceramic'),poster:m(0xd5d2c3,'poster'),drain:m(0xabb9c8,'drain'),puddle:m(0x8ea4ba,'puddle'),neonCyan:m(0x21edff,undefined,1),neonPink:m(0xff298c,undefined,1),neonViolet:m(0x9d4dff,undefined,1),neonAmber:m(0xffa33d,undefined,1),neonGreen:m(0x69ffac,undefined,1),arcane:m(0xc04bff,undefined,1),stone:m(0x99958e,'wall'),bone:m(0xd0c7a0,'skin'),robe:m(0x6b3153,'coat'),beast:m(0x773c53,'leather'),wall:m(0xc3c6d2,'wall'),windows:m(0xb2b4a0,'windows'),road:m(0xaab8ca,'road'),metal:m(0xc0c9d5,'metal'),rust:m(0xc9b1a4,'rust'),hazard:m(0xb5ad81,'hazard'),coat:m(0xb2b7a2,'coat'),glove:m(0xafb29f,'glove'),shutter:m(0xb8bca4,'shutter'),circuit:m(0xa8b893,'circuit',1),dark:m(0x7e8575,'coat'),black:m(0x6d766a,'glove'),skin:m(0xd2c7ad,'skin'),skinDeep:m(0x9c8b71,'skin'),skinPale:m(0xe0d5bd,'skin'),eye:pipeline.material(0x9e9f8c),lip:pipeline.material(0x655344),hair:m(0x555b4e,'coat'),obsidian:m(0x777f73,'blade'),edge:m(0xa2a98f,'metal'),crimson:pipeline.material(0x771b15,undefined,1,1),leather:m(0x96977e,'leather'),pink:pipeline.material(0xb19b85,undefined,1,1),cyan:pipeline.material(0x8c9c81,undefined,1,1),acid:pipeline.material(0xbcb286,undefined,1,1),red:pipeline.material(0xa94b30,undefined,1,1)}};
+ return {textures,materials:{npcCoat:m(0xb9c3cf,'npc-cloth'),npcDark:m(0x7d899b,'npc-cloth'),npcGlove:m(0x657186,'npc-cloth'),npcSkin:m(0xe1ccb6,'npc-skin'),npcSkinDeep:m(0xb6927b,'npc-skin'),npcSkinPale:m(0xeadcce,'npc-skin'),npcFace:m(0xe1ccb6,'npc-face'),npcFaceDeep:m(0xb6927b,'npc-face'),npcFacePale:m(0xeadcce,'npc-face'),npcMetal:m(0xb7c8d9,'npc-armor'),npcObsidian:m(0x66748a,'npc-armor'),npcRobe:m(0x9d5e86,'npc-robe'),npcLeather:m(0x86716c,'npc-cloth'),npcHair:pipeline.material(0x29313c),npcEye:pipeline.material(0xc9c4b9,undefined,1,.3),brick:m(0xc4b4b8,'brick'),ceramic:m(0xbccbd2,'ceramic'),poster:m(0xd5d2c3,'poster'),drain:m(0xabb9c8,'drain'),puddle:m(0x8ea4ba,'puddle'),neonCyan:m(0x21edff,undefined,1),neonPink:m(0xff298c,undefined,1),neonViolet:m(0x9d4dff,undefined,1),neonAmber:m(0xffa33d,undefined,1),neonGreen:m(0x69ffac,undefined,1),arcane:m(0xc04bff,undefined,1),stone:m(0x99958e,'wall'),bone:m(0xd0c7a0,'skin'),robe:m(0x6b3153,'coat'),beast:m(0x773c53,'leather'),wall:m(0xc3c6d2,'wall'),windows:m(0xb2b4a0,'windows'),road:m(0xaab8ca,'road'),metal:m(0xc0c9d5,'metal'),rust:m(0xc9b1a4,'rust'),hazard:m(0xb5ad81,'hazard'),coat:m(0xb2b7a2,'coat'),glove:m(0xafb29f,'glove'),shutter:m(0xb8bca4,'shutter'),circuit:m(0xa8b893,'circuit',1),dark:m(0x7e8575,'coat'),black:m(0x6d766a,'glove'),skin:m(0xd2c7ad,'skin'),skinDeep:m(0x9c8b71,'skin'),skinPale:m(0xe0d5bd,'skin'),eye:pipeline.material(0x9e9f8c),lip:pipeline.material(0x655344),hair:m(0x555b4e,'coat'),obsidian:m(0x777f73,'blade'),edge:m(0xa2a98f,'metal'),crimson:pipeline.material(0x771b15,undefined,1,1),leather:m(0x96977e,'leather'),pink:pipeline.material(0xb19b85,undefined,1,1),cyan:pipeline.material(0x8c9c81,undefined,1,1),acid:pipeline.material(0xbcb286,undefined,1,1),red:pipeline.material(0xa94b30,undefined,1,1)}};
 }

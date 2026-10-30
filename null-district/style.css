@@ -13,3 +13,6 @@
 .relay-dots{display:flex;flex-direction:column;gap:3px;margin-top:12px;max-width:360px}.relay-dots>span{display:none;padding:5px 8px;border-top:0;border-left:2px solid #596674;font-size:9px}.relay-dots>span.active{display:block;border-color:#35edf4}.relay-dots b{font-size:9px;color:#cedadd;letter-spacing:0}.mission p{max-width:390px;line-height:1.6}.mission{max-width:45%}.mission h2{max-width:380px}#notice{top:42%}
 
 #blunt-cooldown{display:block;font:9px monospace;color:#a9dcc3;margin:8px 0;letter-spacing:.3px}#loadout{display:flex;justify-content:center;gap:5px}#loadout span{padding:6px 8px}.weapon-info{max-width:42%}#damage:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 8% 20%,#87091bea 0 1.4%,transparent 1.5%),radial-gradient(ellipse at 88% 63%,#a41323df 0 2%,transparent 2.2%),radial-gradient(ellipse at 16% 80%,#79051bdd 0 1%,transparent 1.2%),radial-gradient(ellipse at 93% 13%,#8e071de0 0 .8%,transparent 1%);pointer-events:none}
+
+/* Preserve the retro raster without a film-noise veil over material detail. */
+#grain{opacity:0}#scanlines{opacity:.045}

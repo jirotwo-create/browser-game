@@ -43,7 +43,7 @@ export function makePistol(m){
 }
 export function posePistol(root,{time=0,walk=0,recoil=0,reload=0,empty=false}={}){
  const r=root.userData.rig,progress=reload>0?1-reload/PISTOL.reload:0,reach=reload>0?Math.sin(progress*Math.PI):0;
- r.grip.position.set(.145+Math.sin(walk*.5)*.004,-.24-Math.abs(Math.cos(walk))*.004-reach*.025,-.40+recoil*.5);
+ r.grip.position.set(.16+Math.sin(walk*.5)*.004,-.345-Math.abs(Math.cos(walk))*.004-reach*.025,-.57+recoil*.5);
  r.grip.rotation.set(-.04-recoil*1.6,.045,-.02-reach*.2);
  r.support.position.set(-reach*.01,-.018-reach*.3,.035+reach*.02);r.support.rotation.set(0,reach*.5,-reach*.25);
  r.slide.position.z=empty&&(!reload||progress<.85)?.045:Math.max(0,recoil*.31);
