@@ -85,3 +85,11 @@ The road material alone opts into `groundRelief`. A perspective-interpolated vie
 Blood droplets and irregular triangle-fan ground/wall stains use the world’s existing material pipeline, so they retain affine interpolation, raster snapping and RGB555. Raycasts place wall marks behind impact points; falling droplets leave ground spots. Counts are capped at 96 droplets and 128 stains, with 120-second stain lifetimes and explicit chapter cleanup.
 
 NIGHT LEAF uses a separate smoking hand with an index/middle-finger pinch and the same fixed-length arm solver as the weapons. Its leaf wrapper, spiral seam, ash and animated ember render in the native gear pass. Procedural, translucent smoke planes also render in that pass; time-based emission and a 72-particle cap bound their cost. The gameplay controller handles a 2.8-second puff, one heal at 1.45 seconds, and a 12-second cooldown that cannot be erased by holstering.
+
+### Courier / pistol / environment refinement (1.9)
+
+`painted-surfaces.js` supplies 64px point-filtered gear maps with broad painted shadows, steel edges, fasteners, wear, stitching and knuckle creases. The gear shader samples these with perspective interpolation in the existing native-resolution pass. Unpainted black steel retains its specular sheen. The K-13 uses coherent planar UVs per slide face, avoiding repeated triangular patterns on the end cap, and a dedicated two-handed pistol pose using the existing IK solver.
+
+`player-body.js` supplies a headless first-person courier torso, utility belt, trouser legs, knee plates and armored boots. Its inverse pitch keeps the body below the player when looking down; hip/knee animation follows the walking cycle. Reinforced hands and additional sleeve cross-sections share the same materials and wrist constraints across all held items.
+
+World surface maps expand to 128px for environment materials while retaining nearest filtering; broad stains receive a finer layer of aggregate/chips. `set-dressing.js` adds rigid cabinets, pipes, grilles, paper layers and ground detail, flattens them and batches by material. Solid cabinet footprints participate in collision and cover. Route tests flood every chapter and verify that all objectives, exits, spawns and the full courier corridor remain clear.

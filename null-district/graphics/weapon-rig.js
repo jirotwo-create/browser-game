@@ -24,13 +24,17 @@ export function makeGripHand(materials,{trigger=false,name='hand',handedness='ri
  }
  const thumb=[[.075,.048,.062],[.027,.09,.052],[-.029,.073,.023],[-.043,.033,.002]];
  for(let k=0;k<3;k++)phalanx(anatomy,thumb[k],thumb[k+1],.016,materials.skin);
+ // Raised knuckle shells, wrist reinforcement and sewn edge tabs.
+ for(let i=0;i<3;i++){const shell=add(anatomy,new THREE.IcosahedronGeometry(.016,0),materials.metal);shell.position.set(.096,.033-i*.033,.023);shell.scale.set(.45,1,.85);}
+ const cuff=add(anatomy,organic([[-.108,.034,.043,.06,.025],[-.09,.036,.046,.06,.025],[-.077,.034,.04,.06,.025]],10),materials.glove);cuff.name='reinforced-cuff';
+ for(const y of [-.10,-.083]){const stitch=add(anatomy,new THREE.BoxGeometry(.004,.003,.045),materials.bone);stitch.position.set(.093,y,.025);}
  const wrist=anchor(anatomy,'wrist-contact',[.06,-.089,.033]);
  hand.userData.contacts={wrist,tips,palm:anchor(anatomy,'palm-contact',[.06,-.02,.018]),thumb:anchor(anatomy,'thumb-tip',thumb.at(-1))};return hand;
 }
 function makeArm(root,side,materials){
  const shoulder=new THREE.Vector3(side*.21,-.22,.01);
- const upper=add(root,organic([[0,.060,.064],[.45,.062,.065],[1,.046,.050]],10),materials.coat);
- const fore=add(root,organic([[0,.046,.050],[.43,.048,.052],[1,.030,.034]],10),materials.coat);
+ const upper=add(root,organic([[0,.060,.064],[.12,.065,.068],[.35,.068,.065],[.52,.061,.062],[.7,.055,.055],[1,.046,.050]],10),materials.coat);
+ const fore=add(root,organic([[0,.046,.050],[.15,.049,.052],[.36,.053,.055],[.55,.046,.05],[.72,.041,.043],[.9,.034,.037],[1,.030,.034]],10),materials.coat);
  upper.name=(side>0?'right':'left')+'-upper-arm';fore.name=(side>0?'right':'left')+'-forearm';
  const shoulderNode=anchor(root,side>0?'right-shoulder':'left-shoulder',shoulder.toArray());
  const elbowNode=anchor(root,side>0?'right-elbow':'left-elbow',[0,0,0]);
