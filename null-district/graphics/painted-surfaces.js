@@ -1,13 +1,19 @@
 import * as T from '../vendor/three.module.js';
+import {weatherSurface,photographicWear} from './material-studies.js';
 // Authored, palette-limited paint: broad panel shadows first, chips and marks last.
 // Sharp point filtering supplies PSX texels without lowering the gear silhouette resolution.
 export function paintGearTexture(kind){
- const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');let seed=1997;
+ const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.scale(4,4);let seed=1997;
  const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const rect=(color,a,b,w,h)=>{x.fillStyle=color;x.fillRect(a,b,w,h);};
  const bases={steel:'#8997a8',frame:'#27303e',coat:'#575667',glove:'#535862',skin:'#d6b298',trousers:'#625566',boot:'#474b54'};
  rect(bases[kind]||bases.steel,0,0,64,64);
- if(kind==='serial'){
+ if(kind==='blacksteel'){
+  rect('#89938e',0,0,64,64);for(let i=0;i<31;i++){const a=rand()*64,b=rand()*64;rect(i%3?'#d8d9cb65':'#13212b55',a,b,.13,3+rand()*8);}
+  rect('#c6c7b850',30,0,.3,64);
+ }else if(kind==='leaf'){
+  rect('#756348',0,0,64,64);for(let i=0;i<18;i++){const a=i*4;rect('#302d214a',a,0,.25,64);rect('#c1a36a33',a+.5,0,.3,64);}
+ }else if(kind==='serial'){
   rect('#c2c7bb',0,0,64,64);rect('#253144',2,2,60,60);rect('#c2c7bb',4,4,56,56);
   x.fillStyle='#253144';x.font='bold 18px monospace';x.fillText('K-13',6,25);x.font='bold 9px monospace';x.fillText('IRON',7,40);x.fillText('WITNESS',7,52);
  }else if(kind==='steel'||kind==='frame'){
@@ -37,6 +43,7 @@ export function paintGearTexture(kind){
   for(const y of [12,29,47]){rect('#896557',3,y,38,2);rect('#e0b996',3,y+2,33,2);}
   rect('#985b5a',42,20,2,13);rect('#e0bfaa',44,20,1,13);
  }
- for(let i=0;i<180;i++)rect(i%3?'#090e1a18':'#e5dfd217',Math.floor(rand()*64),Math.floor(rand()*64),1,1);
- const t=new T.CanvasTexture(c);t.magFilter=t.minFilter=T.NearestFilter;t.generateMipmaps=false;t.wrapS=t.wrapT=T.RepeatWrapping;t.name='painted-psx-'+kind;return t;
+ x.setTransform(1,0,0,1,0,0);weatherSurface(c,kind,{strength:kind==='serial'?.15:1.5});
+ if(kind==='steel'||kind==='frame')photographicWear(c,'metal',.48);
+ const t=new T.CanvasTexture(c);t.magFilter=t.minFilter=T.NearestFilter;t.generateMipmaps=false;t.wrapS=t.wrapT=T.RepeatWrapping;t.name='noir-256-gear-'+kind;return t;
 }

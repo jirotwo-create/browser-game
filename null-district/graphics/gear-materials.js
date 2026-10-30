@@ -30,10 +30,10 @@ export function gearSurface(color,{metallic=0,polish=.4,emission=0,sheen=0,textu
 }
 export function makeGearPalette(){
  const painted=(kind,color,options={})=>gearSurface(color,{...options,texture:paintGearTexture(kind)});
- const steel=gearSurface(0x090d15,{metallic:1,polish:.93,sheen:.85});steel.name='polished-black-steel-animated-sheen';
- const metal=gearSurface(0x293644,{metallic:.95,polish:.8});
+ const steel=gearSurface(0x090d15,{metallic:1,polish:.93,sheen:.85,texture:paintGearTexture('blacksteel')});steel.name='polished-black-steel-animated-sheen';
+ const metal=painted('steel',0x6b777c,{metallic:.75,polish:.35});
  return {steel,metal,edge:gearSurface(0xb3bfca,{metallic:1,polish:.95}),obsidian:steel,
- black:gearSurface(0x090d13,{metallic:.65}),dark:gearSurface(0x121a25),coat:painted('coat',0x646070),glove:painted('glove',0x454b58),leather:gearSurface(0x1f0c16),
+ black:painted('frame',0x222d35,{metallic:.5}),dark:painted('coat',0x323c41),coat:painted('coat',0x646070),glove:painted('glove',0x454b58),leather:painted('glove',0x543c37),
  skin:painted('skin',0xc4a18b),skinDeep:painted('skin',0x94715e),skinPale:painted('skin',0xd7bca3),
  pistolSerial:painted('serial',0xffffff),pistolSight:gearSurface(0xb447be,{emission:.65}),pistolSteel:painted('steel',0x899080,{metallic:.45,polish:.2}),pistolFrame:painted('frame',0x49483d,{metallic:.28,polish:.18}),trousers:painted('trousers',0x655467),boot:painted('boot',0x454c5b),
  crimson:gearSurface(0xb80826,{emission:1}),acid:gearSurface(0xffc86a,{emission:1}),red:gearSurface(0xff3159,{emission:1}),

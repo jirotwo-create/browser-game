@@ -1,11 +1,11 @@
 {
   "name": "null-district",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js && node --check graphics/enemies.js && node --check graphics/levels.js && node --check graphics/neon.js && node --check systems/combat.js && node --check graphics/gear-materials.js && node --check graphics/sculpt.js && node --check graphics/urban-levels.js && node --check graphics/signage.js && node --check systems/missions.js && node --check systems/smoking.js && node --check graphics/blunt.js && node --check graphics/blood.js && node --check graphics/pistol.js && node --check graphics/player-body.js && node --check graphics/set-dressing.js && node --check graphics/painted-surfaces.js && node --check graphics/human-npcs.js && node --check graphics/human-surfaces.js",
+    "check": "node --check game.js && node --check desktop/main.cjs && node --check graphics/psx-renderer.js && node --check graphics/models.js && node --check graphics/textures.js && node --check graphics/district.js && node --check graphics/anatomy.js && node --check graphics/weapon-rig.js && node --check graphics/enemies.js && node --check graphics/levels.js && node --check graphics/neon.js && node --check systems/combat.js && node --check graphics/gear-materials.js && node --check graphics/sculpt.js && node --check graphics/urban-levels.js && node --check graphics/signage.js && node --check systems/missions.js && node --check systems/smoking.js && node --check graphics/blunt.js && node --check graphics/blood.js && node --check graphics/pistol.js && node --check graphics/player-body.js && node --check graphics/set-dressing.js && node --check graphics/painted-surfaces.js && node --check graphics/human-npcs.js && node --check graphics/human-surfaces.js && node --check graphics/material-studies.js",
     "preview": "python3 -m http.server 4180 --bind 0.0.0.0",
     "dist:win": "electron-builder --win portable --x64 --publish never",
     "dist:linux": "electron-builder --linux dir --x64 --publish never",
@@ -55,6 +55,9 @@
     "linux": {
       "target": "dir",
       "category": "Game"
-    }
+    },
+    "electronLanguages": [
+      "en-US"
+    ]
   }
 }

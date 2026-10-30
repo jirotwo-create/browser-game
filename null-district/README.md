@@ -2,13 +2,26 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.11.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.12.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.12 reworks the full game's material art and replaces the terminal UI with a biomechanical collage.
+
+- **Photographic-style grunge:** an original generated scan atlas supplies spalled concrete, rusted steel, damp brick and worn asphalt. All world maps are now **512px**, with sharp cracks, seams, pitting, soot and grime. Separate cathedral stone, terminal tile and rooftop bitumen floors give the chapters distinct surfaces. The large Sable portrait and legacy signs are also repainted at higher resolution.
+- **Characters and gear:** **256px** face, skin, fabric and armor maps add pores, creases, weave and wear to the slim polygonal humans. Monsters gain distinct scarred flesh and bone surfaces. Player streetwear, firearms, leaf wrapper and black-steel sword gain finer material detail; Mournfang's animated sheen remains.
+- **Sharper retro output:** **480-line** world rendering, nearest sampling, RGB555, vertex snapping and the existing affine mapping/close-ground relief. Gear/body/smoke still render independently at native resolution. The floor's photographic detail has restrained contrast; there is no film-grain overlay. F8 still enables optional subtle dithering.
+- **Surreal interface:** original tendon/ceramic screen frame, swollen green health emblem, skull ammunition seal, four-eyed cable-bound idol, distorted green serif title and irregular curved menu buttons. Its direction draws from Cruelty Squad community HUD references, with original artwork and no strobing. Details and research limits are documented in [Art direction](graphics/ART-DIRECTION.md).
+
+![Biotech title screen](screenshots/biotech-title.png)
+
+![Noir grunge and neon in the district](screenshots/noir-neon-schism.png)
+
+![Photographic-style material studies](screenshots/noir-material-studies.png)
 
 Version 1.11 rebuilds the title screen and HUD as a dystopian employee reanimation terminal, and makes the K-13 more rugged.
 
@@ -129,7 +142,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.11.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.11.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.12.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.12.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -163,7 +176,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.11.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.12.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

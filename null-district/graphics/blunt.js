@@ -1,10 +1,11 @@
 import * as T from '../vendor/three.module.js';
 import {createSmokingRig,poseSmoking} from './weapon-rig.js';
 import {gearSurface} from './gear-materials.js';
+import {paintGearTexture} from './painted-surfaces.js';
 import {organic} from './anatomy.js';
 export function makeBlunt(materials){
  const root=createSmokingRig(materials),r=root.userData.smokingRig;root.name='permanent-marijuana-blunt';
- const leaf=gearSurface(0x70432a,{polish:.1}),ash=gearSurface(0x4b4944),emberMat=gearSurface(0xff5a16,{emission:1});
+ const leaf=gearSurface(0x70432a,{polish:.1,texture:paintGearTexture('leaf')}),ash=gearSurface(0x4b4944),emberMat=gearSurface(0xff5a16,{emission:1});
  const roll=new T.Mesh(organic([[-.09,.010,.011],[-.075,.014,.013],[-.03,.013,.014],[.025,.012,.013],[.08,.011,.012],[.09,.009,.009]],9),leaf);roll.rotation.x=Math.PI/2;roll.position.set(0,.086,-.065);r.tool.add(roll);
  // Raised spiral leaf seam and fine creases retain their silhouette at native size.
  const seamPoints=[];for(let i=0;i<60;i++){const t=i/59,a=t*Math.PI*7;seamPoints.push(new T.Vector3(Math.cos(a)*.013,.086+Math.sin(a)*.013,-.15+t*.17));}

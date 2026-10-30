@@ -61,7 +61,7 @@ export function createSignSystem(pipeline,root){
    if(!item){const frames=[0,1].map(p=>texture(paintAdvert(ad,p,w/h)));frames.forEach(t=>ownedTextures.add(t));material=pipeline.material(0xffffff,frames[0],1,1);item={material,frames,ad,frame:0};adverts.set(key,item);}
    material=item.material;panels++;
   }else{
-   const c=document.createElement('canvas');c.width=128;c.height=32;const ctx=c.getContext('2d');ctx.fillStyle='#33323e';ctx.fillRect(0,0,128,32);ctx.strokeStyle=color;ctx.strokeRect(1,1,126,30);ctx.fillStyle=color;ctx.font='700 14px DistrictJP';ctx.textAlign='center';ctx.fillText(text,64,22,118);const t=texture(c);ownedTextures.add(t);material=pipeline.material(0xffffff,t,1,1);legacyPanels++;
+   const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');ctx.scale(4,4);ctx.fillStyle='#33323e';ctx.fillRect(0,0,128,32);ctx.strokeStyle=color;ctx.strokeRect(1,1,126,30);ctx.fillStyle=color;ctx.font='700 14px DistrictJP';ctx.textAlign='center';ctx.fillText(text,64,22,118);const t=texture(c);ownedTextures.add(t);material=pipeline.material(0xffffff,t,1,1);legacyPanels++;
   }
   const mesh=new T.Mesh(new T.PlaneGeometry(w,h),material);mesh.position.set(x,y,z);mesh.rotation.y=rotation;root.add(mesh);return mesh;
  };

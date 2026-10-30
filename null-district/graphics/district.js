@@ -1,4 +1,6 @@
 import * as THREE from '../vendor/three.module.js';
+import {paintHumanSurface} from './human-surfaces.js';
+import {weatherSurface} from './material-studies.js';
 import { addNeonDistrict } from './neon.js';
 import { loft, mesh, plate, cylinder, makeCrate, batchStatic } from './models.js';
 
@@ -46,8 +48,15 @@ export function buildDistrict(world,m,solids,sign) {
  sign('KOBRA / 電脳',-7.4,5.6,6,'#b7c7b1',4,1.3,.3);
  sign('眠 / SLEEP CLINIC',7.5,4.6,-11,'#e0b0a4',4.6,1.2,-.35);
  sign('UPLINK',0,3.8,30.9,'#e4ca81',5,1.2,Math.PI);
- // Graphic wall mural: designed as a tiny palette-limited poster, not a photo.
- const c=document.createElement('canvas');c.width=64;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#bc8c52';ctx.fillRect(0,0,64,96);ctx.fillStyle='#414051';ctx.beginPath();ctx.moveTo(14,80);ctx.lineTo(4,96);ctx.lineTo(60,96);ctx.lineTo(48,72);ctx.lineTo(45,26);ctx.lineTo(37,12);ctx.lineTo(21,12);ctx.lineTo(13,26);ctx.fill();ctx.fillStyle='#99918c';ctx.beginPath();ctx.moveTo(16,30);ctx.lineTo(37,24);ctx.lineTo(43,57);ctx.lineTo(30,73);ctx.lineTo(16,54);ctx.fill();ctx.fillStyle='#ad5c59';ctx.fillRect(10,37,39,8);ctx.fillStyle='#e4ca81';ctx.font='bold 8px monospace';ctx.fillText('SABLE',18,88);const t=new THREE.CanvasTexture(c);t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;const mural=mesh(world,new THREE.PlaneGeometry(2.4,3.6),m.wall.clone(),-7,3,17);mural.material.uniforms={...m.wall.uniforms,tex:{value:t},unlit:{value:.6},repeatUV:{value:1}};mural.rotation.y=.4;
+ // Layered crime bulletin: a detailed censored portrait on weathered paper.
+ const c=document.createElement('canvas');c.width=512;c.height=768;const ctx=c.getContext('2d');ctx.fillStyle='#a69778';ctx.fillRect(0,0,512,768);
+ const paper=ctx.createLinearGradient(0,0,512,768);paper.addColorStop(0,'#d1c2a3');paper.addColorStop(1,'#70695e');ctx.fillStyle=paper;ctx.fillRect(12,12,488,744);
+ ctx.fillStyle='#282c34';ctx.font='bold 58px Georgia';ctx.fillText('SABLE / 09',30,80);ctx.fillStyle='#6e3138';ctx.fillRect(24,98,464,4);
+ ctx.fillStyle='#222b32';ctx.beginPath();ctx.moveTo(40,680);ctx.quadraticCurveTo(256,395,472,680);ctx.fill();
+ const portrait=paintHumanSurface('face');ctx.save();ctx.beginPath();ctx.ellipse(256,342,133,193,0,0,Math.PI*2);ctx.clip();ctx.drawImage(portrait.image,123,149,266,386);const shadow=ctx.createRadialGradient(220,310,40,256,330,200);shadow.addColorStop(0,'#151c2500');shadow.addColorStop(1,'#19202ab0');ctx.fillStyle=shadow;ctx.fillRect(110,130,300,430);ctx.restore();portrait.dispose();
+ ctx.fillStyle='#773a3ee0';ctx.fillRect(76,296,360,43);ctx.fillStyle='#ddd0ad';ctx.font='bold 27px monospace';ctx.fillText('IDENTITY REVOKED',91,327);
+ ctx.fillStyle='#b5ad94';ctx.fillRect(24,687,464,57);ctx.fillStyle='#272c35';ctx.font='bold 29px Georgia';ctx.fillText('REPORT / RECLAIM / REPEAT',32,724,448);weatherSurface(c,'poster-portrait',{strength:.8});
+ const t=new THREE.CanvasTexture(c);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestMipmapNearestFilter;t.generateMipmaps=true;const mural=mesh(world,new THREE.PlaneGeometry(2.4,3.6),m.wall.clone(),-7,3,17);mural.material.uniforms={...m.wall.uniforms,tex:{value:t},unlit:{value:.6},repeatUV:{value:1}};mural.rotation.y=.4;
  const neon=addNeonDistrict(world,m,sign);
  batchStatic(world);
  return {...neon,staticBatches:world.children.filter(o=>o.name==='batched-painted-district').length};

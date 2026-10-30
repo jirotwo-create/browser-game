@@ -1,6 +1,8 @@
 import * as T from '../vendor/three.module.js';
+import {weatherSurface,photographicWear} from './material-studies.js';
 export function paintHumanSurface(kind){
- const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),rect=(color,a,b,w,h)=>{x.fillStyle=color;x.fillRect(a,b,w,h);};
+ const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d'),rect=(color,a,b,w,h)=>{x.fillStyle=color;x.fillRect(a,b,w,h);};
+ x.scale(2,2);
  if(kind==='face'){
   rect('#cbb6a1',0,0,128,128);
   x.fillStyle='#a28d7e';for(const p of [[[0,0],[23,0],[17,62],[27,100],[0,128]],[[128,0],[108,0],[114,61],[102,103],[128,128]]]){x.beginPath();p.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fill();}
@@ -24,5 +26,7 @@ export function paintHumanSurface(kind){
   for(let b=5;b<125;b+=8){rect('#bab8a8',17,b,3,1);rect('#b0aea3',101,b,3,1);}
   rect('#b3b7b3',25,12,48,16);rect('#4b5665',30,16,38,3);rect('#9b3e68',30,22,20,2);
  }
- const t=new T.CanvasTexture(c);t.magFilter=t.minFilter=T.NearestFilter;t.generateMipmaps=false;t.wrapS=t.wrapT=T.RepeatWrapping;t.name='refined-human-'+kind;return t;
+ x.setTransform(1,0,0,1,0,0);weatherSurface(c,kind,{strength:1.35});
+ if(kind==='armor')photographicWear(c,'metal',.4);
+ const t=new T.CanvasTexture(c);t.magFilter=T.NearestFilter;t.minFilter=T.NearestMipmapNearestFilter;t.generateMipmaps=true;t.wrapS=t.wrapT=T.RepeatWrapping;t.name='noir-256-human-'+kind;return t;
 }

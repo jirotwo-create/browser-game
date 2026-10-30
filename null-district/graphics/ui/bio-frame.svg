@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="none">
+<defs>
+ <linearGradient id="skin" x2=".7" y2="1"><stop stop-color="#0c3545"/><stop offset=".18" stop-color="#a1d9ce"/><stop offset=".29" stop-color="#dfb8cc"/><stop offset=".42" stop-color="#174d5f"/><stop offset=".65" stop-color="#5bb7bf"/><stop offset=".78" stop-color="#e3d3ce"/><stop offset="1" stop-color="#172b46"/></linearGradient>
+ <linearGradient id="bone" x2=".9" y2="1"><stop stop-color="#fbf0d6"/><stop offset=".3" stop-color="#b2cdc4"/><stop offset=".56" stop-color="#456e77"/><stop offset=".75" stop-color="#d3c8b6"/><stop offset="1" stop-color="#342c49"/></linearGradient>
+ <radialGradient id="iris"><stop stop-color="#ffeff7"/><stop offset=".2" stop-color="#ff4b8d"/><stop offset=".6" stop-color="#d00050"/><stop offset="1" stop-color="#27061c"/></radialGradient>
+ <g id="socket"><path d="M-41-14Q-25-43 2-32 33-41 42-10L32 19 8 31-29 22Z" fill="url(#bone)" stroke="#14293d" stroke-width="4"/><ellipse rx="23" ry="19" fill="#222339"/><ellipse rx="16" ry="15" fill="url(#iris)"/><path d="M-30 27 0 39 28 27M-36-26 0-18 34-28" fill="none" stroke="#d5e3d3" stroke-width="4"/></g>
+ <g id="teeth"><path d="M0 0 16 7 20 32 9 36 2 27Z M23 7 40 6 41 32 29 35 24 27Z M46 4 60 0 58 26 48 31Z" fill="url(#bone)" stroke="#305063" stroke-width="2"/></g>
+ <g id="corner"><path d="M-8 102Q14 69 37 64L50 28 102-7-9-9Z" fill="url(#skin)" stroke="#172238" stroke-width="5"/><path d="M8 94Q24 68 45 70L62 32 104 7M-1 64 30 40 26 16M10 11 50 12 75-2" fill="none" stroke="#b4d2c6" stroke-width="8"/><path d="M9 88 38 59 40 34 83 8M-1 49 22 30 15 1" fill="none" stroke="#314363" stroke-width="5"/><use href="#socket" transform="translate(44 43) scale(.68)"/><use href="#teeth" transform="translate(48 76) rotate(-45) scale(.67)"/></g>
+<filter id="worn" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".065 .11" numOctaves="3" seed="19" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="mono"/><feComponentTransfer in="mono" result="quiet"><feFuncR type="linear" slope=".16" intercept=".84"/><feFuncG type="linear" slope=".16" intercept=".84"/><feFuncB type="linear" slope=".16" intercept=".84"/></feComponentTransfer><feComposite in="quiet" in2="SourceGraphic" operator="in" result="g"/><feBlend in="SourceGraphic" in2="g" mode="multiply"/></filter></defs><g filter="url(#worn)">
+<!-- Transparent center. Original tendon/ceramic collage only occupies the perimeter. -->
+<path d="M0 0H1440V900H0ZM27 43Q120 25 210 32T400 30 590 26 780 31 970 29 1160 31 1408 43Q1394 140 1408 225T1406 440 1410 650 1408 858Q1320 876 1200 866T970 875 740 867 510 874 280 866 32 861Q45 760 31 650T34 440 30 225 27 43Z" fill="url(#skin)" fill-rule="evenodd" stroke="#172c43" stroke-width="5"/>
+<g fill="none" stroke-linecap="round">
+ <path d="M78 12Q130 44 196 14T330 16 470 12 612 16 754 12 900 16 1040 12 1180 16 1355 12M74 887Q138 857 200 887T340 885 480 888 620 884 760 889 900 884 1040 888 1180 883 1368 889" stroke="#d2d9cf" stroke-width="8"/>
+ <path d="M78 20Q150 48 221 20T365 23 509 19 653 23 797 19 941 23 1085 19 1229 23 1365 20M73 879Q146 854 219 879T365 876 511 880 657 876 803 880 949 876 1095 880 1241 876 1369 880" stroke="#233a60" stroke-width="5"/>
+ <path d="M13 90Q43 153 13 213T15 345 11 477 16 609 12 741 14 819M1426 91Q1398 154 1426 217T1424 349 1428 481 1423 613 1427 745 1426 820" stroke="#d0d9cc" stroke-width="9"/>
+ <path d="M22 89Q47 156 22 223T22 357 21 491 24 625 20 759 22 823M1417 89Q1391 156 1417 223T1417 357 1419 491 1416 625 1420 759 1417 823" stroke="#284265" stroke-width="5"/>
+</g>
+<use href="#corner"/><use href="#corner" transform="translate(1440 0) scale(-1 1)"/><use href="#corner" transform="translate(0 900) scale(1 -1)"/><use href="#corner" transform="translate(1440 900) scale(-1 -1)"/>
+<use href="#socket" transform="translate(18 425) scale(.47 .8)"/><use href="#socket" transform="translate(1422 475) scale(.47 .8)"/>
+<use href="#socket" transform="translate(445 19) scale(.65 .43)"/><use href="#socket" transform="translate(1035 881) scale(.65 .43)"/>
+</g></svg>

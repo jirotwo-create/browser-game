@@ -41,7 +41,7 @@ app.whenReady().then(() => {
     catch { return new Response('Invalid path', { status: 400 }); }
     const relative = path.relative(root, file);
     if (relative.startsWith('..') || path.isAbsolute(relative) ||
-        !['.html', '.js', '.css', '.svg', '.woff'].includes(path.extname(file)) ||
+        !['.html', '.js', '.css', '.svg', '.woff', '.png'].includes(path.extname(file)) ||
         relative.split(path.sep).some(part => ['desktop', 'node_modules', 'tests', 'dist'].includes(part))) {
       return new Response('Not found', { status: 404 });
     }

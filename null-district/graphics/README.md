@@ -107,3 +107,9 @@ Pistol ready grip shifts from (.145, -.24, -.40) to (.16, -.345, -.57) before id
 The K-13 retains its native foreground pass and low, distant ready pose. Its authored flat polygons now include jagged slide cheeks, five cut-steel teeth per side, a chamfered front shroud, exposed recoil housing and hooked hammer. New pieces belong to the animated slide or tool as appropriate; wrist and trigger IK targets are unchanged. Steel/frame tints use duller olive-gray pigment and reduced polish. No world renderer or texture-warp parameters changed.
 
 `dystopia.css` skins the title, pause and HUD without replacing gameplay control IDs. Original inline SVG effigy art and static conic/stripe patterns are bundled offline. Corner windows keep center view clear; responsive rules retain all five chapter choices. `tests/ui.cjs` checks actual viewport bounds and menu transitions; `tests/pistol-art.cjs` still checks native isolation, aim clearance and 36 IK/slide/reload poses.
+
+## 1.12 — full material pass and biomechanical interface
+
+See [Art direction, source notes and verification](ART-DIRECTION.md). The image atlas is loaded once as a local ES-module dependency before any material palette can be created; the custom desktop protocol explicitly allows local PNG assets. 512px world / 256px character and gear maps carry the new material detail. The actual game renders at 480 lines; `PSXPipeline`'s default and its affine/color shader are unchanged. Palette-owned chapter floor maps survive level disposal and are selected on each load/restart.
+
+The portable build retains only Electron's English application locale to offset the bundled photographic atlas size. The game's Japanese font and all signs remain packaged locally; this does not change in-game Japanese text.

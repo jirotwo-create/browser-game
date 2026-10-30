@@ -7,6 +7,7 @@ import { makeBlunt, createSmoke } from './graphics/blunt.js';
 import { createBlood } from './graphics/blood.js';
 import { poseSmoking } from './graphics/weapon-rig.js';
 import { makeGearPalette } from './graphics/gear-materials.js';
+import {materialSource} from './graphics/material-studies.js';
 import { PSXPipeline } from './graphics/psx-renderer.js';
 import { makePalette } from './graphics/textures.js';
 import { loft, mesh, plate, makeCarbine, makeSword } from './graphics/models.js';
@@ -18,7 +19,7 @@ import { createMission, LENGTH_SCALE } from './systems/missions.js';
 import { stepEnemy, playerHitDistance } from './systems/combat.js';
 import { poseCarbine, poseSword, gripDiagnostics } from './graphics/weapon-rig.js';
 const $=id=>document.getElementById(id);
-const pipeline=new PSXPipeline($('game'),{height:360,ditherStrength:.25});
+const pipeline=new PSXPipeline($('game'),{height:480,ditherStrength:.25});
 pipeline.configure({dither:false});
 const renderer=pipeline.renderer;
 const scene=new THREE.Scene();scene.background=pipeline.fogColor;
@@ -123,6 +124,7 @@ function disposeLevel(){
 function loadLevel(index,{carry=false}={}){
  const kills=carry?player.kills:0,time=carry?missionTime:0,cooldown=carry?smoking.state.cooldown:0;disposeLevel();levelIndex=index;enemyId=0;seed=923+index*49;
  pipeline.fogColor.set(level().fog).convertLinearToSRGB();
+ materials.road.uniforms.tex.value=textures[['road','cathedral-floor','road','terminal-floor','roof-floor'][index]];
  district=buildLevel(index,world,materials,solids,sign);
  // Lengthen the authored routes and sight lines without stretching characters or gear.
  const architecture=new THREE.Group();architecture.name='extended-chapter-architecture';architecture.add(...world.children.slice());architecture.scale.z=LENGTH_SCALE;world.add(architecture);
@@ -251,7 +253,7 @@ function animateSword(dt){
  poseSword(sword,{time:weaponTime,attack:swordAttack?.elapsed||0,attacking:!!swordAttack,combo:swordAttack?.combo||0});
 }
 function updateHUD(){
- $('health').textContent=Math.max(0,Math.ceil(player.hp));$('healthbar').style.width=player.hp+'%';$('healthbar').style.background=player.hp<30?'#ff5a55':'#38e9ed';
+ $('health').textContent=Math.max(0,Math.ceil(player.hp));$('healthbar').style.width=player.hp+'%';$('healthbar').style.background=player.hp<30?'#ff5a55':'#9bf08d';
  const puff=smoking.state;
  $('ammo').textContent=selectedWeapon==='blunt'?(puff.cooldown>0?String(Math.ceil(puff.cooldown)).padStart(2,'0'):'RDY'):selectedWeapon==='sword'?'∞':String(player[ammoKey()]).padStart(2,'0');
  $('weapon-name').textContent=selectedWeapon==='blunt'?'03 // NIGHT LEAF · MARIJUANA BLUNT':selectedWeapon==='pistol'?'04 // K-13 IRON WITNESS':selectedWeapon==='sword'?'02 // MOURNFANG · THE OATH-EATER':'01 // K-09 PULSE CARBINE';
@@ -336,4 +338,4 @@ function updateGraphics(){const s=pipeline.options;const el=$('graphics-status')
 loadLevel(0);updateGraphics();
 let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;tick(dt);gunCamera.aspect=innerWidth/innerHeight;gunCamera.updateProjectionMatrix();pipeline.render(scene,camera,mode==='menu'?null:gunScene,gunCamera)}requestAnimationFrame(frame);
 // Read-only diagnostics for smoke tests and renderer inspection.
-window.nullDistrict={get state(){return {mode,level:levelIndex+1,levelId:level().id,levelName:level().name,exit:{...level().exit},nodes:relays.map(r=>({id:r.id,label:r.label,kind:r.kind,x:r.x,z:r.z,endZ:r.endZ,done:r.done,active:mission.active(r),progress:r.progress,hp:r.hp,started:r.started,wave:r.wave,guards:r.guards.filter(e=>e.hp>0).map(e=>e.id)})),missionComplete:mission.complete,health:player.hp,ammo:player.ammo,pistolAmmo:player.pistolAmmo,reloading:reloadTime>0,weapon:selectedWeapon,inventory:[...inventory],smoking:{...smoking.state},blood:{...blood.diagnostics},smoke:{...smoke.diagnostics},meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species,type:e.type,name:e.info.name,maxHp:e.info.hp,attack:e.attack?{elapsed:e.attack.elapsed,windup:e.info.windup}:null})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length,projectiles:projectiles.map(p=>({type:p.type,x:p.mesh.position.x,y:p.mesh.position.y,z:p.mesh.position.z}))}},navigation:()=>({bounds:{...level().bounds},solids:solids.map(({x,z,w,d})=>({x,z,w,d}))}),renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword),pistol:gripDiagnostics(pistol)}),graphics:()=>({...pipeline.diagnostics,...district,chapter:level().name,chapters:LEVELS.map(l=>({id:l.id,name:l.name})),...signage.diagnostics(),roster:Object.entries(ENEMY_TYPES).map(([type,info])=>({type,...info})),guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset,blunt:blunt.userData.asset,pistol:pistol.userData.asset,player:playerBody.userData.asset})};
+window.nullDistrict={get state(){return {mode,level:levelIndex+1,levelId:level().id,levelName:level().name,exit:{...level().exit},nodes:relays.map(r=>({id:r.id,label:r.label,kind:r.kind,x:r.x,z:r.z,endZ:r.endZ,done:r.done,active:mission.active(r),progress:r.progress,hp:r.hp,started:r.started,wave:r.wave,guards:r.guards.filter(e=>e.hp>0).map(e=>e.id)})),missionComplete:mission.complete,health:player.hp,ammo:player.ammo,pistolAmmo:player.pistolAmmo,reloading:reloadTime>0,weapon:selectedWeapon,inventory:[...inventory],smoking:{...smoking.state},blood:{...blood.diagnostics},smoke:{...smoke.diagnostics},meleeStrikes,meleeHits,meleeCooldown,swingPhase:swordAttack?.elapsed||0,kills:player.kills,position:{x:player.x,z:player.z,y:player.y},yaw:player.yaw,pitch:player.pitch,targets:enemies.filter(e=>e.hp>0).map(e=>({id:e.id,x:e.g.position.x,z:e.g.position.z,hp:e.hp,species:e.g.userData.asset.species,type:e.type,name:e.info.name,maxHp:e.info.hp,attack:e.attack?{elapsed:e.attack.elapsed,windup:e.info.windup}:null})),relays:relays.filter(r=>r.done).length,enemies:enemies.filter(e=>e.hp>0).length,projectiles:projectiles.map(p=>({type:p.type,x:p.mesh.position.x,y:p.mesh.position.y,z:p.mesh.position.z}))}},navigation:()=>({bounds:{...level().bounds},solids:solids.map(({x,z,w,d})=>({x,z,w,d}))}),renderer,scene,pipeline,grips:()=>({carbine:gripDiagnostics(gun),sword:gripDiagnostics(sword),pistol:gripDiagnostics(pistol)}),graphics:()=>({...pipeline.diagnostics,materialAtlas:materialSource,floorTexture:materials.road.uniforms.tex.value.name,...district,chapter:level().name,chapters:LEVELS.map(l=>({id:l.id,name:l.name})),...signage.diagnostics(),roster:Object.entries(ENEMY_TYPES).map(([type,info])=>({type,...info})),guard:enemies[0]?.g.userData.asset,weapon:gun.userData.asset,sword:sword.userData.asset,blunt:blunt.userData.asset,pistol:pistol.userData.asset,player:playerBody.userData.asset})};
