@@ -1,6 +1,7 @@
+const{deploy}=require('./start-game.cjs');
 const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-tools/node_modules/playwright');const assert=require('node:assert/strict');
 (async()=>{const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});try{
- const p=await b.newPage({viewport:{width:960,height:720}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180');await p.waitForFunction(()=>window.nullDistrict);await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await p.click('#start');const state=()=>p.evaluate(()=>nullDistrict.state);
+ const p=await b.newPage({viewport:{width:960,height:720}}),errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180');await p.waitForFunction(()=>window.nullDistrict);await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await deploy(p);const state=()=>p.evaluate(()=>nullDistrict.state);
  assert.deepEqual((await state()).inventory,['carbine','sword','blunt','pistol']);await p.keyboard.press('Digit4');assert.equal((await state()).pistolAmmo,12);assert.equal((await state()).weapon,'pistol');assert.match(await p.locator('#weapon-status').textContent(),/SEMI/);
  // Actual firearm hit: heavy sidearm damage, emitted blood, and a held trigger that fires once.
  let s=await state(),t=s.targets.find(t=>t.id===1);const dx=t.x-s.position.x,dz=t.z-s.position.z,yaw=Math.atan2(-dx,-dz),pitch=Math.atan2(1.23-s.position.y,Math.hypot(dx,dz))-.0264;

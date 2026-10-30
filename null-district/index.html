@@ -13,10 +13,20 @@
 </main>
 <section id="menu">
  <div class="menu-art" aria-hidden="true"><img src="graphics/ui/idol.svg" alt=""><span class="art-stamp">BEYOND THE VEIL<br>YOUR BODY STILL OWES US.</span></div><div class="menu-content"><div class="tag"><i></i> POSTHUMAN CONTRACT SYSTEM / 死後勤務</div><h1>NULL <span>DISTRICT</span><sup>09</sup></h1><div class="subtitle"><span>CHROME & ASH</span><b>生存義務</b></div><div class="deployment"><p class="intro">Five districts. One disposable body.<br>Clock in. Cut the feed. Collect what remains.</p><div id="chapter-select" aria-label="Choose starting chapter"></div><button id="start">DEPLOY BODY <span>↗</span></button><div class="menu-keys">WASD TO MOVE <i>·</i> MOUSE TO AIM <i>·</i> CLICK TO FIRE</div></div></div>
- <aside class="brief"><span class="eyebrow">MANDATORY WELLNESS BULLETIN</span><h3>LIFE IS A DEBT.<br>DEATH IS A SHIFT.</h3><p>Corporate rifles and street chrome meet black knights, blood magic and rift-born beasts. Cross the veil, raid the night market, ride the dead line and silence the rooftop broadcast array.</p><div><span>LOCATION</span><b><span id="menu-chapter">01 / NEON SCHISM</span></b></div><div><span>THREAT</span><b class="red">10 ENEMY ARCHETYPES</b></div><div><span>LOADOUT</span><b>K-09 + K-13 PISTOL + MOURNFANG + NIGHT LEAF</b></div><p id="menu-mission">Sabotage the grid, steal the key and defend the extraction.</p><small>LOW POLY · VERTEX JITTER · AFFINE TEXTURES</small></aside>
- <div class="menu-bottom"><span>© NULL SYSTEMS / HUMAN RESOURCES / 2097</span><span>YOU HAVE BEEN APPROVED FOR EXPENDITURE.</span><button id="settings">CRT: ON</button></div>
+ <aside class="brief"><span class="eyebrow">MANDATORY WELLNESS BULLETIN</span><h3>LIFE IS A DEBT.<br>DEATH IS A SHIFT.</h3><p>Sable leases the dead from the Ashen Court. You are Courier 09: deceased, indebted, and still on shift. A voice inside the network offers a way out. Steal the key. Break the covenant. Cut the feed.</p><div><span>LOCATION</span><b><span id="menu-chapter">01 / NEON SCHISM</span></b></div><div><span>THREAT</span><b class="red">10 ENEMY ARCHETYPES</b></div><div><span>LOADOUT</span><b>K-09 + K-13 PISTOL + MOURNFANG + NIGHT LEAF</b></div><p id="menu-mission">Sabotage the grid, steal the key and defend the extraction.</p><small>LOW POLY · VERTEX JITTER · AFFINE TEXTURES</small></aside>
+ <div class="menu-bottom"><span>© NULL SYSTEMS / HUMAN RESOURCES / 2097</span><button id="watch-opening">↺ WATCH OPENING</button><button id="settings">CRT: ON</button></div>
 </section>
 <section id="pause" class="overlay hidden"><div><span class="eyebrow" id="end-tag">PRODUCTIVITY INTERRUPTED</span><h2 id="end-title">SIGNAL LOST</h2><p id="end-copy">Your absence has been logged. Return to your assigned body.</p><button id="resume">RESUME MISSION ↗</button><button id="next-level" class="hidden">ENTER CHAPTER 02 ↗</button><button id="restart" class="secondary">RESTART CHAPTER</button><button id="to-menu" class="secondary">CHAPTER SELECT</button><p class="small">Mouse capture unavailable? Hold right mouse to look.</p></div></section>
+<section id="opening" class="hidden" aria-label="Opening cinematic">
+ <div class="cinema-bar cinema-top"></div><div class="cinema-bar cinema-bottom"></div>
+ <div class="cinema-topline"><span>NULL SYSTEMS / RECOVERED TRANSMISSION</span><span id="opening-scene">01 / 10</span><button id="opening-skip">SKIP / DEPLOY ↗</button></div>
+ <div id="opening-shot-card"><small id="opening-location"></small><h2 id="opening-shot"></h2></div>
+ <div id="opening-caption"><div class="cinema-channel"><span id="opening-wave" aria-hidden="true">▂ ▅ ▃ ▆ ▂ ▄</span><strong id="opening-speaker"></strong><small id="opening-role"></small></div><p id="opening-dialogue" aria-live="off"></p></div>
+ <div id="opening-ready" class="hidden"><small>AN ORIGINAL NULL DISTRICT PROLOGUE</small><h2>CHROME &amp; ASH</h2><p>First, the rift key. Then the rest of the dead.</p><button id="opening-enter">[ ENTER ] TAKE CONTROL ↗</button></div>
+ <div id="opening-loading">INTERCEPTING THE DEAD CHANNEL…</div><div id="opening-fade"></div>
+ <div class="cinema-bottomline"><button id="opening-play" class="hidden">[ SPACE ] RESUME</button><span>SPACE / PAUSE &nbsp; · &nbsp; ENTER OR ESC / SKIP</span><button id="opening-mute">AUDIO: ON</button></div>
+ <div class="cinema-track"><i id="opening-progress"></i></div>
+</section>
 <div id="graphics-status" aria-label="Graphics settings"></div>
 <script type="module" src="game.js"></script>
 </body></html>

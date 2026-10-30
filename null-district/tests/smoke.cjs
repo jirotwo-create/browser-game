@@ -1,3 +1,4 @@
+const{deploy}=require('./start-game.cjs');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-tools/node_modules/playwright');
 const assert=require('node:assert/strict');
 (async()=>{
@@ -6,7 +7,7 @@ const assert=require('node:assert/strict');
  await page.goto((process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180'));await page.waitForFunction(()=>!!window.nullDistrict);await page.waitForTimeout(700);
  await page.screenshot({path:'/tmp/null-district-menu.png'});
  await page.evaluate(()=>{document.getElementById('game').requestPointerLock=()=>Promise.resolve()});
- await page.getByRole('button',{name:'ENTER THE DISTRICT'}).click();
+ await deploy(page);
  assert.equal(await page.evaluate(()=>nullDistrict.state.mode),'playing');
  await page.keyboard.down('KeyW');await page.waitForTimeout(500);await page.keyboard.up('KeyW');
  assert.ok(await page.evaluate(()=>nullDistrict.state.position.z<21),'movement');

@@ -1,10 +1,11 @@
+const{deploy}=require('./start-game.cjs');
 const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'/workspace/dreadwake-tools/node_modules/playwright');const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
  try{
   const p=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
   await p.goto(process.env.NULL_DISTRICT_URL||'http://127.0.0.1:4180');await p.waitForFunction(()=>window.nullDistrict);
-  await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await p.click('#start');
+  await p.evaluate(()=>document.getElementById('game').requestPointerLock=()=>Promise.resolve());await deploy(p);
   const state=()=>p.evaluate(()=>nullDistrict.state);
   assert.deepEqual((await state()).inventory,['carbine','sword','blunt','pistol']);assert.ok((await state()).targets.some(t=>t.species==='human'));assert.ok((await state()).targets.some(t=>t.type==='hound'));
   await p.keyboard.press('Digit2');assert.equal((await state()).weapon,'sword');
