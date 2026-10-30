@@ -99,9 +99,9 @@ const magazineOrientation=new THREE.Quaternion();
 export function poseCarbine(root,{time=0,walk=0,recoil=0,reload=0}={}){
  const r=root.userData.rig,loading=reload>0,progress=loading?1-reload/1.5:0;
  const reach=loading?Math.sin(progress*Math.PI):0;
- r.grip.position.set(.16+Math.sin(walk*.5)*.006,-.255-Math.abs(Math.cos(walk))*.004-loading*.025,-.43+recoil*.65);
+ r.grip.position.set(.22+Math.sin(walk*.5)*.006,-.315-Math.abs(Math.cos(walk))*.004-loading*.025,-.49+recoil*.65);
  r.grip.rotation.set(-.055-recoil*.55, .07, -.025-loading*.07);
- r.support.position.set(-.03,.11-reach*.28,-.24+reach*.12);
+ r.support.position.set(-.03,.11-reach*.28,-.20+reach*.12);
  r.support.quaternion.copy(supportOrientation).slerp(magazineOrientation,reach*.9);
  if(r.bolt)r.bolt.position.z=.025+recoil*.35;
  if(r.magazine)r.magazine.position.y=-.03-reach*.14;

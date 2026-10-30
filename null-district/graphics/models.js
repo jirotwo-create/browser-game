@@ -1,6 +1,7 @@
 import * as THREE from '../vendor/three.module.js';
 import { organic, faceGeometry, polygonPrism } from './anatomy.js';
 import { blackBladeGeometry, chisel } from './sculpt.js';
+import {pistolSurfaces,projectFirearmPaint} from './pistol-surfaces.js';
 import { gearSurface, gearClock } from './gear-materials.js';
 import { createHeldRig, poseCarbine, poseSword } from './weapon-rig.js';
 
@@ -65,36 +66,42 @@ export function makeGuard(m,variant=0) {
  return {g,legs,knees,arms,head,torso};
 }
 export function makeCarbine(m) {
- const g=createHeldRig(m);g.name='K09-two-handed-carbine';const r=g.userData.rig,t=r.tool;
- mesh(t,loft([[-.43,.10,.12],[-.32,.14,.15],[.06,.12,.14],[.10,.07,.09]],'z'),m.metal,0,.17,0);
+ const g=createHeldRig(m);g.name='K09-asymmetric-weathered-carbine';const r=g.userData.rig,t=r.tool;const finish=pistolSurfaces();m={...m,metal:finish.chrome,black:finish.dark,edge:finish.edge};
+ mesh(t,loft([[-.47,.074,.075,.32],[-.31,.14,.13,.25],[-.12,.15,.145,.22],[.06,.12,.14,.28],[.10,.07,.09,.3]],'z'),m.metal,0,.17,0);
  mesh(t,organic([[-.105,.031,.037],[.03,.037,.044],[.105,.033,.041]],8),m.glove);
- const fore=mesh(t,loft([[-.54,.09,.09],[-.47,.125,.13],[-.20,.12,.12]],'z'),m.black,0,.15,0);fore.name='fore-end-under-support-hand';
- cylinder(t,m.metal,.032,.29,7,0,.17,-.65).rotation.x=Math.PI/2;
- cylinder(t,m.black,.049,.085,7,0,.17,-.84).rotation.x=Math.PI/2;
- for(let i=0;i<4;i++)plate(t,m.metal,.13,.015,.022,0,.235,-.26-i*.05);
- plate(t,m.black,.025,.075,.028,0,.235,-.69);
- plate(t,m.black,.085,.07,.045,0,.237,.09);
+ const fore=mesh(t,loft([[-.55,.065,.07,.3],[-.43,.095,.105,.25],[-.20,.12,.12,.3]],'z'),m.black,0,.15,0);fore.name='fore-end-under-support-hand';
+ const barrel=mesh(t,loft([[-.90,.020,.024,.36],[-.81,.027,.032,.35],[-.68,.043,.047,.35],[-.50,.068,.060,.3]],'z'),m.metal,0,.17,0);barrel.name='asymmetric-tapered-rifle-barrel';
+ const bp=barrel.geometry.attributes.position;for(let i=0;i<bp.count;i++)bp.setX(i,bp.getX(i)+.012*(-.5-bp.getZ(i))/.4);barrel.geometry.computeVertexNormals();
+ mesh(t,loft([[-.907,.025,.028,.35],[-.875,.029,.033,.35]],'z'),m.black,.012,.17,0);
+ const bore=cylinder(t,finish.bore,.0078,.012,7,.012,.17,-.914);bore.rotation.x=Math.PI/2;
+ // Unequal side hardware and a clipped left shoulder are authored silhouette details.
+ const left=mesh(t,polygonPrism([[-.45,.12],[-.31,.23],[.015,.225],[.09,.15],[-.10,.105]],.014,.004),m.metal,-.071,0,0);left.rotation.y=-Math.PI/2;
+ plate(t,m.black,.031,.036,.27,.076,.105,-.12);plate(t,m.metal,.023,.025,.11,-.06,.24,-.30);
+ for(let i=0;i<3;i++)plate(t,m.metal,.078,.008,.025,-.012,.235,-.26-i*.055);
+ plate(t,m.black,.015,.046,.02,.005,.211,-.78);
+ plate(t,m.black,.064,.018,.032,0,.226,.075);
  // Open rear sight, stock running back toward the player's right shoulder.
- for(const x of [-.027,.027])plate(t,m.black,.018,.032,.025,x,.26,.09);
- mesh(t,organic([[.10,.025,.03],[.20,.028,.035,.12,0],[.35,.03,.04,.32,0]],8),m.black,0,.15,0).rotation.x=Math.PI/2;
- plate(t,m.glove,.07,.17,.035,.32,.13,.35);
+ for(const x of [-.020,.020])plate(t,m.black,.010,.026,.018,x,.244,.075);
+ mesh(t,organic([[.10,.022,.026],[.25,.023,.028,.018,0],[.44,.025,.033,.03,0]],8),m.black,0,.15,0).rotation.x=Math.PI/2;
+ plate(t,m.glove,.06,.12,.025,.03,.13,.44);
  const mag=mesh(t,organic([[-.17,.042,.063],[-.025,.049,.07],[.08,.043,.065]],6),m.metal,0,-.03,-.18);mag.rotation.x=.11;r.magazine=mag;
  for(const [a,b]of [[[0,.11,-.09],[0,.11,-.19]],[[0,.11,-.19],[0,.01,-.18]],[[0,.01,-.18],[0,.01,-.04]]]){
   const d=new THREE.Vector3(...b).sub(new THREE.Vector3(...a));const tube=cylinder(t,m.black,.007,d.length(),5,...new THREE.Vector3(...a).addScaledVector(d,.5).toArray());tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
  }
  const trigger=cylinder(t,m.metal,.007,.035,5,.012,.065,-.14);trigger.rotation.x=-.35;
  r.trigger=new THREE.Object3D();r.trigger.name='trigger-contact';r.trigger.position.set(.018,.065,-.14);t.add(r.trigger);
- r.muzzle=new THREE.Object3D();r.muzzle.name='actual-muzzle';r.muzzle.position.set(0,.17,-.89);t.add(r.muzzle);
+ r.muzzle=new THREE.Object3D();r.muzzle.name='actual-muzzle';r.muzzle.position.set(.012,.17,-.925);t.add(r.muzzle);
  for(let i=0;i<7;i++){const vent=plate(t,m.black,.025,.058,.035,0,.207,-.43+i*.034);vent.rotation.z=.22;plate(t,m.edge,.014,.009,.030,.054,.23,-.43+i*.034);}
  for(const side of [-1,1]){
   mesh(t,polygonPrism([[0,0],[.1,.015],[.17,.075],[.05,.085]],.007,.004),m.edge,side*.071,.10,-.08).rotation.y=side*Math.PI/2;
   for(const z of [-.26,.07])cylinder(t,m.edge,.012,.014,10,side*.077,.17,z).rotation.z=Math.PI/2;
  }
- for(const z of [-.77,-.81])cylinder(t,m.edge,.038,.009,12,0,.17,z).rotation.x=Math.PI/2;
+ for(const z of [-.65,-.73])cylinder(t,m.edge,z===-.65?.026:.021,.008,6,.012*(-.5-z)/.4,.17,z).rotation.x=Math.PI/2;
  plate(t,m.cyan||m.red,.009,.012,.22,.059,.23,-.33);
  r.bolt=plate(t,m.edge,.035,.025,.13,.077,.185,.025);
+ projectFirearmPaint(t,m.metal);
  t.traverse(o=>{if(o.isMesh){const original=o.geometry;o.geometry=chisel(original,.025);original.dispose()}});
- g.userData.asset={name:'K09 / shouldered two-hand carbine',triangles:countTriangles(g),features:['trigger finger on trigger','opposed thumb','support hand around fore-end','shoulder elbow wrist IK','physical muzzle']};
+ g.userData.asset={name:'K09 / asymmetric gunmetal carbine',triangles:countTriangles(g),features:['slim tapered six-sided barrel','unequal receiver shoulders','offset side hardware','dark oxidized gunmetal paint','trigger finger on trigger','opposed thumb','support hand around fore-end','shoulder elbow wrist IK','physical muzzle']};
  poseCarbine(g);return g;
 }
 export function makeSword(m) {

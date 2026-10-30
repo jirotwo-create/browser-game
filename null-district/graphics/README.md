@@ -123,3 +123,7 @@ The framebuffer test now also requires visible cold-silver pixels and a visible 
 ## 1.14 — Chrome & Ash prologue
 
 See [screenplay, playback, resources and verification](PROLOGUE.md). The ten-shot timeline uses actual lengths from nineteen bundled Ogg voice clips. Seven isolated staged sets reuse the existing architecture and character assets; shared material/texture ownership is protected on exit. The custom desktop protocol now serves local Ogg audio. Main gameplay enters an explicit intro state, freezes combat/objectives/input, and resumes only from a user gesture so mouse capture remains reliable. The first Chapter 01 deployment plays once per session, with independent menu replay.
+
+## 1.15 — Night Leaf presentation and firearm rebuild
+
+See [effect lifecycle, firearm geometry and verification](EXHALE-GUNMETAL.md). The drug effect lives in the world presentation shader, before native equipment compositing; zero strength uses the original exact sampling path. It does not alter the affine UV shader or camera. `createSmoking` owns its timed, exhale-only envelope. Both firearms share the distressed finish from `pistol-surfaces.js`; their actual six-sided barrel meshes taper and shift toward their muzzles.

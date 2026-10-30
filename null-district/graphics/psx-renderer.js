@@ -89,7 +89,7 @@ export class PSXPipeline {
     this.processed=this.target.clone();this.processed.texture.generateMipmaps=false;
     this.outputSize=new THREE.Vector2(320,height);
     this.present=new THREE.Scene();this.presentCamera=new THREE.Camera();
-    this.presentMaterial=new THREE.ShaderMaterial({uniforms:{frame:{value:this.processed.texture}},vertexShader:'varying vec2 uvOut;void main(){uvOut=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:'uniform sampler2D frame;varying vec2 uvOut;void main(){gl_FragColor=texture2D(frame,uvOut);}',depthTest:false,depthWrite:false});
+    this.presentMaterial=new THREE.ShaderMaterial({uniforms:{frame:{value:this.processed.texture},highStrength:{value:0},highTime:{value:0}},vertexShader:'varying vec2 uvOut;void main(){uvOut=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:`uniform sampler2D frame;uniform float highStrength;uniform float highTime;varying vec2 uvOut;void main(){if(highStrength<.00001){gl_FragColor=texture2D(frame,uvOut);return;}vec2 p=uvOut-.5;float edge=smoothstep(.18,.62,length(p));vec2 drift=vec2(sin(uvOut.y*14.+highTime*2.1)*.0022,cos(uvOut.x*11.+highTime*1.7)*.0014)*edge*highStrength;vec2 uv=clamp(uvOut+drift,vec2(.001),vec2(.999));vec2 split=vec2(.00065,0.)*edge*highStrength;gl_FragColor=vec4(texture2D(frame,clamp(uv+split,vec2(0.),vec2(1.))).r,texture2D(frame,uv).g,texture2D(frame,clamp(uv-split,vec2(0.),vec2(1.))).b,1.);}`,depthTest:false,depthWrite:false});
     this.present.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.presentMaterial));
     this.post = new THREE.Scene();
     this.postCamera = new THREE.Camera();
@@ -119,6 +119,7 @@ export class PSXPipeline {
     for(const m of this.materials){m.uniforms.affine.value=Number(this.options.affine);m.uniforms.vertexSnap.value=Number(this.options.vertexSnap)}
     this.postMaterial.uniforms.dither.value=Number(this.options.dither)*this.ditherStrength;
   }
+  setIntoxication(strength=0,time=0){this.presentMaterial.uniforms.highStrength.value=Math.max(0,Math.min(1,strength));this.presentMaterial.uniforms.highTime.value=time;}
   render(scene,camera,foreground,foregroundCamera) {
     const r=this.renderer;r.setRenderTarget(this.target);r.autoClear=true;r.render(scene,camera);
     // Quantize/dither at the original world raster, then nearest-upscale it.
@@ -127,5 +128,5 @@ export class PSXPipeline {
     // Player anatomy and equipment are composited afterwards at native size.
     if(foreground){r.autoClear=false;r.clearDepth();r.render(foreground,foregroundCamera);r.autoClear=true;}
   }
-  get diagnostics(){return {resolution:this.size.toArray(),gearResolution:this.outputSize.toArray(),gearPass:'native / perspective / unquantized',...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
+  get diagnostics(){return {intoxication:this.presentMaterial.uniforms.highStrength.value,resolution:this.size.toArray(),gearResolution:this.outputSize.toArray(),gearPass:'native / perspective / unquantized',...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
 }
