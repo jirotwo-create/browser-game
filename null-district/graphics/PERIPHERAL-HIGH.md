@@ -1,5 +1,7 @@
 # 1.16 — Night Leaf peripheral spirals
 
+Historical version: this finished-image effect is replaced in 1.17 by [actual surface UV motion](SURFACE-HIGH.md).
+
 A completed exhale starts ten seconds of world distortion, including puffs at full health. The existing 25-HP heal, 1.45-second exhale point, 2.8-second use animation and twelve-second cooldown remain. Interrupted inhales do not trigger it; dead players receive neither healing nor the effect.
 
 Strength eases in over 0.35 seconds, stays at full intensity through 8.5 seconds, then fades over the final 1.5 seconds. The timer uses gameplay time. Holstering preserves it, pause freezes and hides it, and chapter/restart resets clear it.

@@ -2,7 +2,7 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.16.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.17.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
@@ -10,7 +10,15 @@ A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted char
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
 
-Version 1.16 replaces the barely visible smoke ripple with **ten seconds of animated peripheral spirals**.
+Version 1.17 moves Night Leaf distortion into the **actual world texture coordinates**.
+
+- For ten seconds after the completed puff, brickwork, grime, signs, pavement and peripheral enemy textures rotate, spiral and flow across their own surfaces, independently of camera input. Building edges, gaps, silhouettes and the sky stay in place.
+- The focus area receives only a tiny amount of texture motion. Hands, gear and HUD stay clear. Healing, cooldown, pause, holster persistence and the final fade remain the same.
+- [Material rendering and GPU verification](graphics/SURFACE-HIGH.md).
+
+![Actual texture motion across world surfaces](screenshots/surface-high.png)
+
+Version 1.16 originally replaced the barely visible smoke ripple with **ten seconds of animated peripheral spirals**. Its screen-image distortion is superseded by actual material UV animation in 1.17.
 
 - After a completed puff, buildings, pavement, signs and enemies at the edges twist, breathe and ripple continuously, even when you stand still. The center has only a tiny ripple so targets stay readable. The strongest swirl is outside your focus area.
 - A quick ease-in leads into a sustained effect, then a smooth fade during the final 1.5 seconds. Healing remains 25 HP, with the same twelve-second cooldown. Hands, gear and HUD stay clear. Holstering keeps the effect; pause freezes it; restart/chapter changes clear it.
@@ -186,7 +194,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.16.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.16.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.17.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.17.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -220,7 +228,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.16.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.17.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

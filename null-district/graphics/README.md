@@ -129,3 +129,5 @@ See [screenplay, playback, resources and verification](PROLOGUE.md). The ten-sho
 See [effect lifecycle, firearm geometry and verification](EXHALE-GUNMETAL.md). The drug effect lives in the world presentation shader, before native equipment compositing; zero strength uses the original exact sampling path. It does not alter the affine UV shader or camera. `createSmoking` owns its timed, exhale-only envelope. Both firearms share the distressed finish from `pistol-surfaces.js`; their actual six-sided barrel meshes taper and shift toward their muzzles.
 
 Version 1.16: [ten-second peripheral smoke spirals](PERIPHERAL-HIGH.md), with a protected aim area and native foreground.
+
+Version 1.17: [actual material UV spirals](SURFACE-HIGH.md) replace screen-image distortion.

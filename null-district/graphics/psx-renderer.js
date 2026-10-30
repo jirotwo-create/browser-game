@@ -36,6 +36,9 @@ uniform sampler2D tex;
 uniform float affine;
 uniform float debugUV;
 uniform float groundRelief;
+uniform float highStrength;
+uniform float highTime;
+uniform vec2 rasterSize;
 uniform vec3 fogColor;
 uniform vec2 fogRange;
 varying vec3 affineUV;
@@ -49,6 +52,20 @@ void main() {
   float groundWeight = mix(0.12, 1.0, smoothstep(2.0, 7.0, length(surfaceView)));
   float warp = affine * mix(1.0, groundWeight, groundRelief);
   vec2 uv = mix(perspectiveUV, affineUV.xy / affineUV.z, warp);
+  // Animate each surface's actual texture coordinates, before texture sampling.
+  // Screen position controls intensity only; no finished-image displacement.
+  if(highStrength>0.00001){
+    vec2 focus=(gl_FragCoord.xy/rasterSize-.5)*vec2(rasterSize.x/rasterSize.y,1.);
+    float radius=length(focus),edge=smoothstep(.16,.60,radius);
+    float amount=highStrength*(.0008*smoothstep(.04,.16,radius)+.9992*edge*edge);
+    vec2 q=uv-.5;q/=max(1.,length(q));float r=length(q);
+    float angle=amount*(highTime*1.1+1.7*sin(r*8.-highTime*2.6)+.8*sin(uv.x*5.+uv.y*4.+highTime*1.7));
+    float c=cos(angle),s=sin(angle);
+    vec2 swirl=vec2(c*q.x-s*q.y,s*q.x+c*q.y);
+    swirl*=1.+.32*amount*sin(r*12.-highTime*3.);
+    vec2 flow=vec2(sin(uv.y*11.+highTime*2.3),cos(uv.x*9.-highTime*2.7));
+    uv+=swirl-q+.23*amount*flow;
+  }
   if (debugUV > 0.5) { gl_FragColor = vec4(uv, 0.0, 1.0); return; }
   vec3 sampled = texture2D(tex, uv).rgb;
   vec3 lit = sampled * affineColor.rgb / affineColor.w;
@@ -89,26 +106,9 @@ export class PSXPipeline {
     this.processed=this.target.clone();this.processed.texture.generateMipmaps=false;
     this.outputSize=new THREE.Vector2(320,height);
     this.present=new THREE.Scene();this.presentCamera=new THREE.Camera();
-    // World-only intoxication: strong animated peripheral vortices, quiet aim area.
-    // This runs after the normal PSX pass and before native hands/gear and the HUD.
-    this.presentMaterial=new THREE.ShaderMaterial({uniforms:{frame:{value:this.processed.texture},highStrength:{value:0},highTime:{value:0},viewAspect:{value:1}},vertexShader:'varying vec2 uvOut;void main(){uvOut=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:`
-      uniform sampler2D frame;uniform float highStrength;uniform float highTime;uniform float viewAspect;varying vec2 uvOut;
-      void main(){
-        if(highStrength<.00001){gl_FragColor=texture2D(frame,uvOut);return;}
-        vec2 p=(uvOut-.5)*vec2(viewAspect,1.);float r=length(p);
-        float edge=smoothstep(.16,.60,r);float theta=atan(p.y,p.x);
-        float twist=edge*edge*highStrength*(.30*sin(r*15.-highTime*2.)+.16*sin(theta*3.+highTime*1.3));
-        float c=cos(twist),s=sin(twist);
-        vec2 warped=vec2(c*p.x-s*p.y,s*p.x+c*p.y);
-        warped*=1.+.10*edge*highStrength*sin(r*21.-highTime*2.7+theta*2.);
-        vec2 ripple=vec2(sin(p.y*19.+highTime*2.4),cos(p.x*17.-highTime*2.1));
-        warped+=ripple*highStrength*(.014*edge+.0009*smoothstep(.04,.18,r));
-        vec2 uv=warped/vec2(viewAspect,1.)+.5;
-        // Reflect the outermost samples instead of stretching border pixels into streaks.
-        uv=clamp(1.-abs(mod(uv,2.)-1.),vec2(.001),vec2(.999));
-        vec2 split=vec2(.0018,0.)*edge*highStrength;
-        gl_FragColor=vec4(texture2D(frame,clamp(uv+split,vec2(0.),vec2(1.))).r,texture2D(frame,uv).g,texture2D(frame,clamp(uv-split,vec2(0.),vec2(1.))).b,1.);
-      }`,depthTest:false,depthWrite:false});
+    // Presentation only upscales. Intoxication lives in world surface UVs.
+    this.highUniforms={highStrength:{value:0},highTime:{value:0}};
+    this.presentMaterial=new THREE.ShaderMaterial({uniforms:{frame:{value:this.processed.texture}},vertexShader:'varying vec2 uvOut;void main(){uvOut=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:'uniform sampler2D frame;varying vec2 uvOut;void main(){gl_FragColor=texture2D(frame,uvOut);}',depthTest:false,depthWrite:false});
     this.present.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),this.presentMaterial));
     this.post = new THREE.Scene();
     this.postCamera = new THREE.Camera();
@@ -128,7 +128,7 @@ export class PSXPipeline {
   }
   material(color=0xffffff,tex=this.white,repeat=1,unlit=0,extra={}) {
     const material=new THREE.ShaderMaterial({
-      uniforms:{rasterSize:{value:this.size},vertexSnap:{value:Number(this.options.vertexSnap)},repeatUV:{value:repeat},tint:{value:new THREE.Color(color).convertLinearToSRGB()},unlit:{value:unlit},tex:{value:tex},affine:{value:Number(this.options.affine)},debugUV:{value:0},groundRelief:{value:0},fogColor:{value:this.fogColor},fogRange:{value:new THREE.Vector2(18,65)},...extra},
+      uniforms:{...this.highUniforms,rasterSize:{value:this.size},vertexSnap:{value:Number(this.options.vertexSnap)},repeatUV:{value:repeat},tint:{value:new THREE.Color(color).convertLinearToSRGB()},unlit:{value:unlit},tex:{value:tex},affine:{value:Number(this.options.affine)},debugUV:{value:0},groundRelief:{value:0},fogColor:{value:this.fogColor},fogRange:{value:new THREE.Vector2(18,65)},...extra},
       vertexShader,fragmentShader,vertexColors:true,
     });
     this.materials.add(material);return material;
@@ -138,7 +138,7 @@ export class PSXPipeline {
     for(const m of this.materials){m.uniforms.affine.value=Number(this.options.affine);m.uniforms.vertexSnap.value=Number(this.options.vertexSnap)}
     this.postMaterial.uniforms.dither.value=Number(this.options.dither)*this.ditherStrength;
   }
-  setIntoxication(strength=0,time=0){this.presentMaterial.uniforms.viewAspect.value=this.outputSize.x/Math.max(1,this.outputSize.y);this.presentMaterial.uniforms.highStrength.value=Math.max(0,Math.min(1,strength));this.presentMaterial.uniforms.highTime.value=time;}
+  setIntoxication(strength=0,time=0){this.highUniforms.highStrength.value=Math.max(0,Math.min(1,strength));this.highUniforms.highTime.value=time;}
   render(scene,camera,foreground,foregroundCamera) {
     const r=this.renderer;r.setRenderTarget(this.target);r.autoClear=true;r.render(scene,camera);
     // Quantize/dither at the original world raster, then nearest-upscale it.
@@ -147,5 +147,5 @@ export class PSXPipeline {
     // Player anatomy and equipment are composited afterwards at native size.
     if(foreground){r.autoClear=false;r.clearDepth();r.render(foreground,foregroundCamera);r.autoClear=true;}
   }
-  get diagnostics(){return {intoxication:this.presentMaterial.uniforms.highStrength.value,resolution:this.size.toArray(),gearResolution:this.outputSize.toArray(),gearPass:'native / perspective / unquantized',...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
+  get diagnostics(){return {intoxication:this.highUniforms.highStrength.value,intoxicationPass:'world material UV / before texture sampling',resolution:this.size.toArray(),gearResolution:this.outputSize.toArray(),gearPass:'native / perspective / unquantized',...this.options,colorDepth:'RGB555',filter:'nearest',interpolation:this.options.affine?'screen-space affine':'perspective-correct'}}
 }
