@@ -105,7 +105,8 @@ export function makeCarbine(m) {
  poseCarbine(g);return g;
 }
 export function makeSword(m) {
- const g=createHeldRig(m,{sword:true});g.name='MOURNFANG-black-steel-regalia';const r=g.userData.rig,t=r.tool;
+ const fittings=pistolSurfaces();m={...m,edge:fittings.edge,gold:fittings.chrome,black:fittings.dark};
+ const g=createHeldRig(m,{sword:true});g.name='MOURNFANG-forged-gunmetal-relic';const r=g.userData.rig,t=r.tool;
  const steel=m.steel||gearSurface(0x090d15,{metallic:1,polish:.93,sheen:.85}),gold=m.gold||m.edge;
  const core=m.crimson.clone();core.uniforms.tint.value.setRGB(.48,.008,.025);core.uniforms.time=gearClock;
  const glyphs=[],fangs=[],links=[],seals=[];
@@ -119,25 +120,25 @@ export function makeSword(m) {
  for(let i=0;i<10;i++){const y=.35+i*.064;const rune=mesh(t,polygonPrism([[-.009,0],[.01,.007],[-.004,.013],[.009,.024],[.002,.021],[-.012,.01]],.001,0),core,0,y,.035);rune.userData.baseY=y;glyphs.push(rune)}
  // Layered bat-wing quillons, black horns, silver talons and gold wirework.
  for(const side of [-1,1]){
-  mesh(t,polygonPrism([[0,.12],[side*.12,.09],[side*.28,.15],[side*.36,.30],[side*.29,.28],[side*.23,.20],[side*.12,.23],[0,.24]],.045,.025),steel);
-  mesh(t,polygonPrism([[side*.09,.13],[side*.22,.16],[side*.31,.26],[side*.23,.20],[side*.12,.19]],.008,.007),gold,0,0,.052);
+  mesh(t,polygonPrism([[0,.12],[side*.12,.09],[side*.24,.15],[side*.29,.26],[side*.26,.25],[side*.20,.18],[side*.11,.21],[0,.24]],.045,.025),steel);
+  mesh(t,polygonPrism([[side*.09,.13],[side*.22,.16],[side*.25,.23],[side*.20,.18],[side*.12,.19]],.008,.007),gold,0,0,.052);
   for(let i=0;i<3;i++){
-   const hinge=new THREE.Group();hinge.position.set(side*(.15+i*.059),.18+i*.025,.012);t.add(hinge);
-   mesh(hinge,polygonPrism([[0,0],[side*.035,.025],[side*.045,.12],[side*.014,.081]],.022,.012),i%2?gold:m.edge);
+   const hinge=new THREE.Group();hinge.position.set(side*(.12+i*.046),.17+i*.021,.012);t.add(hinge);
+   mesh(hinge,polygonPrism([[0,0],[side*.035,.025],[side*.035,.085],[side*.012,.057]],.022,.012),i%2?gold:m.edge);
    hinge.userData={side,rest:side*(.1+i*.14)};fangs.push(hinge);
   }
-  for(let i=0;i<4;i++){const setting=mesh(t,new THREE.IcosahedronGeometry(.018,0),gold,side*(.09+i*.045),.19+i*.007,.066);mesh(t,new THREE.OctahedronGeometry(.010,0),core,setting.position.x,setting.position.y,.083);}
+  for(let i=0;i<4;i++){const setting=mesh(t,new THREE.IcosahedronGeometry(.013,0),gold,side*(.075+i*.037),.19+i*.007,.066);mesh(t,new THREE.OctahedronGeometry(.007,0),core,setting.position.x,setting.position.y,.083);}
  }
  mesh(t,organic([[-.34,.028,.032],[-.29,.033,.034],[-.1,.033,.035],[.08,.035,.037],[.13,.027,.030]],12),m.leather);
- for(let i=0;i<15;i++){const wrap=cylinder(t,i%3===0?gold:m.black,.035,.008,12,0,-.315+i*.028,0);wrap.rotation.z=.22;}
+ for(let i=0;i<15;i++){const wrap=cylinder(t,i%5===0?gold:m.black,.034,.007,8,0,-.315+i*.028,0);wrap.rotation.z=.22;}
  // Sculpted iron death mask: separate brow, cheek planes, hollow sockets,
  // fanged jaw, horn crown and a faceted blood gem mounted in a gold setting.
- mesh(t,organic([[.09,.024,.035],[.13,.055,.055],[.19,.075,.048],[.23,.062,.04],[.26,.033,.035]],10),m.edge,0,0,.056);
+ mesh(t,organic([[.09,.024,.035],[.13,.055,.055],[.19,.064,.044],[.23,.054,.036],[.26,.033,.035]],10),gold,0,0,.056);
  for(const side of [-1,1]){
   mesh(t,polygonPrism([[0,0],[side*.041,.002],[side*.032,.030],[side*.008,.022]],.008,.005),m.black,side*.007,.17,.105);
   mesh(t,polygonPrism([[0,0],[side*.026,.005],[side*.018,.013]],.004,0),core,side*.016,.18,.119);
   mesh(t,polygonPrism([[0,0],[side*.028,.002],[side*.035,.026],[side*.01,.035]],.012,.01),gold,side*.033,.13,.10);
-  const horn=mesh(t,organic([[0,.021,.022],[.07,.017,.018,side*.017,-.009],[.14,.009,.012,side*.035,-.028],[.19,.001,.002,side*.045,-.055]],7),steel,side*.057,.23,.047);horn.rotation.z=-side*.17;
+  const horn=mesh(t,organic([[0,.021,.022],[.07,.017,.018,side*.017,-.009],[.11,.009,.012,side*.028,-.028],[.145,.001,.002,side*.035,-.045]],7),steel,side*.057,.23,.047);horn.rotation.z=-side*.17;
   const jaw=mesh(t,new THREE.ConeGeometry(.014,.08,5),m.edge,side*.043,.106,.103);jaw.rotation.z=side*.2;
  }
  mesh(t,polygonPrism([[0,.172],[-.014,.144],[.014,.144]],.006,0),m.black,0,0,.121);
@@ -145,20 +146,26 @@ export function makeSword(m) {
  mesh(t,new THREE.OctahedronGeometry(.033,0),gold,0,.248,.087,[1,1.2,.7]);
  const ruby=mesh(t,new THREE.OctahedronGeometry(.022,1),m.ruby||core,0,.249,.114,[1,1.2,.65]);
  // Crowned pommel, relic rings, thorn finial and two articulated charm chains.
- mesh(t,new THREE.IcosahedronGeometry(.050,1),steel,0,-.378,0,[1,1.1,.9]);
+ mesh(t,new THREE.IcosahedronGeometry(.044,0),steel,0,-.378,0,[1,1.1,.9]);
  for(const y of [-.35,-.408])cylinder(t,gold,.045,.012,12,0,y,0);
  mesh(t,new THREE.OctahedronGeometry(.026,0),core,0,-.378,.047);
- mesh(t,new THREE.ConeGeometry(.035,.13,7),steel,0,-.46,0).rotation.z=Math.PI;
+ mesh(t,new THREE.ConeGeometry(.028,.10,6),steel,0,-.46,0).rotation.z=Math.PI;
  for(const side of [-1,1]){
   let chain=t;
-  for(let i=0;i<9;i++){const link=new THREE.Group();link.position.set(i===0?side*.25:0,i===0?.16:-.031,i===0?.05:0);chain.add(link);mesh(link,new THREE.TorusGeometry(.016,.0035,5,10),i%3===0?gold:m.edge).rotation.y=i%2?Math.PI/2:0;link.userData.side=side;links.push(link);chain=link;}
-  const seal=new THREE.Group();chain.add(seal);seal.position.y=-.04;mesh(seal,new THREE.OctahedronGeometry(.035,0),gold,0,0,0,[.8,1.2,.35]);mesh(seal,new THREE.OctahedronGeometry(.021,0),core,0,0,.014,[.8,1.2,.4]);mesh(seal,new THREE.ConeGeometry(.014,.07,5),m.bone||m.edge,0,-.065,0).rotation.z=Math.PI;seals.push(seal);
+  for(let i=0;i<9;i++){const link=new THREE.Group();link.position.set(i===0?side*.205:0,i===0?.16:-.025,i===0?.05:0);chain.add(link);mesh(link,new THREE.TorusGeometry(.012,.0028,4,8),i%3===0?gold:m.edge).rotation.y=i%2?Math.PI/2:0;link.userData.side=side;links.push(link);chain=link;}
+  const seal=new THREE.Group();chain.add(seal);seal.position.y=-.04;mesh(seal,new THREE.OctahedronGeometry(.027,0),gold,0,0,0,[.8,1.2,.35]);mesh(seal,new THREE.OctahedronGeometry(.017,0),core,0,0,.014,[.8,1.2,.4]);mesh(seal,new THREE.ConeGeometry(.014,.07,5),m.bone||m.edge,0,-.065,0).rotation.z=Math.PI;seals.push(seal);
  }
  r.tip=new THREE.Object3D();r.tip.position.set(0,1.19,0);t.add(r.tip);
+ // Machined ricasso collars and off-center fasteners match the firearm hardware.
+ for(const side of [-1,1]){
+  plate(t,gold,.022,.083,.011,side*.053,.29,.024);
+  for(const y of [.26,.32]){const bolt=cylinder(t,m.black,.007,.006,6,side*.053,y,.033);bolt.rotation.x=Math.PI/2;}
+ }
+ projectFirearmPaint(t,gold);
  const ribbon=new THREE.BufferGeometry();ribbon.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));
  const trail=mesh(g,ribbon,new THREE.MeshBasicMaterial({color:0xce284b,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));trail.frustumCulled=false;trail.visible=false;
  g.userData.relic={steel,core,ruby,glyphs,fangs,links,seals,trail,previousTip:null,previousBase:null};
- g.userData.asset={name:'MOURNFANG / black-steel sovereign',triangles:countTriangles(g),type:'traditional demonic black-steel longsword',features:['native-resolution polished steel','animated specular sheen','symmetrical diamond-section blade','engraved blood runes','sculpted death-mask guard','articulated silver talons','horn crown','gilded filigree','twin linked charm chains','faceted blood gems','thorn pommel','two-handed anatomical grip']};
+ g.userData.asset={name:'MOURNFANG / gunmetal oathbreaker',triangles:countTriangles(g),type:'traditional demonic black-steel longsword',features:['native-resolution polished steel','animated specular sheen','symmetrical diamond-section blade','engraved blood runes','sculpted death-mask guard','articulated silver talons','horn crown','weathered gunmetal inlays','compact angular quillons','machined ricasso collars','twin linked charm chains','faceted blood gems','thorn pommel','two-handed anatomical grip']};
  poseSword(g);return g;
 }
 export function makeCrate(m,w=2,h=1.4,d=2){const g=new THREE.Group();mesh(g,loft([[0,w*.88,d*.9],[.2,w,d],[h-.2,w,d],[h,w*.88,d*.9]]),m.rust);plate(g,m.hazard,w*.8,.28,.04,0,h*.62,d/2+.025);for(const s of [-1,1])plate(g,m.metal,.15,h*.8,d*.88,s*w*.36,h/2,0);return g}

@@ -12,7 +12,10 @@ export function paintGearTexture(kind){
   rect('#89938e',0,0,64,64);for(let i=0;i<31;i++){const a=rand()*64,b=rand()*64;rect(i%3?'#d8d9cb65':'#13212b55',a,b,.13,3+rand()*8);}
   rect('#c6c7b850',30,0,.3,64);
  }else if(kind==='leaf'){
-  rect('#756348',0,0,64,64);for(let i=0;i<18;i++){const a=i*4;rect('#302d214a',a,0,.25,64);rect('#c1a36a33',a+.5,0,.3,64);}
+  rect('#817044',0,0,64,64);
+  for(let i=0;i<30;i++){const a=rand()*64,b=rand()*64;x.fillStyle=i%2?'#55603266':'#b3925855';x.beginPath();x.ellipse(a,b,3+rand()*6,1+rand()*3,rand()*3,0,Math.PI*2);x.fill();}
+  x.strokeStyle='#3e402988';x.lineWidth=.35;for(let i=0;i<9;i++){const a=i*8;x.beginPath();x.moveTo(a,0);x.lineTo(a-5,32);x.lineTo(a+1,64);x.stroke();for(let j=0;j<7;j++){const b=j*10;x.beginPath();x.moveTo(a-3,b);x.lineTo(a+4,b+6);x.stroke();}}
+  for(let i=0;i<38;i++)rect(i%3?'#c6a96e55':'#302a2455',rand()*64,rand()*64,.2,1+rand()*4);
  }else if(kind==='serial'){
   rect('#c2c7bb',0,0,64,64);rect('#253144',2,2,60,60);rect('#c2c7bb',4,4,56,56);
   x.fillStyle='#253144';x.font='bold 18px monospace';x.fillText('K-13',6,25);x.font='bold 9px monospace';x.fillText('IRON',7,40);x.fillText('WITNESS',7,52);
