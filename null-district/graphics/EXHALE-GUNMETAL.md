@@ -1,5 +1,7 @@
 # 1.15 — short exhale effect and tapered gunmetal firearms
 
+The smoke effect described here is historical; version 1.16 supersedes it with [ten-second peripheral spirals](PERIPHERAL-HIGH.md). Firearm details still apply.
+
 Night Leaf now starts a 4.2-second visual effect at the completed exhale (1.45 seconds into a puff), including cosmetic puffs at full health. An interrupted inhale does not trigger it. Strength eases in over 0.35 seconds and fades out smoothly. The twelve-second cooldown and 25-HP recovery remain.
 
 The presentation shader adds a small, edge-weighted ripple and very slight color separation after the normal PSX world pass. The central radius stays unchanged, and gear/body/smoke are still drawn at native resolution afterward. The HUD, aim ray, camera angles, FOV, movement and enemy behavior are untouched. It introduces no blur, shake or camera roll. At peak intensity in the 960×720 GPU fixture, changed color samples stay within a few neighboring pixels; the center and gear are byte-identical to their normal frames. A zero strength restores the original output exactly. Existing affine interpolation, ground relief and color quantization remain unchanged.

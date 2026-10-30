@@ -2,7 +2,7 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.15.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.16.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
@@ -10,9 +10,17 @@ A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted char
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
 
-Version 1.15 adds a brief Night Leaf screen effect and reworks both firearms in darker, tapered gunmetal.
+Version 1.16 replaces the barely visible smoke ripple with **ten seconds of animated peripheral spirals**.
 
-- On the completed exhale, a **4.2-second** edge-weighted ripple and subtle color separation ease in and fade away. The center aim area, HUD and native-resolution gear stay clear. It changes no camera angles, movement, aiming or damage. Cosmetic puffs at full health work too; interrupted inhales do not trigger it. Holstering preserves the short effect, pause freezes it, and chapter loads/restarts clear it.
+- After a completed puff, buildings, pavement, signs and enemies at the edges twist, breathe and ripple continuously, even when you stand still. The center has only a tiny ripple so targets stay readable. The strongest swirl is outside your focus area.
+- A quick ease-in leads into a sustained effect, then a smooth fade during the final 1.5 seconds. Healing remains 25 HP, with the same twelve-second cooldown. Hands, gear and HUD stay clear. Holstering keeps the effect; pause freezes it; restart/chapter changes clear it.
+- [Rendering and verification notes](graphics/PERIPHERAL-HIGH.md).
+
+![Night Leaf peripheral spirals](screenshots/peripheral-high.png)
+
+Version 1.15 originally added a brief Night Leaf screen effect and reworks both firearms in darker, tapered gunmetal.
+
+- On the completed exhale, a **4.2-second** edge-weighted ripple (replaced by the stronger ten-second effect in 1.16) and subtle color separation ease in and fade away. The center aim area, HUD and native-resolution gear stay clear. It changes no camera angles, movement, aiming or damage. Cosmetic puffs at full health work too; interrupted inhales do not trigger it. Holstering preserves the short effect, pause freezes it, and chapter loads/restarts clear it.
 - **K-13 pistol:** darker oxidized steel, grease, sparse worn edges, unequal receiver shoulders and side hardware. Its exposed six-sided barrel progressively narrows toward a slim, offset muzzle. The violet sight and long-barrel reference silhouette remain.
 - **K-09 rifle:** matching worn gunmetal, an asymmetric receiver/fore-end, tapered offset barrel and smaller muzzle hardware. Its stock/sight and lower ready position make the new shape clearer while retaining the exact two-hand grip and reload animation.
 - The original PSX affine texture mapping and the opening cutscene remain intact. [Implementation and checks](graphics/EXHALE-GUNMETAL.md).
@@ -178,7 +186,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.15.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.15.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.16.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.16.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -212,7 +220,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.15.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.16.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

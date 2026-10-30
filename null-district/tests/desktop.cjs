@@ -51,7 +51,7 @@ const path = require('node:path');
     await page.mouse.click(650, 400);
     await page.waitForFunction(() => nullDistrict.state.smoking.puffs === 1);
     await page.waitForFunction(() => nullDistrict.graphics().intoxication > .5);
-    assert.ok(await page.evaluate(()=>nullDistrict.state.smoking.highRemaining>0&&nullDistrict.state.smoking.highDuration===4.2));
+    assert.ok(await page.evaluate(()=>nullDistrict.state.smoking.highRemaining>0&&nullDistrict.state.smoking.highDuration===10));
     assert.ok(await page.evaluate(() => nullDistrict.state.smoking.cooldown > 0));
     assert.equal(await page.evaluate(() => nullDistrict.state.ammo), 24);
     await page.keyboard.press('Digit4');
