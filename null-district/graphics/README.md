@@ -101,3 +101,9 @@ The game selects a 360-line world target; reusable pipeline fixtures retain thei
 `human-npcs.js` builds new anatomical humans with narrower torsos, shoulders, limbs and heads, modeled facial parts and segmented hands. `human-surfaces.js` supplies clear 128px face, skin, cloth, robe and armor maps. Human chisel depth/contrast are reduced to keep clean planes; monsters retain their previous sculpt settings. The seven human meshes contain roughly 10,500–11,300 triangles after joint-preserving batching. Roster tests verify actual proportions, independent props, articulation and geometry budgets.
 
 Pistol ready grip shifts from (.145, -.24, -.40) to (.16, -.345, -.57) before idle motion and IK. GPU/model tests verify that its top remains below the center of the view, that it sits farther from the camera, and that wrist/trigger contacts and arm lengths survive 36 recoil/reload/empty poses.
+
+## 1.11 — salvaged K-13 and employee terminal
+
+The K-13 retains its native foreground pass and low, distant ready pose. Its authored flat polygons now include jagged slide cheeks, five cut-steel teeth per side, a chamfered front shroud, exposed recoil housing and hooked hammer. New pieces belong to the animated slide or tool as appropriate; wrist and trigger IK targets are unchanged. Steel/frame tints use duller olive-gray pigment and reduced polish. No world renderer or texture-warp parameters changed.
+
+`dystopia.css` skins the title, pause and HUD without replacing gameplay control IDs. Original inline SVG effigy art and static conic/stripe patterns are bundled offline. Corner windows keep center view clear; responsive rules retain all five chapter choices. `tests/ui.cjs` checks actual viewport bounds and menu transitions; `tests/pistol-art.cjs` still checks native isolation, aim clearance and 36 IK/slide/reload poses.

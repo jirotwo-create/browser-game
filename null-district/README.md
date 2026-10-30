@@ -2,13 +2,23 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.10.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.11.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.11 rebuilds the title screen and HUD as a dystopian employee reanimation terminal, and makes the K-13 more rugged.
+
+- Original fleshy one-eyed effigy artwork, a toxic-yellow halo, pink/green beveled terminal windows, tilted type and corporate mortality notices replace the restrained neon menu. Chapter selection, pause, health/ammo, mission tracking and loadout share the new palette. The center of the gameplay view stays clear; the collage uses static patterns rather than flashing effects.
+- The pistol has a heavier faceted slide with jagged steel cheeks, cut-metal teeth, an impact shroud, exposed recoil housing, hooked hammer and angular fasteners. Darker worn-metal paint replaces the cleaner blue-gray finish. Its lower/farther ready position, exact hand contacts, semi-auto behavior and reload animation remain.
+- Title controls and navigation were checked at 1440×900, 960×640, 800×600 and 390×844. The desktop package includes all UI art/styles locally and requires no internet.
+
+![Employee reanimation portal title screen](screenshots/employee-terminal.png)
+
+![Rugged K-13 and dystopian HUD](screenshots/rugged-k13-hud.png)
 
 Version 1.10 cleans up the environment, rebuilds the seven human NPC types and lowers the pistol.
 
@@ -119,7 +129,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.10.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.10.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.11.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.11.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -153,7 +163,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.10.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.11.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

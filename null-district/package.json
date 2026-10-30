@@ -1,6 +1,6 @@
 {
   "name": "null-district",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,6 +29,7 @@
       "index.html",
       "game.js",
       "style.css",
+      "dystopia.css",
       "favicon.svg",
       "vendor/**",
       "graphics/**",
