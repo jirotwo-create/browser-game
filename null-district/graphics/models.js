@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import {batchRigidParts} from './rigid-batches.js';
 import { organic, faceGeometry, polygonPrism } from './anatomy.js';
 import { blackBladeGeometry, chisel } from './sculpt.js';
 import {pistolSurfaces,projectFirearmPaint} from './pistol-surfaces.js';
@@ -102,7 +103,7 @@ export function makeCarbine(m) {
  projectFirearmPaint(t,m.metal);
  t.traverse(o=>{if(o.isMesh){const original=o.geometry;o.geometry=chisel(original,.025);original.dispose()}});
  g.userData.asset={name:'K09 / asymmetric gunmetal carbine',triangles:countTriangles(g),features:['slim tapered six-sided barrel','unequal receiver shoulders','offset side hardware','dark oxidized gunmetal paint','trigger finger on trigger','opposed thumb','support hand around fore-end','shoulder elbow wrist IK','physical muzzle']};
- poseCarbine(g);return g;
+ batchRigidParts(t,{exclude:[r.magazine,r.bolt]});poseCarbine(g);return g;
 }
 export function makeSword(m) {
  const fittings=pistolSurfaces();m={...m,edge:fittings.edge,gold:fittings.chrome,black:fittings.dark};
@@ -166,7 +167,7 @@ export function makeSword(m) {
  const trail=mesh(g,ribbon,new THREE.MeshBasicMaterial({color:0xce284b,transparent:true,opacity:.16,side:THREE.DoubleSide,depthWrite:false}));trail.frustumCulled=false;trail.visible=false;
  g.userData.relic={steel,core,ruby,glyphs,fangs,links,seals,trail,previousTip:null,previousBase:null};
  g.userData.asset={name:'MOURNFANG / gunmetal oathbreaker',triangles:countTriangles(g),type:'traditional demonic black-steel longsword',features:['native-resolution polished steel','animated specular sheen','symmetrical diamond-section blade','engraved blood runes','sculpted death-mask guard','articulated silver talons','horn crown','weathered gunmetal inlays','compact angular quillons','machined ricasso collars','twin linked charm chains','faceted blood gems','thorn pommel','two-handed anatomical grip']};
- poseSword(g);return g;
+ batchRigidParts(t,{exclude:[ruby,...glyphs]});poseSword(g);return g;
 }
 export function makeCrate(m,w=2,h=1.4,d=2){const g=new THREE.Group();mesh(g,loft([[0,w*.88,d*.9],[.2,w,d],[h-.2,w,d],[h,w*.88,d*.9]]),m.rust);plate(g,m.hazard,w*.8,.28,.04,0,h*.62,d/2+.025);for(const s of [-1,1])plate(g,m.metal,.15,h*.8,d*.88,s*w*.36,h/2,0);return g}
 export function countTriangles(group){let n=0;group.traverse(o=>{if(o.isMesh)n+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3});return n}

@@ -1,4 +1,5 @@
 import * as T from '../vendor/three.module.js';
+import {batchRigidParts} from './rigid-batches.js';
 import {createSmokingRig,poseSmoking} from './weapon-rig.js';
 import {gearSurface} from './gear-materials.js';
 import {paintGearTexture} from './painted-surfaces.js';
@@ -21,25 +22,28 @@ export function makeBlunt(materials){
  const leafInk=gearSurface(0x62a63c,{emission:.2});for(let i=0;i<7;i++){const angle=(i-3)*.38,len=.012-Math.abs(i-3)*.0015,g=new T.Mesh(polygonPrism([[0,0],[-.0025,len*.38],[-.0018,len*.62],[-.0025,len*.67],[0,len],[.0025,len*.67],[.0018,len*.62],[.0025,len*.38]],.0002,0),leafInk);g.rotation.z=angle;badge.add(g);}
  const stem=new T.Mesh(new T.BoxGeometry(.0015,.008,.0003),leafInk);stem.position.y=-.003;badge.add(stem);
  const tip=new T.Object3D();tip.position.set(0,.086,-.184);r.tool.add(tip);root.userData.smokeTip=tip;
- root.userData.asset={name:'NIGHT LEAF / hand-rolled cannabis blunt',permanent:true,features:['fat uneven cone silhouette','pinched twisted mouth end','olive-brown veined tobacco leaf','raised hand-rolled seam','ragged charcoal ash','green-purple packed flower','seven-finger cannabis leaf stamp','animated ember','pinched fingers','fixed-length arm']};poseSmoking(root);return root;
+ root.userData.asset={name:'NIGHT LEAF / hand-rolled cannabis blunt',permanent:true,features:['fat uneven cone silhouette','pinched twisted mouth end','olive-brown veined tobacco leaf','raised hand-rolled seam','ragged charcoal ash','green-purple packed flower','seven-finger cannabis leaf stamp','animated ember','pinched fingers','fixed-length arm']};batchRigidParts(r.tool,{exclude:[ember]});batchRigidParts(r.hand);poseSmoking(root);return root;
 }
 // Soft procedural smoke, composited with player gear at native resolution.
 export function createSmoke(scene){
- const geometry=new T.PlaneGeometry(1,1),particles=[];let emitted=0,accumulator=0,exhaleAccumulator=0;
- const material=new T.ShaderMaterial({transparent:true,depthWrite:false,depthTest:false,uniforms:{opacity:{value:1}},vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;uniform float opacity;void main(){vec2 p=(v-.5)*2.;float r=length(p);float curl=sin(p.x*8.+p.y*9.)*.04;float a=pow(max(0.,1.-r+curl),2.)*.22*opacity;gl_FragColor=vec4(.68,.75,.77,a);}'});
+ const capacity=72,geometry=new T.PlaneGeometry(1,1),particles=[];let emitted=0,accumulator=0,exhaleAccumulator=0;
+ const fades=new T.InstancedBufferAttribute(new Float32Array(capacity),1);fades.setUsage(T.DynamicDrawUsage);geometry.setAttribute('smokeOpacity',fades);
+ const material=new T.ShaderMaterial({transparent:true,depthWrite:false,depthTest:false,vertexShader:'attribute float smokeOpacity;varying vec2 v;varying float fade;void main(){v=uv;fade=smokeOpacity;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 v;varying float fade;void main(){vec2 p=(v-.5)*2.;float r=length(p);float curl=sin(p.x*8.+p.y*9.)*.04;float a=pow(max(0.,1.-r+curl),2.)*.22*fade;gl_FragColor=vec4(.68,.75,.77,a);}'});
+ const cloud=new T.InstancedMesh(geometry,material,capacity),pose=new T.Object3D();cloud.name='instanced-native-smoke';cloud.instanceMatrix.setUsage(T.DynamicDrawUsage);cloud.count=0;cloud.frustumCulled=false;scene.add(cloud);
  function emit(point,exhale){
-  const mesh=new T.Mesh(geometry,material.clone());mesh.position.copy(point);mesh.rotation.z=emitted*2.4;mesh.scale.setScalar(exhale?.065:.025);scene.add(mesh);
-  particles.push({mesh,age:0,life:exhale?2.2:1.4,size:exhale?.065:.025,exhale,velocity:new T.Vector3(Math.sin(emitted*2.3)*.035,exhale?.055:.09,exhale?-.27:-.025)});emitted++;
-  if(particles.length>72){const p=particles.shift();scene.remove(p.mesh);p.mesh.material.dispose();}
+  particles.push({position:point.clone(),rotation:emitted*2.4,age:0,life:exhale?2.2:1.4,size:exhale?.065:.025,exhale,velocity:new T.Vector3(Math.sin(emitted*2.3)*.035,exhale?.055:.09,exhale?-.27:-.025)});emitted++;
+  if(particles.length>capacity)particles.shift();
  }
  return {
   tick(dt,blunt,phase,visible){
    accumulator+=dt;
    if(visible&&accumulator>.08){accumulator=0;blunt.updateMatrixWorld(true);emit(blunt.userData.smokeTip.getWorldPosition(new T.Vector3()),false);}
    if(phase!==null&&phase>=1.45&&phase<2.5){exhaleAccumulator+=dt;while(exhaleAccumulator>=.035){exhaleAccumulator-=.035;emit(new T.Vector3((Math.random()-.5)*.045,-.06,-.13),true);}}else exhaleAccumulator=0;
-   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.age+=dt;p.mesh.position.addScaledVector(p.velocity,dt);p.velocity.x+=Math.sin(p.age*4+i)*dt*.03;p.mesh.rotation.z+=dt*.12;p.mesh.scale.setScalar(p.size+p.age*(p.exhale?.18:.06));p.mesh.material.uniforms.opacity.value=Math.max(0,1-p.age/p.life);if(p.age>=p.life){scene.remove(p.mesh);p.mesh.material.dispose();particles.splice(i,1);}}
+   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.age+=dt;p.position.addScaledVector(p.velocity,dt);p.velocity.x+=Math.sin(p.age*4+i)*dt*.03;p.rotation+=dt*.12;if(p.age>=p.life)particles.splice(i,1);}
+   for(let i=0;i<particles.length;i++){const p=particles[i];pose.position.copy(p.position);pose.rotation.z=p.rotation;pose.scale.setScalar(p.size+p.age*(p.exhale?.18:.06));pose.updateMatrix();cloud.setMatrixAt(i,pose.matrix);fades.setX(i,Math.max(0,1-p.age/p.life));}
+   cloud.count=particles.length;cloud.visible=cloud.count>0;cloud.instanceMatrix.needsUpdate=true;fades.needsUpdate=true;
   },
-  clear(){for(const p of particles){scene.remove(p.mesh);p.mesh.material.dispose();}particles.length=0;accumulator=exhaleAccumulator=0;},
-  get diagnostics(){return {particles:particles.length,emitted,nativeResolution:true};}
+  clear(){particles.length=0;cloud.count=0;cloud.visible=false;accumulator=exhaleAccumulator=0;},
+  get diagnostics(){return {particles:particles.length,emitted,nativeResolution:true,drawBatches:particles.length?1:0};}
  };
 }

@@ -1,0 +1,386 @@
+{
+  "cpu": [
+    [
+      "(program)",
+      2870
+    ],
+    [
+      "updateMatrixWorld",
+      27
+    ],
+    [
+      "multiplyMatrices",
+      14
+    ],
+    [
+      "setup",
+      11
+    ],
+    [
+      "copy",
+      9
+    ],
+    [
+      "bindVertexArray",
+      9
+    ],
+    [
+      "projectObject",
+      9
+    ],
+    [
+      "WebGLRenderer.renderBufferDirect",
+      8
+    ],
+    [
+      "updateFocus",
+      7
+    ],
+    [
+      "update",
+      7
+    ],
+    [
+      "setProgram",
+      6
+    ],
+    [
+      "frame",
+      5
+    ],
+    [
+      "tick",
+      5
+    ],
+    [
+      "drawArrays",
+      5
+    ],
+    [
+      "applyMatrix4",
+      4
+    ],
+    [
+      "renderObjects",
+      4
+    ],
+    [
+      "upload",
+      4
+    ],
+    [
+      "sort",
+      4
+    ],
+    [
+      "updateHUD",
+      3
+    ],
+    [
+      "intersect",
+      3
+    ],
+    [
+      "_computeIntersections",
+      3
+    ],
+    [
+      "drawMap",
+      3
+    ],
+    [
+      "needsUpdate",
+      3
+    ],
+    [
+      "bindTexture",
+      3
+    ],
+    [
+      "setMaterial",
+      3
+    ],
+    [
+      "compose",
+      2
+    ],
+    [
+      "checkGeometryIntersection",
+      2
+    ],
+    [
+      "dot",
+      2
+    ],
+    [
+      "set x",
+      2
+    ],
+    [
+      "WebGLRenderer.render",
+      2
+    ]
+  ],
+  "results": [
+    {
+      "weapon": "carbine",
+      "frames": [
+        {
+          "ms": 2.400000035762787,
+          "calls": 518,
+          "triangles": 118758
+        },
+        {
+          "ms": 2.600000023841858,
+          "calls": 518,
+          "triangles": 118758
+        },
+        {
+          "ms": 2.800000011920929,
+          "calls": 518,
+          "triangles": 118758
+        },
+        {
+          "ms": 3.199999988079071,
+          "calls": 518,
+          "triangles": 118758
+        },
+        {
+          "ms": 2.699999988079071,
+          "calls": 518,
+          "triangles": 118758
+        },
+        {
+          "ms": 2.799999952316284,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 3.399999976158142,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 2.899999976158142,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 2.599999964237213,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 2.5,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 3.099999964237213,
+          "calls": 511,
+          "triangles": 118566
+        },
+        {
+          "ms": 3.199999988079071,
+          "calls": 511,
+          "triangles": 118566
+        }
+      ]
+    },
+    {
+      "weapon": "sword",
+      "frames": [
+        {
+          "ms": 3.600000023841858,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3.300000011920929,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3.199999988079071,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 2.800000011920929,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 12.300000011920929,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 2.900000035762787,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3.099999964237213,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 2.899999976158142,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 2.899999976158142,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3,
+          "calls": 579,
+          "triangles": 117894
+        },
+        {
+          "ms": 3.300000011920929,
+          "calls": 579,
+          "triangles": 117894
+        }
+      ]
+    },
+    {
+      "weapon": "blunt",
+      "frames": [
+        {
+          "ms": 3.200000047683716,
+          "calls": 489,
+          "triangles": 114842
+        },
+        {
+          "ms": 2.699999988079071,
+          "calls": 489,
+          "triangles": 114842
+        },
+        {
+          "ms": 3.100000023841858,
+          "calls": 490,
+          "triangles": 114844
+        },
+        {
+          "ms": 3,
+          "calls": 490,
+          "triangles": 114844
+        },
+        {
+          "ms": 2.699999988079071,
+          "calls": 491,
+          "triangles": 114846
+        },
+        {
+          "ms": 2.600000023841858,
+          "calls": 491,
+          "triangles": 114846
+        },
+        {
+          "ms": 4.699999988079071,
+          "calls": 492,
+          "triangles": 114848
+        },
+        {
+          "ms": 3.100000023841858,
+          "calls": 493,
+          "triangles": 114850
+        },
+        {
+          "ms": 2.900000035762787,
+          "calls": 486,
+          "triangles": 114658
+        },
+        {
+          "ms": 3.399999976158142,
+          "calls": 487,
+          "triangles": 114660
+        },
+        {
+          "ms": 7.5,
+          "calls": 487,
+          "triangles": 114640
+        },
+        {
+          "ms": 9.699999988079071,
+          "calls": 488,
+          "triangles": 114642
+        }
+      ]
+    },
+    {
+      "weapon": "pistol",
+      "frames": [
+        {
+          "ms": 3.099999964237213,
+          "calls": 524,
+          "triangles": 115874
+        },
+        {
+          "ms": 3,
+          "calls": 524,
+          "triangles": 115874
+        },
+        {
+          "ms": 3.400000035762787,
+          "calls": 524,
+          "triangles": 115874
+        },
+        {
+          "ms": 2.899999976158142,
+          "calls": 531,
+          "triangles": 116066
+        },
+        {
+          "ms": 3,
+          "calls": 531,
+          "triangles": 116066
+        },
+        {
+          "ms": 2.699999988079071,
+          "calls": 531,
+          "triangles": 116066
+        },
+        {
+          "ms": 4.099999964237213,
+          "calls": 530,
+          "triangles": 116064
+        },
+        {
+          "ms": 3,
+          "calls": 530,
+          "triangles": 116064
+        },
+        {
+          "ms": 2.800000011920929,
+          "calls": 529,
+          "triangles": 116062
+        },
+        {
+          "ms": 4.199999988079071,
+          "calls": 528,
+          "triangles": 116060
+        },
+        {
+          "ms": 3.100000023841858,
+          "calls": 528,
+          "triangles": 116060
+        },
+        {
+          "ms": 2.699999988079071,
+          "calls": 527,
+          "triangles": 116058
+        }
+      ]
+    }
+  ]
+}

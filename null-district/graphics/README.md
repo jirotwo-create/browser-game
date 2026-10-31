@@ -133,3 +133,5 @@ Version 1.16: [ten-second peripheral smoke spirals](PERIPHERAL-HIGH.md), with a 
 Version 1.17: [actual material UV spirals](SURFACE-HIGH.md) replace screen-image distortion.
 
 Version 1.18: [refined Mournfang and hand-rolled Night Leaf](RELIC-LEAF.md).
+
+Version 1.19: [rendering and update performance](PERFORMANCE.md), preserving the current visual settings.

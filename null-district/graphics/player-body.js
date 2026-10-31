@@ -1,4 +1,5 @@
 import * as T from '../vendor/three.module.js';
+import {batchRigidParts} from './rigid-batches.js';
 import {organic} from './anatomy.js';
 import {mesh,plate,loft,cylinder} from './models.js';
 export function makePlayerBody(m){
@@ -29,7 +30,7 @@ export function makePlayerBody(m){
   for(let i=0;i<5;i++){const lace=plate(boot,m.bone,.077,.006,.012,0,-.245-i*.017,-.10+i*.005);lace.rotation.z=(i%2?1:-1)*.15;}
   leg.userData.knee=knee;
  }
- root.userData.legs=legs;root.userData.asset={name:'Courier 09 / patched ballistic streetwear',features:['headless first-person torso','stitched jacket','buckled harness','utility belt','cargo trousers','articulated knees','plated lace-up boots'],nativeResolution:true};return root;
+ batchRigidParts(root);root.userData.legs=legs;root.userData.asset={name:'Courier 09 / patched ballistic streetwear',features:['headless first-person torso','stitched jacket','buckled harness','utility belt','cargo trousers','articulated knees','plated lace-up boots'],nativeResolution:true};return root;
 }
 export function posePlayerBody(root,{pitch=0,walk=0,moving=false,pistol=false}={}){
  root.rotation.x=-pitch;const stride=moving?.28:0;

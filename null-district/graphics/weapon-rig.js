@@ -1,4 +1,5 @@
 import * as THREE from '../vendor/three.module.js';
+import {batchRigidParts} from './rigid-batches.js';
 import { gearClock } from './gear-materials.js';
 import { organic } from './anatomy.js';
 const Y=new THREE.Vector3(0,1,0);
@@ -29,7 +30,7 @@ export function makeGripHand(materials,{trigger=false,name='hand',handedness='ri
  const cuff=add(anatomy,organic([[-.108,.034,.043,.06,.025],[-.09,.036,.046,.06,.025],[-.077,.034,.04,.06,.025]],10),materials.glove);cuff.name='reinforced-cuff';
  for(const y of [-.10,-.083]){const stitch=add(anatomy,new THREE.BoxGeometry(.004,.003,.045),materials.bone);stitch.position.set(.093,y,.025);}
  const wrist=anchor(anatomy,'wrist-contact',[.06,-.089,.033]);
- hand.userData.contacts={wrist,tips,palm:anchor(anatomy,'palm-contact',[.06,-.02,.018]),thumb:anchor(anatomy,'thumb-tip',thumb.at(-1))};return hand;
+ hand.userData.contacts={wrist,tips,palm:anchor(anatomy,'palm-contact',[.06,-.02,.018]),thumb:anchor(anatomy,'thumb-tip',thumb.at(-1))};batchRigidParts(hand);return hand;
 }
 function makeArm(root,side,materials){
  const shoulder=new THREE.Vector3(side*.21,-.22,.01);

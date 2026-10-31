@@ -1,4 +1,5 @@
 import * as T from '../vendor/three.module.js';
+import {batchRigidParts} from './rigid-batches.js';
 import {mesh,plate,cylinder,loft} from './models.js';
 import {organic,polygonPrism} from './anatomy.js';
 import {createHeldRig,solveHeldRig} from './weapon-rig.js';
@@ -50,6 +51,7 @@ export function makePistol(m){
  slide.traverse(o=>{if(!o.isMesh||o.material!==s.chrome)return;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal,u=g.attributes.uv;if(!u)return;const transform=inv.clone().multiply(o.matrixWorld),normal=new T.Matrix3().getNormalMatrix(transform);
   for(let i=0;i<p.count;i++){const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(transform),a=new T.Vector3().fromBufferAttribute(n,i).applyMatrix3(normal);if(Math.abs(a.z)>.7)u.setXY(i,v.x/.13+.5,(v.y-.10)/.11);else if(Math.abs(a.y)>.7)u.setXY(i,(v.z+.285)/.41,v.x/.13+.5);else u.setXY(i,(v.z+.285)/.41,(v.y-.10)/.11);}u.needsUpdate=true;
  });
+ batchRigidParts(t,{exclude:[r.magazine]});
  root.userData.asset={name:'K-13 / IRON WITNESS',style:'dark weathered PSX gunmetal / tapered asymmetric barrel / violet sight',capacity:12,damage:2,features:['slim tapered six-sided barrel','asymmetric sloped receiver','dark oxidized gunmetal paint','prominent violet sight','dark grip','open muzzle','ejection port','slide lock','two-handed support','animated magazine']};posePistol(root);return root;
 }
 export function posePistol(root,{time=0,walk=0,recoil=0,reload=0,empty=false}={}){
