@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 (async () => {
+  const {PROLOGUE_SHOTS}=await import('../systems/prologue-script.js');const voiceCount=PROLOGUE_SHOTS.flatMap(s=>s.lines).length;
   const args = [process.env.NULL_DISTRICT_APP || path.resolve(__dirname, '..')];
   if (process.platform === 'linux') args.push('--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader');
   const app = await _electron.launch({
@@ -38,7 +39,7 @@ const path = require('node:path');
     assert.equal(await page.evaluate(() => typeof require), 'undefined', 'Renderer must not expose Node.js');
     await page.click('#watch-opening');
     await page.waitForFunction(()=>nullDistrict.cinematic().status==='playing',null,{timeout:30000});
-    assert.equal(await page.evaluate(()=>nullDistrict.cinematic().voicesDecoded),19,'Bundled character dialogue decodes offline');
+    assert.equal(await page.evaluate(()=>nullDistrict.cinematic().voicesDecoded),voiceCount,'Bundled character dialogue decodes offline');
     assert.equal(await page.evaluate(()=>nullDistrict.cinematic().voiceFailures),0);
     await page.waitForFunction(()=>nullDistrict.cinematic().linesPlayed>=1);
     assert.ok((await page.locator('#opening-dialogue').textContent()).includes('afterlife'));

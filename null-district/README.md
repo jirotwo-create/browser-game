@@ -2,13 +2,20 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.19.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.20.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.20 rewrites and revoices **Chrome & Ash**.
+
+- Four distinct neural voices replace the old speech synth, with clearer, more natural delivery and restrained processing. All 21 lines play offline.
+- The 2:13 opening explains Courier 09's death and restoration debt, why Vesper chose the courier and planted Mournfang, what the midnight soul transfer means, and how the five districts lead to erasing the blacklist and cutting Rainline's broadcast.
+- Captions, voice-driven mouths and camera timing follow the new dialogue. The receipt matches the revised reveal. **Watch Opening** on the menu replays it.
+- [Story and controls](graphics/PROLOGUE.md) · [Neural voice cast, provenance and checks](graphics/NEURAL-VOICES.md).
 
 Version 1.19 optimizes rendering and frame updates while retaining the current visual style.
 
@@ -211,7 +218,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.19.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.19.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.20.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.20.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -245,7 +252,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.19.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.20.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

@@ -53,7 +53,7 @@ export function makePrologueSet(pipeline,m,textures,gear){
  const exchange=stage('exchange');exchange.userData.fog='#131723';ground(exchange,m.road,16,20);plate(exchange,m.wall,14,6,1,0,3,-4);
  for(const x of [-5,5]){plate(exchange,m.metal,1,3,.7,x,1.5,-2);for(let j=0;j<6;j++)plate(exchange,m.neonCyan,.5,.025,.02,x,.5+j*.4,-1.63);}
  plate(exchange,m.metal,3,.8,1,0,.4,-1);character(exchange,'courier',0,-1.9,1);
- text(exchange,['SABLE / DELIVERY 00009','COURIER: 09','ACCOUNT: DECEASED','SERVICE: STILL ACTIVE'],-.95,1.25,-.65,1.35,.68,'#efb18e');
+ text(exchange,['SABLE / DELIVERY 00009','COURIER 09 / DECEASED','DIED: 2097 / 10 / 09','RESTORATION DEBT: ACTIVE'],-.95,1.25,-.65,1.35,.68,'#efb18e');
  const vesper=character(exchange,'vesper',-2,-2.4,2,true);vesper.g.position.y=.1;const ring=mesh(exchange,new T.TorusGeometry(.7,.012,3,24),m.neonCyan,-2,.1,-2.4);ring.rotation.x=Math.PI/2;
  text(exchange,['VESPER / ENGINEERING','DATE OF DEATH: 2089','SOURCE: INSIDE THE WIRE'], -2,2.85,-3,2.6,.9,'#8ee9ff');
  const swordRig=makeSword(gear),sword=swordRig.userData.rig.tool;sword.removeFromParent();exchange.add(sword);sword.position.set(1.4,1.05,-1.7);sword.rotation.y=-.17;

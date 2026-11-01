@@ -135,3 +135,5 @@ Version 1.17: [actual material UV spirals](SURFACE-HIGH.md) replace screen-image
 Version 1.18: [refined Mournfang and hand-rolled Night Leaf](RELIC-LEAF.md).
 
 Version 1.19: [rendering and update performance](PERFORMANCE.md), preserving the current visual settings.
+
+Version 1.20: [neural character voices and rewritten opening](NEURAL-VOICES.md).

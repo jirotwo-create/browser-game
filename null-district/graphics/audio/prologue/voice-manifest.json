@@ -1,0 +1,155 @@
+{
+  "engine": "kokoro-onnx 0.5.0 / Kokoro v1.0",
+  "cast": {
+    "courier": {
+      "voice": "am_michael",
+      "speed": 1.02,
+      "language": "en-us"
+    },
+    "vesper": {
+      "voice": "af_heart",
+      "speed": 1.02,
+      "language": "en-us"
+    },
+    "care": {
+      "voice": "bf_emma",
+      "speed": 1.0,
+      "language": "en-gb"
+    },
+    "regent": {
+      "voice": "bm_george",
+      "speed": 0.94,
+      "language": "en-gb"
+    }
+  },
+  "modelSha256": "beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a",
+  "voicesSha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
+  "clips": {
+    "city-care": {
+      "text": "Welcome to Null District. Your afterlife is in safe hands.",
+      "speaker": "care",
+      "duration": 3.692,
+      "sha256": "baaf024bb8811f2813f4c2cfcfe9eab40989831c389dada754b0f7892dc215c9"
+    },
+    "city-courier": {
+      "text": "Sable owns the city. Die owing them money, and they put you straight back to work.",
+      "speaker": "courier",
+      "duration": 5.44,
+      "sha256": "d8ea0c7042578c1d4490b42a04f019494809e4db47197ff98797ce430f3eaa85"
+    },
+    "court-vesper": {
+      "text": "I helped build their soul network. The Ashen Court supplies the dead. Sable works them until nothing is left.",
+      "speaker": "vesper",
+      "duration": 6.84,
+      "sha256": "aa3e39fc16b97781fada0f6081fab22bb6ab16afc64f8dacde7d513416d9269f"
+    },
+    "court-regent": {
+      "text": "You may spend their memories. Their souls remain mine.",
+      "speaker": "regent",
+      "duration": 4.14,
+      "sha256": "77c88839d2f593e7719615000b1175541769d1bec351eb8be3021e5100e0fe60"
+    },
+    "harvest-care": {
+      "text": "Your service continues after death. Please remain at your assigned station.",
+      "speaker": "care",
+      "duration": 4.34,
+      "sha256": "46259e45fcd3216c4ef940af4b6fd8c70d09603bc8f49ca881a1defd09675dd4"
+    },
+    "harvest-courier": {
+      "text": "After the crash, Sable put me back to work. They said one last delivery would clear my debt.",
+      "speaker": "courier",
+      "duration": 6.54,
+      "sha256": "87c1ac2185244404e8b85e698ccb561477554d7ae132de0894c02fbb6782d633"
+    },
+    "receipt-courier": {
+      "text": "My name. Date of death. So I never made it out.",
+      "speaker": "courier",
+      "duration": 3.415,
+      "sha256": "422b7b7351279d74dfa0ae19e29b9458aab649a35685512005624301e79060a6"
+    },
+    "receipt-vesper": {
+      "text": "They brought your body back. Your soul is still under contract. Just like mine.",
+      "speaker": "vesper",
+      "duration": 4.64,
+      "sha256": "f9d0af65b6fc4316881477463134d277b090d643f97815ef1cf3c3e2e379d462"
+    },
+    "vesper-plan": {
+      "text": "I tried to shut the network down. They killed me and trapped me inside it. Your name is on tonight's blacklist.",
+      "speaker": "vesper",
+      "duration": 6.24,
+      "sha256": "0a9cc3fd558040a5ef1f3363305af38b309f5ebc795ab6fca9e55cfe705d153a"
+    },
+    "vesper-courier": {
+      "text": "Blacklist? What happens to the people on it?",
+      "speaker": "courier",
+      "duration": 2.935,
+      "sha256": "5b0c55410b7f55ede3eebce45c694889dcb9b3aa841044f77246e76675b89d93"
+    },
+    "vesper-transfer": {
+      "text": "At midnight, Rainline sends their souls to the Court. We erase the list and sever the broadcast. No names, no transfer.",
+      "speaker": "vesper",
+      "duration": 7.64,
+      "sha256": "e0f1c7f818b9456bf1b4af733af2c1aba39ec2f122ac11731ad32f498b709003"
+    },
+    "sword-vesper": {
+      "text": "Mournfang cuts the bindings that hold a soul. We need it to break the cathedral seals.",
+      "speaker": "vesper",
+      "duration": 5.24,
+      "sha256": "99395e3a10122fc3af60abd7ed994718ee06dec3dfa0ea5200764ca1d512bcfd"
+    },
+    "sword-courier": {
+      "text": "You put this in my delivery. Why me?",
+      "speaker": "courier",
+      "duration": 2.871,
+      "sha256": "a90f9b0154544067d6fd8dd1bfb4cc68ee791c31035eb6a6ec15f758719217f6"
+    },
+    "sword-choice": {
+      "text": "You can move through their checkpoints. I can't leave the wire. And you're the first courier who opened the package.",
+      "speaker": "vesper",
+      "duration": 6.14,
+      "sha256": "a4cc153476052e44ffda8eb43b5ab6184e53144f40fa5143a4cae1d4f2637fcc"
+    },
+    "market-vesper": {
+      "text": "First, steal a rift key to get below the city. Break the cathedral seals, then recover the blacklist from the Kabuki broker.",
+      "speaker": "vesper",
+      "duration": 7.84,
+      "sha256": "7aea6519bfd400475cb7931effe54805d23771ba714790567c12324ad7d7f591"
+    },
+    "train-vesper": {
+      "text": "The dead line carries sealed cargo to Rainline. Take the blacklist aboard. It will let us erase the names before the transfer.",
+      "speaker": "vesper",
+      "duration": 7.74,
+      "sha256": "785f2dc3f212c7b8b98a7900efd04ed0ced0b03db7b2f1fd4045cbb93d706b91"
+    },
+    "train-care": {
+      "text": "Unauthorized passengers will be returned to processing. Thank you for your cooperation.",
+      "speaker": "care",
+      "duration": 5.24,
+      "sha256": "439aee03c63c19d647425b6b43b676f3e6d98098d6c626e9696260ba2694c992"
+    },
+    "regent-warning": {
+      "text": "Break your contract, courier, and I will take the district in your place.",
+      "speaker": "regent",
+      "duration": 5.24,
+      "sha256": "c7bfa0599140e80bae17214c00bb8ae231157092f96d34f8ce793eabe8efd272"
+    },
+    "regent-courier": {
+      "text": "You don't get them either. We're ending this.",
+      "speaker": "courier",
+      "duration": 2.657,
+      "sha256": "e79262443d23d79843559b72b853fce541fbb0f8504bf7e0e05ffe7f776ab44c"
+    },
+    "deploy-vesper": {
+      "text": "There's a surveillance terminal ahead. It can lead you to the rift key. I'll stay with you.",
+      "speaker": "vesper",
+      "duration": 5.04,
+      "sha256": "f64a65484883c6ac0dfcf79601853e2f621b418f9c365029c955084669cb3a6e"
+    },
+    "deploy-courier": {
+      "text": "Keep that channel open. We get everyone off that list.",
+      "speaker": "courier",
+      "duration": 3.799,
+      "sha256": "81fce9ec392efff3e8a89f3f4d96c1fb8c7e776a6128bd1a602f2716b7dfda56"
+    }
+  }
+}
