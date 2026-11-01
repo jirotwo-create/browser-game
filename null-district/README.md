@@ -2,13 +2,24 @@
 
 A standalone cyberpunk FPS with a custom PS1-style raster pipeline, faceted characters and weapons, pixel-painted environments and real affine texture mapping. This separate game does not modify or replace Dreadwake.
 
-**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.20.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
+**[Download the latest Windows EXE](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.21.0-Windows-x64.exe)** — standalone, offline, no browser or installation needed.
 
 ![Kabuki Aftermarket: Japanese storefronts, covered stalls and neon grime](screenshots/kabuki-aftermarket.png)
 
 ![Shin-Kuro Terminal: the dead line and illuminated departure boards](screenshots/shin-kuro-terminal.png)
 
 ![Rainline Broadcast: a rooftop plaza under citywide advertisements](screenshots/rainline-broadcast.png)
+
+Version 1.21 rebuilds the **enemy character proportions and heads**.
+
+- Seven human archetypes now have broader shoulder frames, tapered waists, larger articulated hands and heavier boots, with distinct builds for street runners, riflemen, riot troops, knights and casters. The direction draws on exaggerated fantasy proportions and angular PS1/early-PS2 characters while keeping the grungy cyberpunk palette.
+- Authored bevelled skulls, square jaws, continuous cheek planes, heavy brows and wedge noses replace the rounded heads. Helmets and hoods use angular profiles; the knight has a closed pointed faceplate.
+- The hound, revenant and gargoyle have new angular skulls/jaws, feet and claws. Riot armor, exposed runner arms, leather arbalist gear and blood-warlock robes separate the roles at a glance.
+- [Character art and verification notes](graphics/ENEMY-REDESIGN.md).
+
+![Rebuilt enemy lineup](screenshots/heroic-enemy-roster.png)
+
+![Angular heads from several views](screenshots/angular-enemy-heads.png)
 
 Version 1.20 rewrites and revoices **Chrome & Ash**.
 
@@ -218,7 +229,7 @@ The two starting weapons retain their articulated first-person grips and fixed-l
 
 ## Play on Windows
 
-1. Download **[NULL-DISTRICT-1.20.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.20.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
+1. Download **[NULL-DISTRICT-1.21.0-Windows-x64.exe](https://github.com/jirotwo-create/browser-game/raw/refs/heads/codex/null-district-fps/NULL-DISTRICT-1.21.0-Windows-x64.exe)** from this branch. If GitHub opens a file page, choose **Download raw file**.
 2. Double-click the downloaded `.exe`. It opens its own game window. No installation, browser, Python, Node.js, server, internet connection or additional game files are needed.
 3. Choose **Enter the district**.
 
@@ -252,7 +263,7 @@ Create a single portable Windows executable:
 npm run dist:win
 ```
 
-Output: `dist/NULL-DISTRICT-1.20.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
+Output: `dist/NULL-DISTRICT-1.21.0-Windows-x64.exe`. The pinned dependencies and lockfile reproduce the build. The Windows target is x64; no signing certificate is configured. The build can also be produced on Linux without Wine. Downloading dependencies and runtime binaries requires internet access at build time only.
 
 `npm run preview` retains the optional browser development workflow on port 4180. Python 3 is needed only for that optional preview.
 

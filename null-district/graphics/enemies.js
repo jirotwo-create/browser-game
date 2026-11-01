@@ -1,6 +1,6 @@
 import * as T from '../vendor/three.module.js';
 import { mesh, plate, cylinder, loft, countTriangles } from './models.js';
-import {makeHuman} from './human-npcs.js';
+import {makeEnemyHuman,angularShell} from './enemy-anatomy.js';
 import { chiselCharacter } from './sculpt.js';
 import { organic, polygonPrism } from './anatomy.js';
 
@@ -23,10 +23,11 @@ function blade(parent,m,length=.7){const g=new T.Group();parent.add(g);mesh(g,po
 function human(m,type,variant){
  m={...m,coat:m.npcCoat,dark:m.npcDark,glove:m.npcGlove,skin:m.npcSkin,skinDeep:m.npcSkinDeep,skinPale:m.npcSkinPale,face:m.npcFace,faceDeep:m.npcFaceDeep,facePale:m.npcFacePale,metal:m.npcMetal,obsidian:m.npcObsidian,robe:m.npcRobe,leather:m.npcLeather,hair:m.npcHair,eye:m.npcEye};
  const info=ENEMY_TYPES[type],fantasy=['knight','arbalist','warlock'].includes(type);
- const rig=makeHuman(m,variant),{g,head,torso,arms}=rig;
+ if(type==='knight')m={...m,coat:m.obsidian,dark:m.black};if(type==='arbalist')m={...m,coat:m.leather,dark:m.leather};if(type==='warlock')m={...m,coat:m.robe,dark:m.robe};
+ const rig=makeEnemyHuman(m,type,variant),{g,head,torso,arms}=rig;
  const fore=arms[1].userData.forearm;
  const accent=type==='razor'?m.neonPink:type==='riot'?m.neonAmber:fantasy?m.arcane:m.neonCyan;
- const props=[];
+ const props=[],baseTorsoParts=new Set(torso.children);
  if(!fantasy){
   for(const side of [-1,1]){plate(torso,accent,.025,.24,.018,side*.14,1.26,.15);plate(head,accent,.045,.025,.025,side*.12,1.74,.10)}
   plate(torso,m.black,.16,.17,.04,0,1.22,.17);
@@ -40,16 +41,16 @@ function human(m,type,variant){
   plate(rifle,m.black,.065,.09,.07,0,.025,-.16);plate(rifle,m.black,.014,.035,.02,0,.12,.20);
   for(let i=0;i<3;i++)plate(rifle,m.edge,.07,.012,.012,0,.112,.04+i*.04);
   if(type==='riot'){
-   mesh(torso,organic([[.94,.17,.12],[1.27,.205,.145],[1.46,.18,.115]],8),m.metal);
+   mesh(torso,angularShell([[.99,.16,.15,.12],[1.18,.205,.22,.14],[1.43,.225,.18,.12],[1.52,.12,.09,.08]]),m.obsidian);for(const arm of arms)mesh(arm,loft([[-.07,.23,.23],[.02,.28,.25],[.12,.20,.19]]),m.metal,0,-.025,0);plate(torso,m.neonAmber,.23,.028,.018,0,1.28,.25);
    const shield=mesh(arms[0],polygonPrism([[-.24,-.5],[.22,-.5],[.25,.42],[0,.57],[-.25,.42]],.045,.025),m.black,0,-.3,.19);props.push(shield);
    plate(shield,m.neonAmber,.29,.06,.025,0,.15,.045);
-   mesh(head,organic([[1.80,.135,.13],[1.95,.105,.10],[2.01,.05,.06]],8),m.metal,0,0,-.04);
+   mesh(head,angularShell([[1.85,.153,.15,.14],[2.02,.14,.11,.12],[2.09,.10,.04,.08]]),m.metal);plate(head,m.black,.26,.055,.025,0,1.835,.154);plate(head,m.neonAmber,.21,.012,.008,0,1.84,.17);
   }
  }
  if(type==='razor'){
   const machete=blade(fore,m,.5);machete.position.set(0,-.308,-.072);machete.rotation.x=-1.5;props.push(machete);
   for(const side of [-1,1])for(let i=0;i<3;i++)spike(torso,m.metal,[side*.18,1.42,-.04+i*.055],[side*.27,1.60,-.04+i*.055],.025);
-  mesh(head,organic([[1.88,.035,.11],[2.13,.015,.04]],5),m.neonPink,0,0,-.04);
+  mesh(head,polygonPrism([[-.025,1.98],[.035,1.98],[.025,2.19],[-.016,2.13]],.22,.014),m.neonPink,0,0,-.04);
  }
  if(type==='netrunner'){
   mesh(torso,organic([[.49,.195,.13],[.98,.15,.10],[1.4,.185,.115]],8),m.coat,0,0,-.06);
@@ -58,12 +59,12 @@ function human(m,type,variant){
   plate(head,m.black,.09,.07,.04,.06,1.74,.16);plate(head,m.neonCyan,.075,.015,.02,.06,1.75,.185);
  }
  if(type==='knight'){
-  mesh(head,organic([[1.81,.135,.125],[1.96,.11,.11],[2.04,.04,.06]],8),m.metal,0,0,-.05);
+  mesh(head,angularShell([[1.73,.115,.15,.11],[1.90,.16,.16,.13],[2.045,.135,.10,.11],[2.13,.03,.02,.05]]),m.metal);mesh(head,polygonPrism([[-.11,1.85],[.11,1.85],[.10,1.88],[-.10,1.88]],.01,.003),m.black,0,0,.173);plate(head,m.neonAmber,.15,.008,.01,0,1.865,.182);mesh(head,polygonPrism([[-.13,1.83],[.13,1.83],[.11,1.67],[0,1.60],[-.11,1.67]],.025,.04),m.obsidian,0,0,.17);mesh(head,polygonPrism([[0,1.61],[-.026,1.76],[0,1.86],[.026,1.76]],.012,.01),m.metal,0,0,.219);
   for(const leg of rig.legs)mesh(leg,organic([[-.38,.055,.068],[-.2,.08,.09],[0,.09,.1]],7),m.metal,0,0,.035);
   for(const arm of arms)mesh(arm.userData.forearm,organic([[-.26,.048,.06],[-.04,.065,.065]],7),m.metal);
   mesh(torso,polygonPrism([[-.16,1.43],[.16,1.43],[.23,.33],[0,.42],[-.23,.33]],.018,.005),m.robe,0,0,-.19);
   mesh(torso,organic([[.84,.15,.11],[1.08,.18,.13],[1.35,.215,.145],[1.48,.15,.1]],9),m.obsidian);
-  for(const side of [-1,1]){mesh(torso,new T.IcosahedronGeometry(.125,0),m.metal,side*.235,1.42,0,[1,.7,1]);spike(torso,m.obsidian,[side*.235,1.47,0],[side*.32,1.72,-.03]);spike(head,m.obsidian,[side*.11,1.87,-.05],[side*.24,2.15,-.1]);}
+  for(const side of [-1,1]){mesh(torso,loft([[-.08,.24,.23],[.02,.29,.26],[.10,.20,.19]]),m.metal,side*.235,1.42,0);spike(torso,m.obsidian,[side*.235,1.47,0],[side*.32,1.72,-.03]);spike(head,m.obsidian,[side*.11,1.87,-.05],[side*.24,2.15,-.1]);}
   const sword=blade(fore,m,.95);sword.position.set(0,-.270,-.061);sword.rotation.x=-1.1;props.push(sword);
   const shield=mesh(arms[0],polygonPrism([[-.23,.30],[.23,.30],[.22,-.21],[0,-.5],[-.22,-.21]],.035,.04),m.metal,0,-.35,.16);props.push(shield);
   mesh(shield,polygonPrism([[0,-.27],[-.075,0],[0,.19],[.075,0]],.005,.01),m.neonAmber,0,0,.065);
@@ -71,7 +72,7 @@ function human(m,type,variant){
  if(type==='arbalist'){
   mesh(torso,polygonPrism([[-.16,1.44],[.16,1.44],[.235,.47],[0,.35],[-.235,.47]],.02,.005),m.leather,0,0,-.18);
   for(const side of [-1,1])rod(torso,m.leather,[side*.22,1.38,.12],[-side*.15,.94,.16],.028);
-  mesh(head,organic([[1.77,.145,.14],[2,.055,.08]],7),m.leather,0,0,-.055);
+  mesh(head,angularShell([[1.86,.16,.10,.15],[2.055,.14,.06,.12],[2.13,.06,.005,.07]]),m.leather,0,0,-.025);
   const bow=new T.Group();fore.add(bow);bow.position.set(0,-.315,.04);bow.rotation.x=-.8;
   plate(bow,m.leather,.065,.09,.45,0,0,0);rod(bow,m.bone,[-.32,0,.12],[0,.03,.23]);rod(bow,m.bone,[0,.03,.23],[.32,0,.12]);rod(bow,m.metal,[-.32,0,.12],[.32,0,.12],.006);spike(bow,m.edge,[0,0,0],[0,0,.5],.015);props.push(bow);
   for(let i=0;i<3;i++)rod(torso,m.leather,[-.1+i*.08,1,-.2],[-.1+i*.08,1.73,-.2]);
@@ -80,22 +81,23 @@ function human(m,type,variant){
   for(const side of [-1,1])mesh(head,organic([[1.54,.055,.12],[1.76,.06,.14],[1.94,.045,.09]],6),m.robe,side*.13,0,-.03);
   for(const arm of arms)mesh(arm.userData.forearm,organic([[-.27,.055,.055],[-.12,.067,.06],[0,.05,.05]],7),m.robe);
   mesh(torso,organic([[.08,.225,.16],[.38,.205,.13],[1.1,.145,.10],[1.44,.185,.115]],9),m.robe);
-  mesh(head,organic([[1.68,.145,.145],[1.87,.13,.135],[2.06,.03,.07]],7),m.robe,0,0,-.07);
+  mesh(head,angularShell([[1.77,.16,.03,.18],[1.99,.16,.09,.16],[2.17,.045,.02,.11]]),m.robe,0,0,-.04);mesh(head,polygonPrism([[-.13,1.78],[0,2.04],[.13,1.78],[.10,1.98],[0,2.17],[-.10,1.98]],.018,.007),m.robe,0,0,.10);
   const staff=new T.Group();fore.add(staff);staff.position.set(0,-.315,.028);staff.rotation.x=.5;
   cylinder(staff,m.leather,.025,1.6,6,0,.28,0);mesh(staff,new T.OctahedronGeometry(.12,0),m.arcane,0,1.14,0);
   for(const side of [-1,1])spike(staff,m.bone,[side*.02,.88,0],[side*.15,1.21,0]);props.push(staff);
   for(let i=0;i<3;i++)plate(torso,m.arcane,.025,.10,.01,(i-1)*.085,.7,.18);
  }
+ for(const part of torso.children)if(!baseTorsoParts.has(part)){part.position.x*=1.35;part.scale.x*=1.35;part.position.z*=1.25;part.scale.z*=1.25;}
  return {...rig,props};
 }
 function monster(m,type){
  const g=new T.Group(),torso=new T.Group(),head=new T.Group();g.add(torso,head);const legs=[],knees=[],arms=[],props=[];
  if(type==='hound'){
-  mesh(torso,organic([[0,.24,.32],[.32,.29,.45],[.55,.17,.35]],8),m.beast,0,.38,-.1).rotation.x=.45;
-  mesh(head,organic([[0,.16,.19],[.28,.20,.25],[.43,.12,.13]],7),m.beast,0,.7,.42).rotation.x=.9;
-  mesh(head,organic([[0,.11,.14],[.35,.10,.10]],6),m.bone,0,.73,.62).rotation.x=Math.PI/2;
+  mesh(torso,angularShell([[0,.23,.30,.28],[.25,.30,.46,.37],[.48,.24,.39,.32],[.56,.15,.27,.24]]),m.beast,0,.38,-.1).rotation.x=.45;
+  const skull=mesh(head,angularShell([[0,.12,.15,.13],[.15,.205,.21,.17],[.34,.14,.10,.12]]),m.beast,0,.7,.42);skull.rotation.x=.9;skull.name='angular-hound-skull';skull.userData.independentPose=true;
+  mesh(head,angularShell([[0,.115,.10,.09],[.22,.105,.075,.065],[.35,.065,.045,.05]]),m.bone,0,.73,.62).rotation.x=Math.PI/2;mesh(head,angularShell([[0,.10,.07,.06],[.30,.078,.055,.05]]),m.bone,0,.665,.66).rotation.x=Math.PI/2;plate(head,m.black,.18,.018,.29,0,.712,.79);
   for(const side of [-1,1]){mesh(head,new T.OctahedronGeometry(.045,0),m.neonPink,side*.15,.91,.58);spike(head,m.bone,[side*.15,.93,.42],[side*.24,1.24,.24]);for(let i=0;i<3;i++)spike(head,m.bone,[side*.08,.78,.73+i*.07],[side*.07,.66,.74+i*.07],.025);}
-  for(const side of [-1,1])for(const z of [-.4,.42]){const leg=new T.Group();leg.position.set(side*.24,.61,z);g.add(leg);legs.push(leg);mesh(leg,organic([[-.3,.055,.065],[0,.095,.11]],6),m.beast);const knee=new T.Group();knee.position.set(0,-.28,0);leg.add(knee);knees.push(knee);mesh(knee,organic([[-.29,.05,.075],[0,.05,.055]],6),m.beast);spike(knee,m.bone,[0,-.28,.01],[0,-.29,.16],.05);}
+  for(const side of [-1,1])for(const z of [-.4,.42]){const leg=new T.Group();leg.position.set(side*.24,.61,z);g.add(leg);legs.push(leg);mesh(leg,organic([[-.3,.055,.065],[0,.095,.11]],6),m.beast);const knee=new T.Group();knee.position.set(0,-.28,0);leg.add(knee);knees.push(knee);mesh(knee,organic([[-.29,.05,.075],[0,.05,.055]],6),m.beast);mesh(knee,angularShell([[-.30,.075,.17,.07],[-.24,.085,.15,.07],[-.19,.055,.09,.05]]),m.beast);for(const toe of[-1,0,1])spike(knee,m.bone,[toe*.045,-.27,.13],[toe*.052,-.29,.23],.022);}
   for(let i=0;i<5;i++)spike(torso,m.obsidian,[0,.9,-.55+i*.15],[0,1.16-i*.02,-.62+i*.15],.055);
   const tail=new T.Group();tail.position.set(0,.65,-.48);g.add(tail);rod(tail,m.beast,[0,0,0],[0,.15,-.7],.055);spike(tail,m.bone,[0,.15,-.65],[0,.27,-.9],.07);props.push(tail);
  }else{
@@ -104,15 +106,15 @@ function monster(m,type){
   // Open rib cage and glowing cavity make the undead visibly skeletal.
   for(let i=0;i<5;i++){const ring=mesh(torso,new T.TorusGeometry(.15-i*.009,.018,3,7,Math.PI*1.7),skin,0,1.04+i*.075,.015);ring.rotation.y=Math.PI/2;ring.scale.set(1,1.4,1);}
   mesh(torso,new T.OctahedronGeometry(.08,0),demon?m.neonAmber:m.neonGreen,0,1.28,.17);
-  mesh(head,organic([[1.52,.07,.075],[1.65,.14,.13],[1.85,.13,.13],[1.94,.08,.08]],8),skin);
-  for(const side of [-1,1]){mesh(head,new T.IcosahedronGeometry(.047,0),m.black,side*.067,1.77,.11,[1,.75,.4]);mesh(head,new T.OctahedronGeometry(.021,0),demon?m.neonAmber:m.neonGreen,side*.067,1.77,.14);if(demon)spike(head,m.obsidian,[side*.1,1.91,0],[side*.31,2.22,-.12],.065);}
+  const skull=mesh(head,angularShell([[1.53,.065,.075,.06],[1.61,.13,.12,.09],[1.76,.16,.13,.125],[1.89,.145,.105,.12],[1.98,.105,.065,.09]]),skin);skull.name='angular-'+type+'-skull';skull.userData.independentPose=true;mesh(head,polygonPrism([[-.10,1.63],[.10,1.63],[.085,1.55],[0,1.52],[-.085,1.55]],.035,.015),skin,0,0,.11);mesh(head,polygonPrism([[-.028,1.68],[0,1.74],[.028,1.68]],.014,.005),m.black,0,0,.15);
+  for(const side of [-1,1]){mesh(head,polygonPrism([[-.044,0],[.04,-.012],[.042,.035],[-.035,.042]],.018,.004),m.black,side*.07,1.775,.136);plate(head,demon?m.neonAmber:m.neonGreen,.044,.011,.01,side*.07,1.787,.156);mesh(head,polygonPrism([[-.06,0],[.055,-.01],[.06,.028],[-.05,.042]],.018,.009),skin,side*.07,1.82,.134);if(demon)spike(head,m.obsidian,[side*.1,1.91,0],[side*.31,2.22,-.12],.065);}
   for(let i=0;i<5;i++)spike(head,m.bone,[(i-2)*.025,1.63,.1],[(i-2)*.025,1.57,.14],.012);
   for(const side of [-1,1]){
-   const leg=new T.Group();leg.position.set(side*.15,.79,0);g.add(leg);legs.push(leg);rod(leg,skin,[0,0,0],[side*.03,-.37,0],.055);const knee=new T.Group();knee.position.set(side*.03,-.37,0);leg.add(knee);knees.push(knee);rod(knee,skin,[0,0,0],[0,-.35,.06],.043);mesh(knee,new T.IcosahedronGeometry(.08,0),skin,0,-.33,.08,[.8,.55,1.7]);
-   const arm=new T.Group();arm.position.set(side*.29,1.42,0);g.add(arm);arms.push(arm);rod(arm,skin,[0,0,0],[side*.10,-.32,.01],.055);rod(arm,skin,[side*.10,-.32,.01],[side*.10,-.64,.16],.04);for(let i=0;i<3;i++)spike(arm,m.bone,[side*.10+(i-1)*.025,-.62,.16],[side*.10+(i-1)*.04,-.78,.24],.016);
+   const leg=new T.Group();leg.position.set(side*.15,.79,0);g.add(leg);legs.push(leg);rod(leg,skin,[0,0,0],[side*.03,-.37,0],.055);const knee=new T.Group();knee.position.set(side*.03,-.37,0);leg.add(knee);knees.push(knee);rod(knee,skin,[0,0,0],[0,-.35,.06],.043);mesh(knee,angularShell([[-.39,.075,.18,.065],[-.32,.085,.19,.07],[-.25,.046,.08,.05]]),skin,0,0,.02);
+   const arm=new T.Group();arm.position.set(side*(demon?.37:.29),1.42,0);g.add(arm);arms.push(arm);rod(arm,skin,[0,0,0],[side*.10,-.32,.01],demon?.09:.055);rod(arm,skin,[side*.10,-.32,.01],[side*.10,-.64,.16],demon?.075:.04);mesh(arm,loft([[-.065,.13,.10],[.04,.16,.12]]),skin,side*.10,-.62,.16);for(let i=0;i<3;i++)spike(arm,m.bone,[side*.10+(i-1)*.025,-.62,.16],[side*.10+(i-1)*.055,-.82,.28],demon?.026:.016);
    if(demon){const wing=new T.Group();wing.position.set(side*.18,1.38,-.08);g.add(wing);mesh(wing,polygonPrism([[0,0],[side*.52,.55],[side*1.11,.22],[side*.81,-.12],[side*.65,.08],[side*.40,-.23],[side*.22,-.08]],.02,.015),m.robe);for(const [x,y]of [[.52,.55],[1.11,.22],[.65,.08]])rod(wing,m.obsidian,[0,0,0],[side*x,y,-.015],.025);props.push(wing);}
   }
-  if(demon)g.scale.setScalar(1.28);
+  if(demon){g.scale.setScalar(1.28);torso.scale.x=1.25;for(const side of[-1,1])mesh(torso,polygonPrism([[side*.13,1.45],[side*.29,1.5],[side*.36,1.38],[side*.24,1.21],[side*.14,1.28]],.14,.06),m.stone,0,0,.02);}
  }
  return {g,torso,head,legs,knees,arms,props};
 }
@@ -120,7 +122,7 @@ export function makeEnemy(m,type='sable',variant=0){
  const info=ENEMY_TYPES[type];if(!info)throw Error('Unknown enemy archetype '+type);
  const rig=info.species==='human'?human(m,type,variant):monster(m,type);
  for(const prop of rig.props)prop.userData.independentPose=true;
- chiselCharacter(rig.g,info.species==='human'?{depth:.015,contrast:.28}:{});rig.g.name=type+'-enemy';rig.g.userData.asset={...rig.g.userData.asset,...info,type,triangles:countTriangles(rig.g)};
+ chiselCharacter(rig.g,info.species==='human'?{depth:.015,contrast:.28}:{});rig.g.name=type+'-enemy';rig.g.userData.asset={...rig.g.userData.asset,...info,type,angularHead:true,triangles:countTriangles(rig.g)};
  return rig;
 }
 export function animateEnemy(e,time,moving){
